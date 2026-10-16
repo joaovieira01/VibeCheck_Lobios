@@ -1,1 +1,131 @@
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="assets/vibecheck-icon.svg"><link rel="stylesheet" href="css/style.css"><title>VibeCheck — Estatísticas</title></head><body data-page="stats"><header class="nav"><div class="container nav-inner"><a class="brand" href="index.html"><span class="brand-mark"><img src="assets/vibecheck-icon.svg" alt=""/></span><span>Vibe<span>Check</span></span></a><nav class="nav-links"><a data-nav="home" href="index.html">Início</a><a data-nav="about" href="sobre.html">Sobre nós</a><a data-nav="stats" href="estatisticas.html">Estatísticas</a><a data-nav="method" href="como-funciona.html">Como funciona</a></nav><div class="nav-actions"><a class="btn btn-ghost btn-small" href="login.html">Entrar</a><a class="btn btn-primary btn-small" href="analise.html">Analisar agora</a></div></div></header><main><section class="page-head"><div class="container"><span class="eyebrow mono"><span class="n">01 /</span> estatísticas</span><h1>Dados para enxergar<br><span class="accent">o que mudou.</span></h1><p class="lead">Página de métricas do mockup com dados ilustrativos. Os filtros e gráficos já são interativos e podem ser ligados ao backend depois.</p></div></section><section class="section"><div class="container"><div class="metric-grid"><div class="metric"><strong data-counter="1284">0</strong><span>análises simuladas</span></div><div class="metric"><strong data-counter="48">0</strong><span>regras ativas</span></div><div class="metric"><strong data-counter="327">0</strong><span>achados identificados</span></div><div class="metric"><strong data-counter="86" data-suffix="%">0%</strong><span>projetos sem crítico na última rodada</span></div></div><div class="stat-controls"><button class="filter-btn active" data-filter="all" onclick="filterStats('all')">Todos</button><button class="filter-btn" data-filter="python" onclick="filterStats('python')">Python</button><button class="filter-btn" data-filter="web" onclick="filterStats('web')">Web</button></div><div class="chart-card"><div style="display:flex;justify-content:space-between;gap:20px;align-items:end"><div><div class="eyebrow mono">volume de análises</div><h3 style="margin:8px 0 0">Últimas 8 janelas</h3></div><span class="pill pill-purple mono">demo</span></div><div class="bar-chart"><div class="bar" style="height:68%"></div><div class="bar" style="height:42%"></div><div class="bar" style="height:54%"></div><div class="bar" style="height:61%"></div><div class="bar" style="height:76%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:88%"></div><div class="bar" style="height:94%"></div></div><div class="bar-labels"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span><span>W7</span><span>W8</span></div></div></div></section></main><footer class="footer"><div class="container footer-inner"><span class="mono">VibeCheck © 2026</span><span>Mockup interativo · dados ilustrativos</span></div></footer><script src="js/app.js"></script><script>filterStats('all')</script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" href="assets/vibecheck-icon.svg" />
+    <link rel="stylesheet" href="css/style.css" />
+    <title>VibeCheck — Estatísticas</title>
+  </head>
+  <body data-page="stats">
+    <header class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="index.html"
+          ><span class="brand-mark"
+            ><img src="assets/vibecheck-icon.svg" alt="" /></span
+          ><span>Vibe<span>Check</span></span></a
+        >
+        <nav class="nav-links">
+          <a data-nav="home" href="index.html">Início</a
+          ><a data-nav="about" href="sobre.html">Sobre nós</a
+          ><a data-nav="stats" href="estatisticas.html">Estatísticas</a
+          ><a data-nav="method" href="como-funciona.html">Como funciona</a>
+        </nav>
+        <div class="nav-actions">
+          <a class="btn btn-ghost btn-small" href="login.html">Entrar</a
+          ><a class="btn btn-primary btn-small" href="analise.html"
+            >Analisar agora</a
+          >
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="page-head">
+        <div class="container">
+          <span class="eyebrow mono"
+            ><span class="n">01 /</span> estatísticas</span
+          >
+          <h1>
+            Dados para enxergar<br /><span class="accent">o que mudou.</span>
+          </h1>
+          <p class="lead">
+            Página de métricas do mockup com dados ilustrativos. Os filtros e
+            gráficos já são interativos e podem ser ligados ao backend depois.
+          </p>
+        </div>
+      </section>
+      <section class="section">
+        <div class="container">
+          <div class="metric-grid">
+            <div class="metric">
+              <strong data-counter="1284">0</strong
+              ><span>análises simuladas</span>
+            </div>
+            <div class="metric">
+              <strong data-counter="48">0</strong><span>regras ativas</span>
+            </div>
+            <div class="metric">
+              <strong data-counter="327">0</strong
+              ><span>achados identificados</span>
+            </div>
+            <div class="metric">
+              <strong data-counter="86" data-suffix="%">0%</strong
+              ><span>projetos sem crítico na última rodada</span>
+            </div>
+          </div>
+          <div class="stat-controls">
+            <button
+              class="filter-btn active"
+              data-filter="all"
+              onclick="filterStats('all')"
+            >
+              Todos</button
+            ><button
+              class="filter-btn"
+              data-filter="python"
+              onclick="filterStats('python')"
+            >
+              Python</button
+            ><button
+              class="filter-btn"
+              data-filter="web"
+              onclick="filterStats('web')"
+            >
+              Web
+            </button>
+          </div>
+          <div class="chart-card">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                gap: 20px;
+                align-items: end;
+              "
+            >
+              <div>
+                <div class="eyebrow mono">volume de análises</div>
+                <h3 style="margin: 8px 0 0">Últimas 8 janelas</h3>
+              </div>
+              <span class="pill pill-purple mono">demo</span>
+            </div>
+            <div class="bar-chart">
+              <div class="bar" style="height: 68%"></div>
+              <div class="bar" style="height: 42%"></div>
+              <div class="bar" style="height: 54%"></div>
+              <div class="bar" style="height: 61%"></div>
+              <div class="bar" style="height: 76%"></div>
+              <div class="bar" style="height: 55%"></div>
+              <div class="bar" style="height: 88%"></div>
+              <div class="bar" style="height: 94%"></div>
+            </div>
+            <div class="bar-labels">
+              <span>W1</span><span>W2</span><span>W3</span><span>W4</span
+              ><span>W5</span><span>W6</span><span>W7</span><span>W8</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span class="mono">VibeCheck © 2026</span
+        ><span>Mockup interativo · dados ilustrativos</span>
+      </div>
+    </footer>
+    <script src="js/app.js"></script>
+    <script>
+      filterStats("all");
+    </script>
+  </body>
+</html>
