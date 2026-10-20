@@ -1,43 +1,62 @@
-# VibeCheck — Mockup interativo
+# VibeCheck — frontend
 
-Interface estática preparada para publicação no GitHub Pages e colaboração em equipe.
+Interface independente para demonstração de análise estática de segurança.
+Executa no navegador, sem API, banco de dados ou serviço externo. A estrutura
+do serviço de análise permite substituir o analisador local por uma API FastAPI
+no futuro.
 
-## Estrutura
+A interface usa React + TypeScript + Vite, com Bootstrap 5 para grade e utilitários
+responsivos e estilos próprios para identidade visual, animações e componentes.
 
-- `index.html` — landing page
-- `sobre.html` — sobre o projeto
-- `estatisticas.html` — métricas e gráfico interativo
-- `como-funciona.html` — fluxo do produto
-- `analise.html` — scanner + chat + relatório demo
-- `login.html` — login/cadastro demo
-- `dashboard.html` — painel da equipe
-- `css/style.css` — identidade visual
-- `js/app.js` — interações do protótipo
-- `assets/vibecheck-icon.svg` — favicon/ícone principal
-- `assets/vibecheck-icon.png` — ícone gerado para uso visual
+## Executar localmente
 
-## Publicar no GitHub Pages
+Requisitos: Node.js 20.19+ e npm.
 
-1. Crie um repositório no GitHub.
-2. Envie todos os arquivos mantendo a estrutura acima.
-3. Em **Settings → Pages**, selecione a branch `main` e a pasta `/root`.
-4. Salve e aguarde a publicação.
+```powershell
+npm install
+npm run dev
+```
 
-## Fluxo sugerido para a equipe
+Abra o endereço indicado pelo Vite (por padrão `http://localhost:5173`).
 
-`main` → produção/demo
+## Criar versão de produção
 
-`develop` → integração da equipe
+```powershell
+npm run build
+```
 
-`feature/nome-da-tarefa` → implementação de cada funcionalidade
+Os arquivos estáticos ficam em `dist/` e podem ser publicados no GitHub Pages ou
+em outro host de frontend.
 
-## Próximo ciclo técnico
+## O que o protótipo faz
 
-- GitHub OAuth real
-- API para autenticação
-- Integração com repositórios
-- Engine de análise real
-- Banco para histórico
-- CI/CD e testes
+- Analisa trechos colados ou arquivos de código de até 1 MB localmente no
+  navegador.
+- Exibe evidências, linhas, severidade, referência CWE/OWASP, impacto, correção
+  recomendada e prevenção.
+- Baixa um relatório PDF estilizado, com resumo executivo, ordem sugerida de
+  correção, cobertura heurística do OWASP Top 10:2025 e detalhes dos achados.
+- Guarda um histórico demonstrativo neste navegador, via `localStorage`.
 
-> As métricas, vulnerabilidades e resultados mostrados no projeto são dados ilustrativos do mockup.
+## Limitações e cobertura OWASP
+
+As regras são heurísticas locais, não executam o código e não substituem uma
+auditoria, SAST/DAST ou análise de dependências/CVEs. Categorias OWASP dependem
+de contexto de aplicação; categoria sem alerta **não** significa aplicação
+segura. A interface identifica explicitamente categorias que precisam de
+revisão manual, como design inseguro, falhas de autenticação em fluxo,
+dependências transitivas e configuração de infraestrutura.
+
+A taxonomia acompanha o [OWASP Top 10:2025](https://top10.owasp.org/2025/). As
+regras podem ser validadas e ampliadas usando o
+[OWASP Benchmark](https://owasp.org/www-project-benchmark/) e os requisitos
+verificáveis do [OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/).
+Mapear um padrão a uma categoria não significa cobertura completa da categoria.
+
+## Conectar um backend no futuro
+
+O componente usa a interface `AnalysisService`, definida em
+`src/services/analysisService.ts`. A implementação atual,
+`LocalAnalysisService`, pode ser trocada por um cliente HTTP que retorne o mesmo
+formato `Analysis`. Assim, o restante da interface e do relatório não precisa
+conhecer detalhes de transporte.
