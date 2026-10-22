@@ -1,0 +1,97 @@
+[
+ {
+  "name": "demo-python",
+  "filename": "app.py",
+  "source": "import os\nimport pickle\nimport subprocess\nimport hashlib\nimport yaml\nimport requests\n\nDEBUG = True\nSECRET_KEY = \"replace-me-with-a-real-secret\"\npassword = \"admin12345\"\n\ndef find_user(user_id):\n    query = f\"SELECT * FROM users WHERE id = {user_id}\"\n    return db.execute(query)\n\ndef calculate(expression):\n    return eval(expression)\n\ndef ping(host):\n    return subprocess.check_output(\"ping \" + host, shell=True)\n\ndef restore_session(payload):\n    return pickle.loads(payload)\n\ndef load_config(raw):\n    return yaml.load(raw)\n\ndef fetch_url(url):\n    return requests.get(url, verify=False)\n\ndef download(filename):\n    return open(BASE_DIR + filename, \"rb\")\n\ndef hash_password(value):\n    return hashlib.md5(value.encode()).hexdigest()\n"
+ },
+ {
+  "name": "demo-javascript",
+  "filename": "server.js",
+  "source": "const express = require(\"express\");\nconst crypto = require(\"crypto\");\nconst jwt = require(\"jsonwebtoken\");\nconst { exec } = require(\"child_process\");\nconst app = express();\n\nconst password = \"demo-secret-password\";\nconst secret = \"replace-this-jwt-secret\";\n\nfunction hashPassword(value) {\n  return crypto.createHash(\"md5\").update(value).digest(\"hex\");\n}\n\napp.get(\"/users/:id\", (req, res) => {\n  const query = \"SELECT * FROM users WHERE id = \" + req.params.id;\n  db.query(query);\n});\n\nfunction authenticate(token) {\n  return jwt.verify(token, secret);\n}\n\napp.post(\"/convert\", (req, res) => {\n  exec(`convert ${req.body.file} output.png`);\n});\n\nconst resetToken = Math.random().toString(36);\nres.cookie(\"session\", token, { httpOnly: true });\nresults.innerHTML = new URLSearchParams(location.search).get(\"q\");\n"
+ },
+ {
+  "name": "safe-controls",
+  "filename": "safe.js",
+  "source": "db_secret = os.environ[\"APP_DB_SECRET\"]\ndb.execute(\"SELECT * FROM users WHERE id = ?\", (user_id,))\nyaml.safe_load(raw)\nsubprocess.run([\"ping\", host], capture_output=True, check=True)\njwt.verify(token, secret, { algorithms: ['HS256'] });\nres.cookie('session', token, { httpOnly: true, secure: true, sameSite: 'lax' });"
+ },
+ {
+  "name": "crlf",
+  "filename": "a.py",
+  "source": "DEBUG = True\r\nx = eval(y)\r\n\r\npickle.loads(z)\r\n"
+ },
+ {
+  "name": "repeated",
+  "filename": "a.js",
+  "source": "const password = \"demo-password\";\nconst apiKey = \"demo-api-key\";\ntoken = \"abcd1234\"\nconst password = \"demo-password\";\nconst apiKey = \"demo-api-key\";\ntoken = \"abcd1234\"\nconst password = \"demo-password\";\nconst apiKey = \"demo-api-key\";\ntoken = \"abcd1234\""
+ },
+ {
+  "name": "pkg-star",
+  "filename": "package.json",
+  "source": "{\n  \"dependencies\": {\n    \"express\": \"*\",\n    \"react\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"latest\",\n    \"x\": \"\"\n  },\n  \"optionalDependencies\": {\n    \"y\": \"*\"\n  }\n}"
+ },
+ {
+  "name": "pkg-nested-path",
+  "filename": "C:\\proj\\sub\\package.json",
+  "source": "{\n  \"dependencies\": {\n    \"a\": \"*\"\n  }\n}"
+ },
+ {
+  "name": "pkg-invalid-json",
+  "filename": "package.json",
+  "source": "{\n \"dependencies\": {\n  \"left-pad\": \"*\",\n  \"b\": \"latest\",\n }\n}"
+ },
+ {
+  "name": "pkg-not-object",
+  "filename": "package.json",
+  "source": "[1,2,3]"
+ },
+ {
+  "name": "requirements",
+  "filename": "requirements.txt",
+  "source": "fastapi\nuvicorn>=0.30\n# comment\n-r other.txt\nflask  # web\nrequests==2.31.0\n\n  django\n"
+ },
+ {
+  "name": "requirements-upper",
+  "filename": "Requirements.TXT",
+  "source": "numpy\r\npandas\r\n"
+ },
+ {
+  "name": "clean",
+  "filename": "clean.py",
+  "source": "def add(a, b):\n    return a + b\n"
+ },
+ {
+  "name": "unicode",
+  "filename": "u.py",
+  "source": "senha = \"ação-çãõ-123\"\n# café\nDEBUG = True\n"
+ },
+ {
+  "name": "evidence-trim",
+  "filename": "a.py",
+  "source": "    DEBUG = True   #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+ },
+ {
+  "name": "sql-variants",
+  "filename": "q.py",
+  "source": "cur.execute(\"SELECT * FROM t WHERE a=\" + a)\ncur.execute(\"SELECT * FROM t WHERE a=%s\" % a)\ncur.execute(\"SELECT * FROM t WHERE a=?\", (a,))\nq = \"UPDATE t SET a=1 WHERE b={}\".format(b)\nq = f'DELETE FROM t WHERE id={i}'\nparams = \"SELECT\"+x"
+ },
+ {
+  "name": "misc-rules",
+  "filename": "m.py",
+  "source": "app.run(host='0.0.0.0', debug=True)\nexcept: pass\nexcept Exception: pass\ntry { x() } catch (e) {}\nlogger.info(\"user password=%s\", password)\nconsole.log(\"token\", token)\napp.use(cors({ origin: '*' }))\nconst reset_token = random.randint(1,9)\nrequests.get(u, verify = False)\nconst t = el.innerHTML = x; el.insertAdjacentHTML('beforeend', y)\nsendFile(req.query.path)\nopen(request.args['f'])\nSELECT * FROM projects WHERE id = ?\nSELECT * FROM projects WHERE id = ? AND owner = ?"
+ },
+ {
+  "name": "cmd-variants",
+  "filename": "c.py",
+  "source": "os.system(\"ls \" + d)\nsubprocess.run([\"ls\", d])\nsubprocess.Popen(cmd, shell=True)\nexec(\"rm \" + req.body.x)\nexecSync(\"echo \" + userInput)"
+ },
+ {
+  "name": "empty-lines",
+  "filename": "e.txt",
+  "source": "\n\n\n"
+ },
+ {
+  "name": "no-ext",
+  "filename": "Makefile",
+  "source": "password = 'abcd1234'"
+ }
+]
