@@ -32,6 +32,7 @@ import {
   Radar,
   RefreshCw,
   ScanLine,
+  Search,
   Shield,
   ShieldAlert,
   Sparkles,
@@ -267,80 +268,214 @@ function FindingRow({
 
 function OwaspPanel({
   findings,
+  hasAnalysis,
   onBack,
+  onViewFindings,
 }: {
   findings: Finding[];
+  hasAnalysis: boolean;
   onBack: () => void;
+  onViewFindings: (categoryId: string) => void;
 }) {
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "findings" | "manual">("all");
+
   const categoryCounts = useMemo(() => {
-    const counts = new Map<string, number>();
+    const counts = new Map<string, Finding[]>();
     findings.forEach((finding) => {
-      counts.set(
-        finding.owaspId,
-        (counts.get(finding.owaspId) ?? 0) + finding.locations.length,
-      );
+      counts.set(finding.owaspId, [...(counts.get(finding.owaspId) ?? []), finding]);
     });
     return counts;
   }, [findings]);
 
+  const filteredCategories = useMemo(() => {
+    const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
+    return owaspCategories.filter((category) => {
+      const categoryFindings = categoryCounts.get(category.id) ?? [];
+      if (filter === "findings" && categoryFindings.length === 0) return false;
+      if (filter === "manual" && category.automated) return false;
+      if (!normalizedSearch) return true;
+      return [
+        category.id,
+        category.name,
+        category.title,
+        category.guidance,
+        ...categoryFindings.map((finding) => finding.title),
+      ].some((value) => value.toLocaleLowerCase("pt-BR").includes(normalizedSearch));
+    });
+  }, [categoryCounts, filter, search]);
+
+  const flaggedCategories = categoryCounts.size;
+  const categoriesWithAutomation = owaspCategories.filter((category) => category.automated).length;
+  const manualReviewCount = owaspCategories.length - categoriesWithAutomation;
+  const occurrenceCount = findings.reduce((total, finding) => total + finding.locations.length, 0);
+
   return (
     <section className="workspace-card coverage-section">
-      <div className="section-heading-row">
-        <div>
-          <div className="eyebrow">MAPA DE REFERÊNCIA</div>
+      <div className="coverage-hero">
+        <div className="coverage-hero-copy">
+          <div className="eyebrow welcome-eyebrow">
+            <span className="eyebrow-spark"><Layers3 size={12} /></span>
+            REFERÊNCIA DE SEGURANÇA
+          </div>
           <h2>OWASP Top 10 <span className="heading-year">2025</span></h2>
           <p>
-            Uma base de orientação, não um certificado de cobertura. Cada categoria
-            precisa ser avaliada no contexto do sistema.
+            Entenda o que cada categoria cobre, quais sinais apareceram na análise
+            e onde uma revisão humana ainda é importante.
           </p>
         </div>
-        <button className="btn button-secondary" onClick={onBack} type="button">
-          Voltar ao scanner <ArrowRight size={15} />
+        <button className="btn button-secondary coverage-back-button" onClick={onBack} type="button">
+          <ArrowRight className="coverage-back-icon" size={14} /> Voltar à análise
         </button>
       </div>
-      <div className="owasp-grid row row-cols-1 row-cols-md-2 g-2">
-        {owaspCategories.map((category) => {
-          const count = categoryCounts.get(category.id) ?? 0;
-          return (
-            <div className="col" key={category.id}>
-              <a
-                className={`owasp-card h-100 ${count ? "has-findings" : ""}`}
-                href={category.url}
-                target="_blank"
-                rel="noreferrer"
+
+      <div className="coverage-overview" aria-label="Resumo da cobertura OWASP">
+        <article className={`coverage-overview-card ${hasAnalysis && flaggedCategories ? "coverage-overview-risk" : ""}`}>
+          <span className="coverage-overview-icon"><ShieldAlert size={16} /></span>
+          <span className="coverage-overview-copy"><small>{hasAnalysis ? "CATEGORIAS COM SINAIS" : "ANÁLISE NECESSÁRIA"}</small><strong>{hasAnalysis ? `${flaggedCategories}` : "—"}<span>{hasAnalysis ? ` / ${owaspCategories.length}` : ""}</span></strong></span>
+          <span className="coverage-overview-note">{hasAnalysis ? `${occurrenceCount} ocorrência(s)` : "Aguardando análise de código"}</span>
+        </article>
+        <article className="coverage-overview-card">
+          <span className="coverage-overview-icon"><Eye size={16} /></span>
+          <span className="coverage-overview-copy"><small>REVISÃO HUMANA</small><strong>{manualReviewCount}<span> categoria</span></strong></span>
+          <span className="coverage-overview-note">Design inseguro</span>
+        </article>
+      </div>
+
+      {hasAnalysis && (
+        <div className="coverage-progress" aria-label={`${flaggedCategories} de 10 categorias com sinais`}>
+          <div className="coverage-progress-copy">
+            <strong>Visão desta análise</strong>
+            <span>{flaggedCategories} de {owaspCategories.length} categorias têm sinais correspondentes às regras atuais.</span>
+          </div>
+          <div className="coverage-progress-track">
+            <span style={{ width: `${flaggedCategories / owaspCategories.length * 100}%` }} />
+          </div>
+          <strong className="coverage-progress-value">{Math.round(flaggedCategories / owaspCategories.length * 100)}%</strong>
+        </div>
+      )}
+
+      <div className="coverage-controls">
+        <label className="coverage-search">
+          <Search size={15} />
+          <input
+            aria-label="Buscar categoria ou achado OWASP"
+            placeholder="Buscar categoria ou achado..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          {search && <button type="button" aria-label="Limpar busca OWASP" onClick={() => setSearch("")}><X size={13} /></button>}
+        </label>
+        <div className="coverage-filter-tabs" role="group" aria-label="Filtrar categorias OWASP">
+          {([
+            ["all", "Todas", owaspCategories.length],
+            ["findings", "Com sinais", hasAnalysis ? flaggedCategories : null],
+            ["manual", "Revisão manual", manualReviewCount],
+          ] as const).map(([value, label, count]) => (
+            <button
+              type="button"
+              className={filter === value ? "active" : ""}
+              aria-pressed={filter === value}
+              key={value}
+              onClick={() => setFilter(value)}
+            >
+              {label}{count !== null && <span>{count}</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filteredCategories.length ? (
+        <div className="owasp-grid">
+          {filteredCategories.map((category, index) => {
+            const categoryFindings = categoryCounts.get(category.id) ?? [];
+            const occurrenceCountForCategory = categoryFindings.reduce(
+              (total, finding) => total + finding.locations.length,
+              0,
+            );
+            return (
+              <article
+                className={`owasp-card ${categoryFindings.length ? "has-findings" : ""}`}
+                key={category.id}
+                style={{ animationDelay: `${Math.min(index, 9) * 25}ms` }}
               >
                 <div className="owasp-card-top">
                   <span className="owasp-id">{category.id}</span>
-                  <span className={`owasp-status ${count ? "flagged" : "review"}`}>
-                    {count ? `${count} sinal(is)` : "revisar"}
+                  <span className={`owasp-status ${categoryFindings.length ? "flagged" : hasAnalysis ? "review" : "pending"}`}>
+                    {categoryFindings.length
+                      ? `${occurrenceCountForCategory} sinal(is)`
+                      : hasAnalysis
+                        ? "Sem sinal detectado"
+                        : "Aguardando análise"}
                   </span>
                 </div>
                 <h3>{category.title}</h3>
-                <p>{category.guidance}</p>
-                <span className="owasp-card-bottom">
-                  {category.automated ? "Heurísticas + revisão contextual" : "Revisão manual"}
-                  <ArrowUpRight size={13} />
-                </span>
-              </a>
-            </div>
-          );
-        })}
-      </div>
+                <p className="owasp-card-english">{category.name}</p>
+                <p className="owasp-card-guidance">{category.guidance}</p>
+                <div className="owasp-card-meta">
+                  <span className={`owasp-method ${category.automated ? "automated" : "manual"}`}>
+                    {category.automated ? <ScanLine size={12} /> : <Eye size={12} />}
+                    {category.automated ? "Heurísticas + revisão contextual" : "Requer revisão manual"}
+                  </span>
+                  <a
+                    className="owasp-external-link"
+                    href={category.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Abrir documentação OWASP de ${category.title}`}
+                  >
+                    OWASP <ArrowUpRight size={12} />
+                  </a>
+                </div>
+                {categoryFindings.length > 0 && (
+                  <div className="owasp-findings">
+                    <div className="owasp-findings-heading">
+                      <strong>Achados relacionados</strong>
+                      <span>{categoryFindings.length}</span>
+                    </div>
+                    {categoryFindings.slice(0, 3).map((finding) => (
+                      <div className="owasp-finding-item" key={finding.id}>
+                        <span className={`severity-dot ${severityStyle(finding.severity)}`} />
+                        <span>{finding.title}</span>
+                        <small>{finding.locations.length === 1 ? `linha ${finding.locations[0]}` : `${finding.locations.length} linhas`}</small>
+                      </div>
+                    ))}
+                    {categoryFindings.length > 3 && <span className="owasp-more-findings">+{categoryFindings.length - 3} categoria(s) de achado</span>}
+                    <button className="owasp-view-findings" type="button" onClick={() => onViewFindings(category.id)}>
+                      Abrir relatório da análise <ArrowRight size={13} />
+                    </button>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="coverage-no-results">
+          <Search size={19} />
+          <strong>Nenhuma categoria encontrada</strong>
+          <span>Ajuste a busca ou escolha outro filtro.</span>
+          <button type="button" onClick={() => { setSearch(""); setFilter("all"); }}>Limpar filtros</button>
+        </div>
+      )}
+
       <div className="coverage-footnote">
-        <AlertTriangle size={15} />
-        “Sem sinal” significa apenas que as regras atuais não encontraram um
-        padrão correspondente. Não significa que a aplicação esteja segura.
+        <AlertTriangle size={16} />
+        <span><strong>Importante sobre a cobertura</strong>“Sem sinal” significa que as regras heurísticas atuais não encontraram um padrão correspondente neste arquivo. Isso não comprova a ausência de vulnerabilidades; algumas categorias exigem contexto, análise de fluxo ou validação manual.</span>
       </div>
-      <div className="source-links">
-        <a href="https://top10.owasp.org/2025/" target="_blank" rel="noreferrer">
-          OWASP Top 10 oficial <ArrowUpRight size={13} />
-        </a>
-        <a href="https://owasp.org/www-project-benchmark/" target="_blank" rel="noreferrer">
-          OWASP Benchmark <ArrowUpRight size={13} />
-        </a>
-        <a href="https://owasp.org/www-project-application-security-verification-standard/" target="_blank" rel="noreferrer">
-          OWASP ASVS <ArrowUpRight size={13} />
-        </a>
+      <div className="coverage-resources">
+        <span>REFERÊNCIAS PARA APROFUNDAR</span>
+        <div className="source-links">
+          <a href="https://top10.owasp.org/2025/" target="_blank" rel="noreferrer">
+            OWASP Top 10 oficial <ArrowUpRight size={13} />
+          </a>
+          <a href="https://owasp.org/www-project-benchmark/" target="_blank" rel="noreferrer">
+            OWASP Benchmark <ArrowUpRight size={13} />
+          </a>
+          <a href="https://owasp.org/www-project-application-security-verification-standard/" target="_blank" rel="noreferrer">
+            OWASP ASVS <ArrowUpRight size={13} />
+          </a>
+        </div>
       </div>
     </section>
   );
@@ -671,7 +806,9 @@ function App() {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [filter, setFilter] = useState("Todas");
+  const [owaspCategoryFilter, setOwaspCategoryFilter] = useState<string | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [reportError, setReportError] = useState("");
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
@@ -712,14 +849,20 @@ function App() {
 
   const filteredFindings = useMemo(() => {
     if (!analysis) return [];
-    if (filter === "Todas") return analysis.findings;
-    return analysis.findings.filter((finding) => finding.severity === filter);
-  }, [analysis, filter]);
+    return analysis.findings.filter((finding) => (
+      (!owaspCategoryFilter || finding.owaspId === owaspCategoryFilter) &&
+      (filter === "Todas" || finding.severity === filter)
+    ));
+  }, [analysis, filter, owaspCategoryFilter]);
+  const activeOwaspCategory = owaspCategories.find(
+    (category) => category.id === owaspCategoryFilter,
+  );
 
   function setViewAndClose(nextView: View) {
     setView(nextView);
     setSidebarOpen(false);
     setError("");
+    if (nextView === "scanner") setOwaspCategoryFilter(null);
   }
 
   async function loadFile(file: File | undefined) {
@@ -778,6 +921,7 @@ function App() {
       await wait(240);
       setAnalysis(result);
       setFilter("Todas");
+      setOwaspCategoryFilter(null);
       await reloadHistory();
       window.setTimeout(
         () => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
@@ -841,6 +985,30 @@ function App() {
   );
   const currentScore = analysis ? scoreFor(analysis) : null;
   const latestScan = history[0];
+  const latestSeverityCounts = latestScan?.findings.reduce(
+    (total, finding) => {
+      total[finding.severity] += finding.locations.length;
+      return total;
+    },
+    { Crítica: 0, Alta: 0, Média: 0, Baixa: 0 },
+  ) ?? { Crítica: 0, Alta: 0, Média: 0, Baixa: 0 };
+  const latestCriticalFindings = latestSeverityCounts.Crítica + latestSeverityCounts.Alta;
+  const latestRiskScore = latestScan ? scoreFor(latestScan) : null;
+  const latestRiskLabel = latestRiskScore === null
+    ? "Aguardando análise"
+    : latestRiskScore >= 80
+      ? "Boa postura"
+      : latestRiskScore >= 55
+        ? "Atenção necessária"
+        : "Risco elevado";
+
+  function toggleSidebar() {
+    if (window.matchMedia("(max-width: 700px)").matches) {
+      setSidebarOpen((open) => !open);
+      return;
+    }
+    setSidebarCollapsed((collapsed) => !collapsed);
+  }
 
   if (portal === "landing") {
     return (
@@ -868,13 +1036,16 @@ function App() {
   }
 
   return (
-    <div className="app-shell" id="inicio">
+    <div className={`app-shell ${sidebarCollapsed ? "sidebar-is-collapsed" : ""}`} id="inicio">
       <div
         className={`sidebar-backdrop ${sidebarOpen ? "visible" : ""}`}
         onClick={() => setSidebarOpen(false)}
         aria-hidden="true"
       />
-      <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
+      <aside
+        id="workspace-navigation"
+        className={`sidebar ${sidebarOpen ? "sidebar-open" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}
+      >
         <div className="sidebar-brand">
           <Logo />
           <button
@@ -901,6 +1072,8 @@ function App() {
           <button
             type="button"
             className={`side-link ${view === "dashboard" ? "active" : ""}`}
+            aria-label="Dashboard"
+            title="Dashboard"
             onClick={() => setViewAndClose("dashboard")}
           >
             <Gauge size={17} />
@@ -910,6 +1083,8 @@ function App() {
           <button
             type="button"
             className={`side-link ${view === "scanner" ? "active" : ""}`}
+            aria-label="Scanner"
+            title="Scanner"
             onClick={() => setViewAndClose("scanner")}
           >
             <ScanLine size={17} />
@@ -919,6 +1094,8 @@ function App() {
           <button
             type="button"
             className={`side-link ${view === "coverage" ? "active" : ""}`}
+            aria-label="Cobertura OWASP"
+            title="Cobertura OWASP"
             onClick={() => setViewAndClose("coverage")}
           >
             <Layers3 size={17} />
@@ -928,6 +1105,8 @@ function App() {
           <button
             type="button"
             className={`side-link ${view === "history" ? "active" : ""}`}
+            aria-label="Histórico"
+            title="Histórico"
             onClick={() => setViewAndClose("history")}
           >
             <History size={17} />
@@ -938,12 +1117,12 @@ function App() {
 
         <span className="sidebar-label sidebar-label-gap">ATALHOS</span>
         <div className="side-nav">
-          <button className="side-link" type="button" onClick={() => useDemo("python")}>
+          <button className="side-link" type="button" aria-label="Exemplo Python" title="Exemplo Python" onClick={() => useDemo("python")}>
             <Code2 size={17} />
             <span>Exemplo Python</span>
             <ArrowDown className="shortcut-arrow" size={13} />
           </button>
-          <button className="side-link" type="button" onClick={() => useDemo("javascript")}>
+          <button className="side-link" type="button" aria-label="Exemplo JavaScript" title="Exemplo JavaScript" onClick={() => useDemo("javascript")}>
             <Braces size={17} />
             <span>Exemplo JavaScript</span>
             <ArrowDown className="shortcut-arrow" size={13} />
@@ -961,6 +1140,8 @@ function App() {
           <button
             type="button"
             className="side-link reference-link"
+            aria-label="Documentação OWASP"
+            title="Documentação OWASP"
             onClick={() => setViewAndClose("coverage")}
           >
             <BookOpenCheck size={16} />
@@ -976,8 +1157,12 @@ function App() {
             <button
               type="button"
               className="icon-button mobile-menu"
-              aria-label="Abrir menu"
-              onClick={() => setSidebarOpen(true)}
+              aria-label={window.matchMedia("(max-width: 700px)").matches
+                ? sidebarOpen ? "Fechar menu de navegação" : "Abrir menu de navegação"
+                : sidebarCollapsed ? "Expandir navegação" : "Recolher navegação"}
+              aria-controls="workspace-navigation"
+              aria-expanded={window.matchMedia("(max-width: 700px)").matches ? sidebarOpen : !sidebarCollapsed}
+              onClick={toggleSidebar}
             >
               <Menu size={19} />
             </button>
@@ -1000,24 +1185,31 @@ function App() {
         <main className="main-content">
           {view === "dashboard" && (
             <>
-              <section className="welcome-row">
+              <section className="welcome-row dashboard-welcome-row">
                 <div className="welcome-copy">
                   <div className="eyebrow welcome-eyebrow">
                     <span className="eyebrow-spark"><Sparkles size={12} /></span>
-                    PROJECT OVERVIEW
+                    VISÃO GERAL DO WORKSPACE
                   </div>
                   <h1>
-                    Visão geral do<br />
-                    <span>projeto e risco.</span>
+                    Segurança do código,<br />
+                    <span>em um só lugar.</span>
                   </h1>
                   <p>
-                    Acompanhe a saúde do projeto, o histórico recente de verificações e
-                    os próximos passos para revisão em PR/CI sem perder o foco no código.
+                    Acompanhe análises, entenda os riscos prioritários e escolha o próximo
+                    passo para proteger seu projeto.
                   </p>
                   <div className="welcome-tags">
-                    <span><ShieldCheck size={13} /> {apiMode ? "Backend e sessão ativos" : "Modo de demonstração local"}</span>
-                    <span><Zap size={13} /> {historyScans} análises registradas</span>
+                    <span><ShieldCheck size={13} /> {apiMode ? "Dados sincronizados com a API" : "Código analisado localmente"}</span>
+                    <span><Activity size={13} /> {latestScan ? `Atualizado ${new Date(latestScan.createdAt).toLocaleString("pt-BR")}` : "Pronto para a primeira análise"}</span>
                   </div>
+                  <button
+                    className="btn button-primary dashboard-scan-button"
+                    type="button"
+                    onClick={() => setView("scanner")}
+                  >
+                    <ScanLine size={15} /> Nova análise <ArrowRight size={14} />
+                  </button>
                 </div>
                 <div className="welcome-visual" aria-hidden="true">
                   <div className="visual-orbit orbit-one" />
@@ -1035,93 +1227,147 @@ function App() {
                 </div>
               </section>
 
-              <section className="metric-strip" aria-label="Resumo do projeto">
+              <section className="metric-strip dashboard-metrics" aria-label="Indicadores de segurança">
                 <div className="metric-tile">
                   <IconBadge tone="violet"><FileSearch size={17} /></IconBadge>
-                  <div><span>SCANS ATIVOS</span><strong>{historyScans}</strong></div>
-                  <span className="metric-caption">arquivos avaliados</span>
+                  <div><span>ANÁLISES REALIZADAS</span><strong>{historyScans}</strong></div>
+                  <span className="metric-caption">no histórico</span>
                 </div>
                 <div className="metric-tile">
-                  <IconBadge tone="red"><ShieldAlert size={17} /></IconBadge>
-                  <div><span>SEVERIDADE</span><strong>{counts.critical + counts.high}</strong></div>
-                  <span className="metric-caption">achados críticos/altos</span>
+                  <IconBadge tone={latestCriticalFindings > 0 ? "red" : "lime"}><ShieldAlert size={17} /></IconBadge>
+                  <div><span>ACHADOS CRÍTICOS E ALTOS</span><strong>{latestCriticalFindings}</strong></div>
+                  <span className="metric-caption">na última análise</span>
+                </div>
+                <div className="metric-tile">
+                  <IconBadge tone="blue"><Code2 size={17} /></IconBadge>
+                  <div><span>LINHAS ANALISADAS</span><strong>{latestScan ? latestScan.linesAnalyzed.toLocaleString("pt-BR") : "—"}</strong></div>
+                  <span className="metric-caption">na última análise</span>
                 </div>
                 <div className="metric-tile">
                   <IconBadge tone="lime"><Gauge size={17} /></IconBadge>
-                  <div><span>RISCO ATUAL</span><strong>{latestScan ? scoreFor(latestScan) : 86}<small>{latestScan ? "/100" : ""}</small></strong></div>
-                  <span className="metric-caption">{latestScan ? latestScan.filename : "nenhum scan ainda"}</span>
+                  <div><span>ÍNDICE DE SEGURANÇA</span><strong>{latestRiskScore ?? "—"}<small>{latestRiskScore !== null ? "/100" : ""}</small></strong></div>
+                  <span className="metric-caption">{latestRiskLabel}</span>
                 </div>
               </section>
 
               <section className="workspace-grid row g-3 align-items-start">
-                <div className="col-12 col-xl-8">
-                  <div className="workspace-card scan-card">
+                <div className="col-12 col-xl-7">
+                  <div className="workspace-card scan-card dashboard-posture-card">
                     <div className="card-heading">
                       <div>
-                        <div className="eyebrow">PROJETO</div>
-                        <h2>Saúde do código e pronto para revisão</h2>
-                        <p>Resumo da postura atual e do que precisa entrar no ciclo de validação do produto.</p>
+                        <div className="eyebrow">POSTURA DE SEGURANÇA</div>
+                        <h2>{latestScan ? "Resumo da última análise" : "Seu painel de segurança começa aqui"}</h2>
+                        <p>{latestScan ? `${latestScan.filename} · ${new Date(latestScan.createdAt).toLocaleString("pt-BR")}` : "Faça uma análise para receber indicadores reais sobre seus arquivos."}</p>
                       </div>
-                      <span className="privacy-chip"><ShieldCheck size={12} /> HEALTHY</span>
+                      <span className={`privacy-chip ${latestCriticalFindings > 0 ? "privacy-chip-risk" : ""}`}>
+                        {latestScan ? latestRiskLabel.toUpperCase() : "SEM DADOS"}
+                      </span>
                     </div>
 
-                    <div style={{ display: "grid", gap: "12px", marginTop: "18px" }}>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px" }}>
-                        <div className="insight-card" style={{ padding: "14px 15px" }}>
-                          <div className="eyebrow">RISCOS ATIVOS</div>
-                          <strong style={{ display: "block", marginTop: "8px", fontSize: "28px", color: "#f1eef8" }}>{counts.occurrences || 0}</strong>
-                          <p style={{ margin: "8px 0 0", color: "#8d8f9d", fontSize: "9px", lineHeight: 1.7 }}>Evidências registradas em varreduras recentes.</p>
+                    {latestScan ? (
+                      <>
+                        <div className="dashboard-risk-summary">
+                          <div className={`dashboard-score ${latestRiskScore !== null && latestRiskScore < 55 ? "dashboard-score-risk" : ""}`}>
+                            <strong>{latestRiskScore}</strong><span>/100</span>
+                          </div>
+                          <div className="dashboard-risk-copy">
+                            <strong>{latestRiskLabel}</strong>
+                            <span>{findingOccurrences(latestScan)} ocorrência(s) identificada(s) em {latestScan.linesAnalyzed.toLocaleString("pt-BR")} linhas.</span>
+                          </div>
+                          <button className="text-link" type="button" onClick={() => { setAnalysis(latestScan); setView("scanner"); }}>
+                            Ver relatório <ArrowRight size={13} />
+                          </button>
                         </div>
-                        <div className="insight-card" style={{ padding: "14px 15px" }}>
-                          <div className="eyebrow">CICLO DE VALIDAÇÃO</div>
-                          <strong style={{ display: "block", marginTop: "8px", fontSize: "28px", color: "#d4eb93" }}>{historyScans > 0 ? "OK" : "IDLE"}</strong>
-                          <p style={{ margin: "8px 0 0", color: "#8d8f9d", fontSize: "9px", lineHeight: 1.7 }}>Preparado para novo scan ou revisão por PR.</p>
+                        <div className="dashboard-severity-list" aria-label="Achados por severidade">
+                          {([
+                            ["Crítica", latestSeverityCounts.Crítica],
+                            ["Alta", latestSeverityCounts.Alta],
+                            ["Média", latestSeverityCounts.Média],
+                            ["Baixa", latestSeverityCounts.Baixa],
+                          ] as const).map(([severity, count]) => (
+                            <div className="dashboard-severity-row" key={severity}>
+                              <span className={`severity-dot ${severityStyle(severity)}`} />
+                              <span>{severity}</span>
+                              <strong>{count}</strong>
+                              <div className="dashboard-severity-track">
+                                <span className={severityStyle(severity)} style={{ width: `${findingOccurrences(latestScan) ? Math.max(count ? 4 : 0, count / findingOccurrences(latestScan) * 100) : 0}%` }} />
+                              </div>
+                            </div>
+                          ))}
                         </div>
+                        <p className="dashboard-score-note">O índice é heurístico e considera a quantidade e a severidade dos achados; não substitui uma auditoria de segurança.</p>
+                      </>
+                    ) : (
+                      <div className="dashboard-empty-state">
+                        <span className="dashboard-empty-icon"><ScanLine size={21} /></span>
+                        <div>
+                          <strong>Nenhuma análise por enquanto</strong>
+                          <p>Envie um arquivo ou cole um trecho para ver vulnerabilidades, severidade e recomendações aqui.</p>
+                        </div>
+                        <button className="btn button-primary" type="button" onClick={() => setView("scanner")}>
+                          Iniciar análise <ArrowRight size={14} />
+                        </button>
                       </div>
-
-                      <div className="insight-card" style={{ padding: "14px 15px" }}>
-                        <div className="eyebrow">PRÓXIMOS PASSOS</div>
-                        <div style={{ display: "grid", gap: "8px", marginTop: "10px" }}>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", color: "#d8d7e1", fontSize: "9px" }}>
-                            <span>Escanear novo trecho de código</span>
-                            <button className="text-link" type="button" onClick={() => setView("scanner")}>Abrir <ArrowRight size={12} /></button>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", color: "#d8d7e1", fontSize: "9px" }}>
-                            <span>Conferir mapa OWASP</span>
-                            <button className="text-link" type="button" onClick={() => setView("coverage")}>Ver mapa <ArrowRight size={12} /></button>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", color: "#d8d7e1", fontSize: "9px" }}>
-                            <span>Preparar integração de review em PR</span>
-                            <button className="text-link" type="button" onClick={() => setView("history")}>Histórico <ArrowRight size={12} /></button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="col-12 col-xl-4">
-                  <div className="workspace-card scan-card">
+                <div className="col-12 col-xl-5 dashboard-side-column">
+                  <div className="workspace-card scan-card dashboard-recent-card">
                     <div className="card-heading">
                       <div>
-                        <div className="eyebrow">INTEGRAÇÃO</div>
-                        <h2>Review em PR/CI</h2>
-                        <p>Próxima extensão do MVP sem sair do escopo de segurança e revisão.</p>
+                        <div className="eyebrow">ATIVIDADE</div>
+                        <h2>Análises recentes</h2>
+                        <p>Seus últimos arquivos revisados.</p>
                       </div>
+                      {historyScans > 0 && <button className="text-link" type="button" onClick={() => setView("history")}>Ver todas <ArrowRight size={13} /></button>}
                     </div>
+                    {historyScans > 0 ? (
+                      <div className="dashboard-recent-list">
+                        {history.slice(0, 4).map((item) => (
+                          <button
+                            className="dashboard-recent-item"
+                            key={item.id}
+                            type="button"
+                            onClick={() => { setAnalysis(item); setView("scanner"); }}
+                          >
+                            <span className={`dashboard-recent-icon ${findingOccurrences(item) ? "has-findings" : ""}`}>
+                              {findingOccurrences(item) ? <ShieldAlert size={15} /> : <BadgeCheck size={15} />}
+                            </span>
+                            <span className="dashboard-recent-meta">
+                              <strong>{item.filename}</strong>
+                              <small>{item.language} · {new Date(item.createdAt).toLocaleDateString("pt-BR")}</small>
+                            </span>
+                            <span className="dashboard-recent-result">
+                              <strong>{findingOccurrences(item)}</strong>
+                              <small>achados</small>
+                            </span>
+                            <ChevronRight size={14} />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="dashboard-activity-empty">
+                        <Clock3 size={18} />
+                        <span>As análises recentes aparecerão aqui.</span>
+                      </div>
+                    )}
+                  </div>
 
-                    <div style={{ display: "grid", gap: "10px", marginTop: "18px" }}>
-                      {[
-                        { label: "GitHub PR comments", status: "Planejado" },
-                        { label: "GitLab merge checks", status: "Planejado" },
-                        { label: "Bitbucket pipeline gate", status: "Plano" },
-                      ].map((item) => (
-                        <div key={item.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "10px 11px", border: "1px solid #2a2b35", borderRadius: "8px", background: "#111219" }}>
-                          <span style={{ color: "#dfe3ee", fontSize: "9px" }}>{item.label}</span>
-                          <span style={{ color: "#cce26f", fontSize: "7px", letterSpacing: "0.8px", textTransform: "uppercase" }}>{item.status}</span>
-                        </div>
-                      ))}
+                  <div className="workspace-card scan-card dashboard-integration-card">
+                    <div className="card-heading">
+                      <div>
+                        <div className="eyebrow">AUTOMAÇÃO</div>
+                        <h2>Integração com CI/CD</h2>
+                      </div>
+                      <span className="privacy-chip"><Activity size={12} /> MVP</span>
                     </div>
+                    <div className="dashboard-integrations">
+                      <div><span className="integration-status integration-status-live" /><span>GitHub Actions</span><strong>Disponível</strong></div>
+                      <div><span className="integration-status" /><span>GitLab CI</span><strong>Planejado</strong></div>
+                      <div><span className="integration-status" /><span>Bitbucket Pipelines</span><strong>Planejado</strong></div>
+                    </div>
+                    <p className="dashboard-integration-note">Comentários automáticos em Pull Requests do GitHub estão disponíveis no workflow do projeto.</p>
                   </div>
                 </div>
               </section>
@@ -1399,7 +1645,23 @@ function App() {
                   </div>
                   <div className="findings-panel">
                     <div className="findings-toolbar">
-                      <div><h3>Achados prioritários</h3><span>{counts.occurrences} ocorrência(s) em {analysis.findings.length} categoria(s)</span></div>
+                      <div>
+                        <h3>Achados prioritários</h3>
+                        <span>
+                          {activeOwaspCategory
+                            ? `Filtrado por ${activeOwaspCategory.id}: ${activeOwaspCategory.title}`
+                            : `${counts.occurrences} ocorrência(s) em ${analysis.findings.length} categoria(s)`}
+                        </span>
+                        {activeOwaspCategory && (
+                          <button
+                            className="clear-owasp-filter"
+                            type="button"
+                            onClick={() => setOwaspCategoryFilter(null)}
+                          >
+                            Limpar filtro <X size={11} />
+                          </button>
+                        )}
+                      </div>
                       <div className="filter-tabs" aria-label="Filtrar por severidade">
                         {["Todas", "Crítica", "Alta", "Média"].map((severity) => (
                           <button className={filter === severity ? "active" : ""} type="button" key={severity} onClick={() => setFilter(severity)}>
@@ -1436,7 +1698,23 @@ function App() {
           )}
 
           {view === "coverage" && (
-            <OwaspPanel findings={analysis?.findings ?? []} onBack={() => setView("scanner")} />
+            <OwaspPanel
+              findings={analysis?.findings ?? []}
+              hasAnalysis={analysis !== null}
+              onBack={() => {
+                setOwaspCategoryFilter(null);
+                setView("scanner");
+              }}
+              onViewFindings={(categoryId) => {
+                setOwaspCategoryFilter(categoryId);
+                setFilter("Todas");
+                setView("scanner");
+                window.setTimeout(
+                  () => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                  120,
+                );
+              }}
+            />
           )}
 
           {view === "history" && (

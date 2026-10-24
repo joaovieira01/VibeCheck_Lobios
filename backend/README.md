@@ -101,6 +101,20 @@ node --experimental-strip-types scripts/generate_golden.mjs ../VibeCheck_Lobios-
 
 e copie as novas regras para `app/rules.json` (campos `pattern`/`safePattern`).
 
+## Revisão de Pull Requests no GitHub
+
+O workflow raiz `.github/workflows/aura-scanner.yml` usa este scanner para revisar
+linhas adicionadas em Pull Requests e publicar comentários inline. Para ativá-lo,
+mantenha o workflow no branch padrão do GitHub. Ele usa `pull_request_target` para
+receber permissão de comentar em PRs de forks, mas faz checkout **somente do commit
+base** e busca os arquivos alterados pela API; nenhum código do PR é executado.
+
+O bot aceita os formatos cobertos pelo scanner, ignora arquivos acima de 1 MB e
+limita a análise a 10 segundos por arquivo. Achados em linhas antigas não são
+comentados. O GitHub Actions fornece `GITHUB_TOKEN` automaticamente com permissões
+mínimas de leitura do repositório e escrita em comentários de PR. GitLab e Bitbucket,
+além de aplicação automática de correções, permanecem fora deste primeiro adaptador.
+
 ## Segurança: decisões e limites
 
 - **Senhas**: scrypt (N=2¹⁵, r=8, p=1) com salt por senha; parâmetros ficam no hash. Para o

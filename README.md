@@ -106,3 +106,15 @@ npm run build
 - Não habilite `VIBECHECK_SEED_DEMO_USER` em ambientes expostos.
 - Troque todas as senhas de exemplo.
 - Use uma conta MySQL exclusiva da aplicação, sem privilégios de administrador.
+
+## Revisão automática de Pull Requests
+
+O workflow `.github/workflows/aura-scanner.yml` executa o scanner nas alterações de
+Pull Requests do GitHub e publica comentários inline para achados em linhas novas.
+Ele lê os arquivos pela API do GitHub, limita o tamanho/tempo de análise e não executa
+código do Pull Request. O token de workflow recebe somente `contents: read` e
+`pull-requests: write`; não é necessário cadastrar um segredo manual.
+
+Este é o primeiro adaptador de CI/CD do MVP. GitLab e Bitbucket ainda não estão
+integrados. Os comentários são heurísticos e explicam como corrigir, mas não aplicam
+alterações automáticas ao código.
