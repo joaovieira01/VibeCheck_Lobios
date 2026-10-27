@@ -24,9 +24,12 @@ import {
   History,
   KeyRound,
   Layers3,
+  LogOut,
   LockKeyhole,
   Mail,
   Menu,
+  MessageSquare,
+  Moon,
   MoveRight,
   ShieldCheck,
   Radar,
@@ -36,6 +39,7 @@ import {
   Shield,
   ShieldAlert,
   Sparkles,
+  Sun,
   Upload,
   X,
   Zap,
@@ -51,12 +55,14 @@ import {
 } from "react";
 import { owaspCategories } from "./data/owasp";
 import { analysisService, authenticateWithApi, logoutFromApi } from "./services/analysisService";
-import type { Analysis, Finding } from "./types";
+import type { Analysis, AnalysisInput, Finding } from "./types";
 
 type View = "dashboard" | "scanner" | "coverage" | "history";
 type InputMode = "paste" | "file";
+type Theme = "dark" | "light";
 
 const apiMode = Boolean((import.meta as ImportMeta & { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL);
+const THEME_STORAGE_KEY = "vibecheck.theme";
 
 const demoSources = {
   python: {
@@ -139,6 +145,7 @@ const scanStages = [
   { title: "Cruzando evidências", detail: "Organizando severidades e localizações", icon: Fingerprint },
   { title: "Preparando resultado", detail: "Montando recomendações de correção", icon: Sparkles },
 ];
+const MAX_BATCH_FILES = 20;
 
 function severityStyle(severity: Finding["severity"]) {
   if (severity === "Crítica") return "critical";
@@ -184,6 +191,32 @@ function Logo() {
         vibe<span>check</span>
       </span>
     </a>
+  );
+}
+
+function ThemeToggle({
+  theme,
+  onToggle,
+  className = "",
+}: {
+  theme: Theme;
+  onToggle: () => void;
+  className?: string;
+}) {
+  const label = theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro";
+  const Icon = theme === "dark" ? Sun : Moon;
+
+  return (
+    <button
+      className={`theme-toggle ${className}`}
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onToggle}
+    >
+      <Icon size={16} />
+      <span>{label}</span>
+    </button>
   );
 }
 
@@ -484,9 +517,13 @@ function OwaspPanel({
 function MarketingPage({
   onLogin,
   onSignup,
+  theme,
+  onToggleTheme,
 }: {
   onLogin: () => void;
   onSignup: () => void;
+  theme: Theme;
+  onToggleTheme: () => void;
 }) {
   return (
     <div className="marketing-shell">
@@ -494,10 +531,13 @@ function MarketingPage({
         <Logo />
         <nav aria-label="Navegação principal">
           <a href="#recursos">Recursos</a>
+          <a href="#analise-em-lote">Análise em lote</a>
           <a href="#como-funciona">Como funciona</a>
           <a href="#cobertura">Cobertura</a>
+          <a href="#integracao">GitHub</a>
         </nav>
         <div className="marketing-nav-actions">
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} className="marketing-theme-toggle" />
           <button type="button" className="marketing-login" onClick={onLogin}>Entrar</button>
           <button type="button" className="button-primary marketing-cta" onClick={onSignup}>
             Começar agora <ArrowRight size={15} />
@@ -564,9 +604,9 @@ function MarketingPage({
           <i />
           <div><strong>10</strong><span>categorias OWASP</span></div>
           <i />
-          <div><strong>0</strong><span>envios ao servidor</span></div>
+          <div><strong>{apiMode ? "API" : "0"}</strong><span>{apiMode ? "análises enviadas ao backend" : "envios ao servidor no modo local"}</span></div>
           <i />
-          <div><strong>1 MB</strong><span>limite por arquivo</span></div>
+          <div><strong>20</strong><span>arquivos por lote</span></div>
         </section>
 
         <section className="marketing-section" id="recursos">
@@ -582,8 +622,8 @@ function MarketingPage({
             <article className="marketing-feature feature-purple">
               <span className="feature-icon"><ScanLine size={19} /></span>
               <span className="eyebrow">01 / ANALISAR</span>
-              <h3>Uma revisão rápida, no seu navegador.</h3>
-              <p>Envie um arquivo de texto ou cole código. A demonstração executa regras heurísticas locais e não envia seu conteúdo a um servidor.</p>
+              <h3>Revise vários arquivos de uma vez.</h3>
+              <p>Selecione ou arraste até 20 arquivos de texto, com limite de 1 MB cada, ou cole um trecho. No modo local, o conteúdo fica no navegador.</p>
               <div className="feature-decoration"><Code2 size={74} strokeWidth={0.7} /></div>
             </article>
             <article className="marketing-feature feature-red">
@@ -603,14 +643,56 @@ function MarketingPage({
           </div>
         </section>
 
+        <section className="marketing-batch" id="analise-em-lote">
+          <div className="batch-copy">
+            <span className="eyebrow">ANÁLISE EM LOTE · ATÉ 20 ARQUIVOS</span>
+            <h2>Mais arquivos.<br /><span>Um fluxo claro.</span></h2>
+            <p>
+              Rode uma análise por arquivo, acompanhe o progresso e alterne entre
+              relatórios individuais. Cada resultado continua ligado ao seu
+              próprio código e localização.
+            </p>
+            <div className="batch-benefits">
+              <span><CheckCircle2 size={15} /> Seleção múltipla ou arrastar e soltar</span>
+              <span><CheckCircle2 size={15} /> Relatório separado para cada arquivo</span>
+              <span><CheckCircle2 size={15} /> Limite de 1 MB por arquivo</span>
+            </div>
+            <button type="button" className="text-link" onClick={onSignup}>
+              Experimentar análise em lote <ArrowRight size={14} />
+            </button>
+          </div>
+          <div className="batch-visual" aria-label="Prévia ilustrativa de análise em lote">
+            <div className="batch-visual-orbit batch-visual-orbit-one" />
+            <div className="batch-visual-orbit batch-visual-orbit-two" />
+            <div className="batch-scan-beam" />
+            <div className="batch-visual-heading"><Layers3 size={15} /> REVISÃO DE ARQUIVOS <span>3 / 20</span></div>
+            <article className="batch-file-card batch-file-one">
+              <span className="batch-file-icon"><FileCode2 size={15} /></span>
+              <span><strong>auth.ts</strong><small>TypeScript · 148 linhas</small></span>
+              <CheckCircle2 size={15} />
+            </article>
+            <article className="batch-file-card batch-file-two">
+              <span className="batch-file-icon batch-file-icon-risk"><Code2 size={15} /></span>
+              <span><strong>routes.py</strong><small>Python · 92 linhas</small></span>
+              <span className="batch-file-count">2 sinais</span>
+            </article>
+            <article className="batch-file-card batch-file-three">
+              <span className="batch-file-icon"><Braces size={15} /></span>
+              <span><strong>config.json</strong><small>JSON · 34 linhas</small></span>
+              <CheckCircle2 size={15} />
+            </article>
+            <div className="batch-progress"><span /></div>
+            <span className="batch-visual-note"><ScanLine size={13} /> Um relatório por arquivo</span>
+          </div>
+        </section>
+
         <section className="marketing-process" id="como-funciona">
           <div className="process-copy">
             <span className="eyebrow">SIMPLES, TRANSPARENTE, LOCAL</span>
             <h2>Segurança com<br /><span>clareza em cada etapa.</span></h2>
             <p>
-              Um protótipo para demonstrar a experiência. O serviço está isolado
-              por uma interface e pode ser substituído por uma API quando o
-              backend estiver pronto.
+              As heurísticas rodam no navegador por padrão. Com a API configurada,
+              as análises também podem ser enviadas ao backend e salvas no histórico.
             </p>
             <button type="button" className="text-link" onClick={onSignup}>Experimentar a demonstração <ArrowRight size={14} /></button>
           </div>
@@ -644,6 +726,30 @@ function MarketingPage({
                 <ArrowUpRight size={13} />
               </a>
             ))}
+          </div>
+        </section>
+
+        <section className="marketing-integration" id="integracao">
+          <div className="integration-copy">
+            <span className="eyebrow">DO CÓDIGO AO PULL REQUEST</span>
+            <h2>Segurança mais perto<br /><span>do seu fluxo.</span></h2>
+            <p>
+              O repositório inclui um workflow de GitHub Actions que analisa
+              linhas adicionadas em Pull Requests e pode publicar comentários
+              inline. A execução depende de o workflow estar habilitado no
+              repositório.
+            </p>
+            <div className="integration-tags">
+              <span><GitPullRequest size={14} /> Pull Requests</span>
+              <span><MessageSquare size={14} /> Comentários inline</span>
+              <span><ShieldCheck size={14} /> Revisão heurística</span>
+            </div>
+          </div>
+          <div className="integration-preview">
+            <div className="integration-preview-bar"><span><i /><i /><i /></span><strong>GitHub Actions</strong><span className="integration-status"><span /> workflow</span></div>
+            <div className="integration-pr"><GitPullRequest size={16} /><span><strong>Revisão do Pull Request</strong><small>Verifica apenas linhas novas suportadas</small></span><CheckCircle2 size={16} /></div>
+            <div className="integration-comment"><span className="integration-comment-icon"><Bug size={14} /></span><span><strong>Possível risco identificado</strong><small>Comentário associado à linha alterada, com contexto e recomendação.</small></span></div>
+            <p>O scanner é heurístico; a ausência de comentários não garante ausência de vulnerabilidades.</p>
           </div>
         </section>
 
@@ -795,11 +901,17 @@ function App() {
   const [portal, setPortal] = useState<"landing" | "auth" | "workspace">("landing");
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [userEmail, setUserEmail] = useState("");
+  const [theme, setTheme] = useState<Theme>(() => (
+    localStorage.getItem(THEME_STORAGE_KEY) === "light" ? "light" : "dark"
+  ));
   const [view, setView] = useState<View>("dashboard");
   const [mode, setMode] = useState<InputMode>("file");
   const [source, setSource] = useState("");
   const [filename, setFilename] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<AnalysisInput[]>([]);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [batchResults, setBatchResults] = useState<Analysis[]>([]);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; filename: string } | null>(null);
   const [history, setHistory] = useState<Analysis[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [stage, setStage] = useState(-1);
@@ -831,6 +943,12 @@ function App() {
   useEffect(() => {
     void reloadHistory();
   }, [reloadHistory]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   const counts = useMemo(() => {
     if (!analysis) return { critical: 0, high: 0, medium: 0, occurrences: 0 };
@@ -865,48 +983,73 @@ function App() {
     if (nextView === "scanner") setOwaspCategoryFilter(null);
   }
 
-  async function loadFile(file: File | undefined) {
-    if (!file) return;
-    if (file.size > 1_000_000) {
-      setError("O arquivo excede o limite de 1 MB. Escolha um arquivo menor.");
+  async function loadFiles(fileList: FileList | File[]) {
+    const files = Array.from(fileList);
+    if (!files.length) return;
+    if (files.length > MAX_BATCH_FILES) {
+      setError(`Selecione no máximo ${MAX_BATCH_FILES} arquivos por análise.`);
       return;
     }
+
+    const oversized = files.filter((file) => file.size > 1_000_000);
+    const validFiles = files.filter((file) => file.size <= 1_000_000);
     try {
-      setFilename(file.name);
-      setSource(await file.text());
+      const inputs = await Promise.all(
+        validFiles.map(async (file) => ({ filename: file.name, source: await file.text() })),
+      );
+      setSelectedFiles(inputs);
+      setFilename(inputs[0]?.filename ?? "");
+      setSource(inputs[0]?.source ?? "");
       setMode("file");
       setAnalysis(null);
-      setError("");
+      setBatchResults([]);
+      setError(
+        oversized.length
+          ? `${oversized.map((file) => file.name).join(", ")}: limite de 1 MB por arquivo excedido; ${oversized.length === 1 ? "este arquivo não foi adicionado" : "estes arquivos não foram adicionados"}.`
+          : "",
+      );
     } catch {
-      setError("Não foi possível ler o arquivo. Verifique se ele está em texto UTF-8.");
+      setError("Não foi possível ler os arquivos selecionados. Verifique se são arquivos de texto UTF-8.");
     }
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    void loadFile(event.target.files?.[0]);
+    if (event.target.files) void loadFiles(event.target.files);
     event.target.value = "";
   }
 
   function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setDragging(false);
-    void loadFile(event.dataTransfer.files?.[0]);
+    void loadFiles(event.dataTransfer.files);
   }
 
   async function runAnalysis(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const name = mode === "file" ? filename : filename || "codigo-colado.txt";
-    if (!source.trim()) {
-      setError(mode === "file" ? "Escolha um arquivo para iniciar." : "Cole o código que deseja analisar.");
+    const inputs: AnalysisInput[] = mode === "file"
+      ? selectedFiles
+      : [{ filename: filename || "codigo-colado.txt", source }];
+    if (!inputs.length) {
+      setError("Escolha ao menos um arquivo para iniciar.");
       return;
     }
-    if (new Blob([source]).size > 1_000_000) {
-      setError("O código excede o limite de 1 MB.");
+    const emptyInputs = inputs.filter((input) => !input.source.trim());
+    const analyzableInputs = inputs.filter((input) => input.source.trim());
+    if (!analyzableInputs.length) {
+      setError(mode === "file"
+        ? `Não há conteúdo para analisar: ${emptyInputs.map((input) => input.filename).join(", ")}.`
+        : "Cole o código que deseja analisar.");
+      return;
+    }
+    if (analyzableInputs.some((input) => new Blob([input.source]).size > 1_000_000)) {
+      setError("Cada arquivo ou trecho deve ter no máximo 1 MB.");
       return;
     }
 
     setError("");
     setAnalysis(null);
+    setBatchResults([]);
+    setBatchProgress(null);
     setIsScanning(true);
     setStage(0);
     const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -916,26 +1059,37 @@ function App() {
       await wait(340);
       setStage(2);
       await wait(300);
-      const result = await analysisService.analyze({ filename: name, source });
+      const completed: Analysis[] = [];
+      const failures = emptyInputs.map((input) => `${input.filename}: arquivo vazio`);
+      for (const [index, input] of analyzableInputs.entries()) {
+        setBatchProgress({ current: index + 1, total: analyzableInputs.length, filename: input.filename });
+        try {
+          completed.push(await analysisService.analyze(input));
+        } catch (cause) {
+          const reason = cause instanceof Error ? cause.message : "erro inesperado";
+          failures.push(`${input.filename}: ${reason}`);
+        }
+      }
+
       setStage(3);
       await wait(240);
-      setAnalysis(result);
+      setBatchResults(completed);
+      setAnalysis(completed[0] ?? null);
       setFilter("Todas");
       setOwaspCategoryFilter(null);
-      await reloadHistory();
-      window.setTimeout(
-        () => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-        120,
-      );
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Não foi possível analisar este conteúdo.",
-      );
-      setStage(-1);
+      setError(failures.length ? `Não foi possível analisar ${failures.join(" · ")}` : "");
+      if (completed.length) {
+        await reloadHistory();
+        window.setTimeout(
+          () => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+          120,
+        );
+      } else {
+        setStage(-1);
+      }
     } finally {
       setIsScanning(false);
+      setBatchProgress(null);
     }
   }
 
@@ -943,8 +1097,10 @@ function App() {
     const demo = demoSources[which];
     setFilename(demo.filename);
     setSource(demo.source);
+    setSelectedFiles([]);
     setMode("paste");
     setAnalysis(null);
+    setBatchResults([]);
     setError("");
     setView("scanner");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -955,6 +1111,7 @@ function App() {
       await analysisService.clearHistory();
       setHistory([]);
       setAnalysis(null);
+      setBatchResults([]);
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível limpar o histórico.");
@@ -1013,6 +1170,8 @@ function App() {
   if (portal === "landing") {
     return (
       <MarketingPage
+        theme={theme}
+        onToggleTheme={() => setTheme((current) => current === "dark" ? "light" : "dark")}
         onLogin={() => { setAuthMode("login"); setPortal("auth"); }}
         onSignup={() => { setAuthMode("signup"); setPortal("auth"); }}
       />
@@ -1036,7 +1195,7 @@ function App() {
   }
 
   return (
-    <div className={`app-shell ${sidebarCollapsed ? "sidebar-is-collapsed" : ""}`} id="inicio">
+    <div className={`app-shell ${sidebarCollapsed ? "sidebar-is-collapsed" : ""}`} id="inicio" data-theme={theme}>
       <div
         className={`sidebar-backdrop ${sidebarOpen ? "visible" : ""}`}
         onClick={() => setSidebarOpen(false)}
@@ -1056,15 +1215,6 @@ function App() {
           >
             <X size={18} />
           </button>
-        </div>
-
-        <div className="workspace-switcher">
-          <div className="workspace-avatar">L</div>
-          <div className="workspace-meta">
-            <strong>Workspace pessoal</strong>
-            <span>Plano de demonstração</span>
-          </div>
-          <ChevronDown size={15} />
         </div>
 
         <span className="sidebar-label">WORKSPACE</span>
@@ -1176,9 +1326,26 @@ function App() {
             <span className="stack-pill"><span /> {apiMode ? "Frontend · API conectada" : "Frontend · modo local"}</span>
             <span className="topbar-divider" />
             <span className="workspace-user-email">{userEmail}</span>
-            <button className="avatar-small logout-avatar" type="button" aria-label="Sair da demonstração" title="Sair da demonstração" onClick={() => { logoutFromApi(); setUserEmail(""); setPortal("landing"); }}>
-              {userEmail.slice(0, 1).toUpperCase() || "VC"}
-            </button>
+            <details className="profile-menu">
+              <summary className="avatar-small profile-trigger" aria-label="Abrir opções do perfil" title={userEmail}>
+                {userEmail.slice(0, 1).toUpperCase() || "VC"}
+              </summary>
+              <div className="profile-popover">
+                <span className="profile-menu-email">{userEmail}</span>
+                <ThemeToggle
+                  theme={theme}
+                  onToggle={() => setTheme((current) => current === "dark" ? "light" : "dark")}
+                  className="profile-menu-action"
+                />
+                <button
+                  className="profile-menu-action"
+                  type="button"
+                  onClick={() => { logoutFromApi(); setUserEmail(""); setPortal("landing"); }}
+                >
+                  <LogOut size={15} /> <span>Sair da conta</span>
+                </button>
+              </div>
+            </details>
           </div>
         </header>
 
@@ -1274,7 +1441,7 @@ function App() {
                             <strong>{latestRiskLabel}</strong>
                             <span>{findingOccurrences(latestScan)} ocorrência(s) identificada(s) em {latestScan.linesAnalyzed.toLocaleString("pt-BR")} linhas.</span>
                           </div>
-                          <button className="text-link" type="button" onClick={() => { setAnalysis(latestScan); setView("scanner"); }}>
+                          <button className="text-link" type="button" onClick={() => { setBatchResults([]); setAnalysis(latestScan); setView("scanner"); }}>
                             Ver relatório <ArrowRight size={13} />
                           </button>
                         </div>
@@ -1329,7 +1496,7 @@ function App() {
                             className="dashboard-recent-item"
                             key={item.id}
                             type="button"
-                            onClick={() => { setAnalysis(item); setView("scanner"); }}
+                            onClick={() => { setBatchResults([]); setAnalysis(item); setView("scanner"); }}
                           >
                             <span className={`dashboard-recent-icon ${findingOccurrences(item) ? "has-findings" : ""}`}>
                               {findingOccurrences(item) ? <ShieldAlert size={15} /> : <BadgeCheck size={15} />}
@@ -1460,7 +1627,7 @@ function App() {
                     >
                       <Code2 size={15} /> Colar código
                     </button>
-                    <span className="input-limit">LIMITE 1 MB</span>
+                    <span className="input-limit">1 MB / ARQUIVO</span>
                   </div>
 
                   <form onSubmit={runAnalysis}>
@@ -1478,32 +1645,48 @@ function App() {
                           ref={fileInput}
                           className="file-input-hidden"
                           type="file"
+                          multiple
                           accept=".py,.js,.jsx,.ts,.tsx,.json,.txt,.php,.java,.go,.rb,.cs,.c,.cpp,.html,.sql,.yml,.yaml"
                           onChange={handleFileChange}
-                          aria-label="Selecionar arquivo de código"
+                          aria-label="Selecionar arquivos de código"
                         />
-                        {filename ? (
-                          <div className="loaded-file">
-                            <div className="loaded-file-icon"><FileCode2 size={21} /></div>
-                            <div className="loaded-file-copy">
-                              <strong>{filename}</strong>
-                              <span>{source.split(/\r?\n/).length.toLocaleString("pt-BR")} linhas · conteúdo pronto para análise</span>
+                        {selectedFiles.length ? (
+                          <div className="loaded-files">
+                            <div className="loaded-files-heading">
+                              <strong>{selectedFiles.length} arquivo(s) selecionado(s)</strong>
+                              <button className="browse-button" type="button" onClick={() => fileInput.current?.click()}>Substituir seleção</button>
                             </div>
-                            <button
-                              type="button"
-                              className="icon-button remove-file"
-                              aria-label="Remover arquivo selecionado"
-                              onClick={() => { setFilename(""); setSource(""); setAnalysis(null); }}
-                            >
-                              <X size={16} />
-                            </button>
+                            {selectedFiles.map((file, index) => (
+                              <div className="loaded-file" key={`${file.filename}-${index}`}>
+                                <div className="loaded-file-icon"><FileCode2 size={18} /></div>
+                                <div className="loaded-file-copy">
+                                  <strong>{file.filename}</strong>
+                                  <span>{file.source.split(/\r?\n/).length.toLocaleString("pt-BR")} linhas · pronto para análise</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="icon-button remove-file"
+                                  aria-label={`Remover ${file.filename}`}
+                                  onClick={() => {
+                                    const remaining = selectedFiles.filter((_, fileIndex) => fileIndex !== index);
+                                    setSelectedFiles(remaining);
+                                    setFilename(remaining[0]?.filename ?? "");
+                                    setSource(remaining[0]?.source ?? "");
+                                    setAnalysis(null);
+                                    setBatchResults([]);
+                                  }}
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            ))}
                           </div>
                         ) : (
                           <>
                             <div className="upload-icon"><Upload size={22} /></div>
-                            <strong>Arraste seu arquivo até aqui</strong>
+                            <strong>Arraste seus arquivos até aqui</strong>
                             <span>ou <button className="browse-button" type="button" onClick={() => fileInput.current?.click()}>escolha no computador</button></span>
-                            <small>Python, JavaScript, TypeScript, JSON e mais</small>
+                            <small>Até {MAX_BATCH_FILES} arquivos · limite de 1 MB por arquivo</small>
                           </>
                         )}
                       </div>
@@ -1546,7 +1729,7 @@ function App() {
                     {error && <div className="error-notice" role="alert"><AlertTriangle size={15} /> {error}</div>}
 
                     <div className="scan-controls">
-                      <span className="scan-note"><Shield size={14} /> Seu código permanece neste dispositivo.</span>
+                      <span className="scan-note"><Shield size={14} /> {apiMode ? "Código enviado à API configurada." : "Seu código permanece neste dispositivo."}</span>
                       <button className="btn button-primary scan-button" type="submit" disabled={isScanning}>
                         {isScanning ? <><RefreshCw size={16} className="spin" /> Analisando</> : <><ScanLine size={16} /> Iniciar análise <ArrowRight size={15} /></>}
                       </button>
@@ -1591,7 +1774,7 @@ function App() {
 
                   <div className="privacy-note">
                     <span className="privacy-note-icon"><LockKeyhole size={15} /></span>
-                    <p><strong>Privacidade primeiro</strong><br />Nesta versão, o código é analisado no navegador e não é enviado a nenhum servidor.</p>
+                    <p><strong>Privacidade primeiro</strong><br />{apiMode ? "O código é enviado à API configurada para análise." : "O código é analisado no navegador e não é enviado a nenhum servidor."}</p>
                   </div>
                 </aside>
                 </div>
@@ -1603,12 +1786,16 @@ function App() {
                     <div className="progress-orb"><Radar size={22} /></div>
                     <div className="progress-copy">
                       <span className="eyebrow">ANÁLISE EM ANDAMENTO</span>
-                      <h3>{scanStages[Math.max(stage, 0)].title}</h3>
-                      <p>{scanStages[Math.max(stage, 0)].detail}</p>
+                      <h3>{batchProgress ? `Analisando arquivo ${batchProgress.current} de ${batchProgress.total}` : scanStages[Math.max(stage, 0)].title}</h3>
+                      <p>{batchProgress ? batchProgress.filename : scanStages[Math.max(stage, 0)].detail}</p>
                     </div>
-                    <span className="progress-percent">{Math.min(96, (stage + 1) * 24)}%</span>
+                    <span className="progress-percent">
+                      {batchProgress
+                        ? `${Math.min(96, Math.round(((batchProgress.current - 1 + (stage + 1) / 4) / batchProgress.total) * 100))}%`
+                        : `${Math.min(96, (stage + 1) * 24)}%`}
+                    </span>
                   </div>
-                  <div className="progress-track"><span style={{ width: `${Math.min(96, (stage + 1) * 24)}%` }} /></div>
+                  <div className="progress-track"><span style={{ width: batchProgress ? `${Math.min(96, Math.round(((batchProgress.current - 1 + (stage + 1) / 4) / batchProgress.total) * 100))}%` : `${Math.min(96, (stage + 1) * 24)}%` }} /></div>
                   <div className="progress-steps">
                     {scanStages.map((scanStage, index) => {
                       const StageIcon = scanStage.icon;
@@ -1637,6 +1824,30 @@ function App() {
                     </button>
                   </div>
                   {reportError && <div className="error-notice" role="alert"><AlertTriangle size={15} /> {reportError}</div>}
+                  {batchResults.length > 1 && (
+                    <div className="batch-results" aria-label="Resultados por arquivo">
+                      <span>{batchResults.length} arquivos analisados</span>
+                      <div className="batch-result-tabs" role="tablist" aria-label="Selecionar relatório do arquivo">
+                        {batchResults.map((item) => (
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={analysis.id === item.id}
+                            className={analysis.id === item.id ? "selected" : ""}
+                            key={item.id}
+                            onClick={() => {
+                              setAnalysis(item);
+                              setFilter("Todas");
+                              setOwaspCategoryFilter(null);
+                            }}
+                          >
+                            <FileCode2 size={13} /> {item.filename}
+                            <span>{findingOccurrences(item)} achado(s)</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="result-kpis">
                     <div className="result-kpi result-total"><span>ACHADOS</span><strong>{counts.occurrences}</strong><small>{analysis.findings.length} categorias</small></div>
                     <div className="result-kpi result-critical"><span>CRÍTICOS</span><strong>{counts.critical}</strong><small>correção imediata</small></div>
@@ -1741,7 +1952,7 @@ function App() {
                         <span>{item.language} <i /> {new Date(item.createdAt).toLocaleString("pt-BR")} <i /> {item.linesAnalyzed.toLocaleString("pt-BR")} linhas</span>
                       </div>
                       <span className="history-findings">{findingOccurrences(item)} achados</span>
-                      <button className="text-link" type="button" onClick={() => { setAnalysis(item); setView("scanner"); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 80); }}>Ver relatório <ArrowRight size={13} /></button>
+                      <button className="text-link" type="button" onClick={() => { setBatchResults([]); setAnalysis(item); setView("scanner"); setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth" }), 80); }}>Ver relatório <ArrowRight size={13} /></button>
                       <button className="icon-button history-download" aria-label={`Baixar relatório de ${item.filename}`} disabled={isDownloadingReport} type="button" onClick={() => void exportReport(item)}>{isDownloadingReport ? <RefreshCw size={15} className="spin" /> : <FileDown size={16} />}</button>
                     </article>
                   ))}

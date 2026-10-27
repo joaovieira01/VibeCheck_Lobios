@@ -1,9 +1,8 @@
 # VibeCheck — frontend
 
-Interface independente para demonstração de análise estática de segurança.
-Executa no navegador, sem API, banco de dados ou serviço externo. A estrutura
-do serviço de análise permite substituir o analisador local por uma API FastAPI
-no futuro.
+Interface React + TypeScript para análise estática heurística de segurança. Por
+padrão, analisa no navegador sem API ou banco de dados; opcionalmente, pode usar
+a API FastAPI do projeto quando `VITE_API_URL` estiver configurada.
 
 A interface usa React + TypeScript + Vite, com Bootstrap 5 para grade e utilitários
 responsivos e estilos próprios para identidade visual, animações e componentes.
@@ -31,7 +30,8 @@ em outro host de frontend.
 ## O que o protótipo faz
 
 - Analisa trechos colados ou arquivos de código de até 1 MB localmente no
-  navegador.
+  navegador. É possível selecionar ou arrastar até 20 arquivos, analisados um
+  por vez; cada relatório fica disponível para consulta e exportação em PDF.
 - Exibe evidências, linhas, severidade, referência CWE/OWASP, impacto, correção
   recomendada e prevenção.
 - Baixa um relatório PDF estilizado, com resumo executivo, ordem sugerida de
@@ -53,10 +53,11 @@ regras podem ser validadas e ampliadas usando o
 verificáveis do [OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/).
 Mapear um padrão a uma categoria não significa cobertura completa da categoria.
 
-## Conectar um backend no futuro
+## Usar a API FastAPI
 
 O componente usa a interface `AnalysisService`, definida em
-`src/services/analysisService.ts`. A implementação atual,
-`LocalAnalysisService`, pode ser trocada por um cliente HTTP que retorne o mesmo
-formato `Analysis`. Assim, o restante da interface e do relatório não precisa
-conhecer detalhes de transporte.
+`src/services/analysisService.ts`. Sem `VITE_API_URL`, é usado
+`LocalAnalysisService`; quando configurada, a implementação HTTP envia as
+análises à API. Configure `VITE_API_URL=http://localhost:8000` em
+`frontend/.env.local` e inicie também o backend. Cada arquivo do lote é enviado
+separadamente e gravado como uma análise independente no histórico da conta.
