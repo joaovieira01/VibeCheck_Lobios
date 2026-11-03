@@ -21,6 +21,7 @@ import {
   FileSearch,
   Fingerprint,
   Gauge,
+  GitPullRequest,
   History,
   KeyRound,
   Layers3,
