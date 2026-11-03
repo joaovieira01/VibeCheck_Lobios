@@ -16,13 +16,22 @@ Requer Python 3.11+.
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 pytest                                                   # rode antes de tudo
-uvicorn app.main:create_app --factory --reload           # http://localhost:8000
+uvicorn app.main:app --reload                             # http://localhost:8000
 ```
 
 Documentação interativa: http://localhost:8000/docs
 
 No frontend, crie `.env.local` com `VITE_API_URL=http://localhost:8000` e rode `npm run dev`.
 Sem essa variável o frontend continua funcionando 100% local, como antes.
+
+## Deploy no Vercel
+
+O módulo `app.main` exporta a instância FastAPI `app` exigida pelo runtime do
+Vercel. Configure `VIBECHECK_DB_ENGINE=mysql` e as variáveis
+`VIBECHECK_DB_HOST`, `VIBECHECK_DB_PORT`, `VIBECHECK_DB_NAME`,
+`VIBECHECK_DB_USER` e `VIBECHECK_DB_PASSWORD` para usar um banco MySQL
+persistente. O SQLite local não deve ser usado para dados de produção em funções
+serverless, pois o armazenamento local não é persistente entre execuções.
 
 Em desenvolvimento, para entrar com a conta que a tela de login já exibe:
 `VIBECHECK_SEED_DEMO_USER=true` cria `demo@vibecheck.dev` / `vibecheck2026`.

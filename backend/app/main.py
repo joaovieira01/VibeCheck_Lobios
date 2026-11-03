@@ -1,6 +1,6 @@
 """API FastAPI do VibeCheck.
 
-Execução:  uvicorn app.main:create_app --factory --reload
+Execução:  uvicorn app.main:app --reload
 
 Rotas (todas sob /api):
   GET    /api/health                          verificação de saúde
@@ -294,3 +294,6 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
         return Response(status_code=204)
 
     return app
+
+
+app = create_app()
