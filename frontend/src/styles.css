@@ -30,13 +30,13 @@
 }
 
 html {
-  min-width: 360px;
+  min-width: 320px;
   scroll-behavior: smooth;
   scrollbar-color: #353441 #0b0c11;
 }
 
 body {
-  min-width: 360px;
+  min-width: 320px;
   min-height: 100vh;
   margin: 0;
   background:
@@ -3098,6 +3098,19 @@ textarea:focus-visible {
   gap: 17px;
 }
 
+.marketing-menu-toggle {
+  display: none;
+  width: 35px;
+  height: 35px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
 .marketing-login {
   padding: 8px 2px;
   border: 0;
@@ -5276,6 +5289,7 @@ textarea:focus-visible {
 
   .dashboard-welcome-row {
     min-height: 320px;
+    overflow: visible;
   }
 
   .dashboard-welcome-row .welcome-copy {
@@ -5288,6 +5302,15 @@ textarea:focus-visible {
 
   .dashboard-welcome-row .welcome-copy > p {
     max-width: 390px;
+  }
+
+  .dashboard-welcome-row .welcome-visual {
+    top: -8px;
+    right: -80px;
+    scale: 0.7;
+    transform-origin: top right;
+    animation: visual-enter-mobile 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    pointer-events: none;
   }
 
   .dashboard-metrics {
@@ -5321,6 +5344,17 @@ textarea:focus-visible {
   .sidebar,
   .main-shell {
     transition: none;
+  }
+}
+
+@keyframes visual-enter-mobile {
+  from {
+    transform: translate(12px, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate(0, 0);
+    opacity: 0.5;
   }
 }
 
@@ -6628,27 +6662,29 @@ textarea:focus-visible {
 
 html[data-theme="light"] {
   color-scheme: light;
-  --bg: #f3f4f8;
+  --bg: #f1f0f7;
   --sidebar: #ffffff;
   --surface: #ffffff;
-  --surface-raised: #f8f8fb;
-  --surface-hover: #eceef4;
-  --line: #dfe1e9;
-  --line-soft: #e9eaf0;
-  --text: #252638;
-  --subtle: #55576a;
-  --muted: #77798a;
-  --purple: #7657d5;
-  --purple-bright: #6342c3;
-  --lime: #78951b;
-  --red: #d94f68;
-  --orange: #bb761d;
-  --blue: #2879a8;
+  --surface-raised: #f8f7fc;
+  --surface-hover: #eae8f3;
+  --line: #cecadb;
+  --line-soft: #e0ddea;
+  --text: #211f32;
+  --subtle: #4b485e;
+  --muted: #656176;
+  --purple: #7047d8;
+  --purple-bright: #5d34c7;
+  --lime: #648500;
+  --red: #cc3e59;
+  --orange: #a85e08;
+  --blue: #176f9e;
 }
 
 html[data-theme="light"],
 html[data-theme="light"] body {
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse at 74% -12%, rgba(118, 87, 213, 0.075), transparent 34%),
+    var(--bg);
   color: var(--text);
   scrollbar-color: #c4c6d0 #f3f4f8;
 }
@@ -6659,11 +6695,9 @@ html[data-theme="light"] .workspace-switcher,
 html[data-theme="light"] .metric-strip,
 html[data-theme="light"] .workspace-card,
 html[data-theme="light"] .insight-card,
-html[data-theme="light"] .dropzone,
 html[data-theme="light"] .loaded-files .loaded-file,
 html[data-theme="light"] .batch-result-tabs button,
-html[data-theme="light"] .editor-topbar,
-html[data-theme="light"] .editor-footer,
+html[data-theme="light"] .marketing-process,
 html[data-theme="light"] .demo-buttons > button,
 html[data-theme="light"] .quick-icon,
 html[data-theme="light"] .scan-progress-card,
@@ -6691,15 +6725,40 @@ html[data-theme="light"] .integration-tags > span {
   color: var(--text);
 }
 
-html[data-theme="light"] .marketing-shell,
+html[data-theme="light"] .dropzone,
+html[data-theme="light"] .coverage-overview-card,
+html[data-theme="light"] .coverage-search,
+html[data-theme="light"] .hero-scan-window,
+html[data-theme="light"] .hero-art-chip,
+html[data-theme="light"] .batch-visual,
+html[data-theme="light"] .batch-file-card,
+html[data-theme="light"] .integration-preview {
+  background: var(--surface-raised);
+}
+
+html[data-theme="light"] .marketing-shell {
+  background:
+    radial-gradient(ellipse at 77% 1%, rgba(118, 87, 213, 0.09), transparent 32%),
+    radial-gradient(ellipse at 5% 52%, rgba(118, 87, 213, 0.045), transparent 35%),
+    var(--bg);
+}
+
 html[data-theme="light"] .auth-shell {
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(118, 87, 213, 0.09), transparent 43%),
+    radial-gradient(ellipse at 92% 5%, rgba(118, 87, 213, 0.06), transparent 33%),
+    var(--bg);
 }
 
 html[data-theme="light"] .marketing-nav,
 html[data-theme="light"] .auth-topbar {
-  border-color: var(--line);
-  background: rgba(255, 255, 255, 0.92);
+  border-color: #cbc7d8;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 5px 20px rgba(43, 35, 75, 0.06);
+}
+
+html[data-theme="light"] .brand-name {
+  color: var(--text);
 }
 
 html[data-theme="light"] .marketing-theme-toggle {
@@ -6723,46 +6782,66 @@ html[data-theme="light"] .coverage-filter-tabs button.active {
   color: var(--purple-bright);
 }
 
+html[data-theme="light"] .side-link,
+html[data-theme="light"] .side-link:hover,
+html[data-theme="light"] .reference-link,
+html[data-theme="light"] .theme-toggle,
+html[data-theme="light"] .profile-menu-action {
+  color: var(--subtle);
+}
+
+html[data-theme="light"] .side-link.active,
+html[data-theme="light"] .brand-name span,
+html[data-theme="light"] .text-link,
+html[data-theme="light"] .marketing-nav > nav a:hover {
+  color: var(--purple-bright);
+}
+
+html[data-theme="light"] .hero-copy h1 span,
+html[data-theme="light"] .marketing-section-heading h2 span,
+html[data-theme="light"] .process-copy h2 span,
+html[data-theme="light"] .marketing-owasp h2 span,
+html[data-theme="light"] .batch-copy h2 span {
+  background-image: linear-gradient(95deg, #9168f2 0%, #6339d0 58%, #7951df 100%);
+}
+
 html[data-theme="light"] .progress-track,
 html[data-theme="light"] .dashboard-severity-track,
 html[data-theme="light"] .coverage-progress-track,
-html[data-theme="light"] .mini-meter {
+html[data-theme="light"] .mini-meter,
+html[data-theme="light"] .batch-progress {
   background: #e5e6ed;
 }
 
-html[data-theme="light"] :is(h1, h2, h3, h4, .metric-tile strong, .card-heading h2, .section-heading-row h2),
-html[data-theme="light"] .app-shell strong,
-html[data-theme="light"] .marketing-shell strong,
-html[data-theme="light"] .auth-shell strong,
-html[data-theme="light"] .marketing-nav > nav a:hover,
-html[data-theme="light"] .marketing-login:hover,
+html[data-theme="light"] :is(h1, h2, h3, h4),
+html[data-theme="light"] .brand-name,
+html[data-theme="light"] .workspace-meta strong,
+html[data-theme="light"] .local-status strong,
+html[data-theme="light"] .breadcrumb-current,
+html[data-theme="light"] .welcome-copy h1,
+html[data-theme="light"] .metric-tile strong,
+html[data-theme="light"] .card-heading h2,
+html[data-theme="light"] .section-heading-row h2,
 html[data-theme="light"] .marketing-proof strong,
 html[data-theme="light"] .marketing-feature h3,
 html[data-theme="light"] .marketing-section-heading h2,
 html[data-theme="light"] .marketing-owasp h2,
 html[data-theme="light"] .marketing-bottom-cta h2,
 html[data-theme="light"] .auth-story h1,
-html[data-theme="light"] .auth-card h2,
+html[data-theme="light"] .auth-card-heading h2,
 html[data-theme="light"] .integration-pr strong,
-html[data-theme="light"] .integration-comment strong {
+html[data-theme="light"] .integration-comment strong,
+html[data-theme="light"] .history-item-main > strong {
   color: var(--text);
 }
 
-html[data-theme="light"] .breadcrumb-current,
-html[data-theme="light"] .welcome-copy h1,
-html[data-theme="light"] .metric-tile strong,
+html[data-theme="light"] .input-tabs > button,
 html[data-theme="light"] .input-tabs > button:hover,
 html[data-theme="light"] .input-tabs > button.selected,
 html[data-theme="light"] .marketing-login,
 html[data-theme="light"] .marketing-nav > nav a,
-html[data-theme="light"] .hero-copy h1,
-html[data-theme="light"] .marketing-section-heading h2,
-html[data-theme="light"] .marketing-owasp h2,
-html[data-theme="light"] .marketing-bottom-cta h2,
-html[data-theme="light"] .auth-story h1,
-html[data-theme="light"] .integration-pr strong,
-html[data-theme="light"] .integration-comment strong {
-  color: var(--text);
+html[data-theme="light"] .auth-back-link {
+  color: var(--subtle);
 }
 
 html[data-theme="light"] .breadcrumb-root,
@@ -6774,8 +6853,7 @@ html[data-theme="light"] .section-heading-row p,
 html[data-theme="light"] .metric-tile > div > span,
 html[data-theme="light"] .metric-caption,
 html[data-theme="light"] .sidebar-label,
-html[data-theme="light"] .workspace-meta strong,
-html[data-theme="light"] .marketing-nav > nav a,
+html[data-theme="light"] .workspace-meta span,
 html[data-theme="light"] .hero-copy > p,
 html[data-theme="light"] .marketing-section-heading p,
 html[data-theme="light"] .marketing-feature > p,
@@ -6791,8 +6869,8 @@ html[data-theme="light"] .integration-comment small {
 html[data-theme="light"] .theme-toggle,
 html[data-theme="light"] .profile-menu-action,
 html[data-theme="light"] .auth-input-wrap,
-html[data-theme="light"] input,
-html[data-theme="light"] textarea {
+html[data-theme="light"] input:not(.code-editor):not(.evidence-code),
+html[data-theme="light"] textarea:not(.code-editor):not(.evidence-code) {
   border-color: var(--line);
   background-color: var(--surface);
   color: var(--text);
@@ -6804,9 +6882,7 @@ html[data-theme="light"] .auth-input-wrap input {
 
 html[data-theme="light"] .workspace-user-email,
 html[data-theme="light"] .stack-pill,
-html[data-theme="light"] .reference-link,
-html[data-theme="light"] .local-status strong,
-html[data-theme="light"] .history-item-main > strong,
+html[data-theme="light"] .local-status small,
 html[data-theme="light"] .history-item-main > span {
   color: var(--subtle);
 }
@@ -6816,6 +6892,281 @@ html[data-theme="light"] .integration-pr,
 html[data-theme="light"] .integration-comment {
   border-color: var(--line);
   background: var(--surface-raised);
+}
+
+html[data-theme="light"] .hero-scan-window {
+  border-color: #ded9e9;
+  background: linear-gradient(145deg, #ffffff, #f8f7fb);
+  box-shadow:
+    0 25px 70px rgba(48, 39, 78, 0.16),
+    0 0 45px rgba(130, 90, 255, 0.07),
+    inset 0 1px rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="light"] .hero-window-bar,
+html[data-theme="light"] .hero-scan-status {
+  border-color: var(--line);
+  color: var(--subtle);
+}
+
+html[data-theme="light"] .hero-code-lines {
+  color: #4a4b5c;
+}
+
+html[data-theme="light"] .hero-code-lines i {
+  color: #9293a2;
+}
+
+html[data-theme="light"] .hero-code-lines b {
+  color: #7657d5;
+}
+
+html[data-theme="light"] .hero-code-lines em {
+  color: #986417;
+}
+
+html[data-theme="light"] .hero-code-alert {
+  background: rgba(217, 79, 104, 0.09);
+  color: #7f2e3e;
+}
+
+html[data-theme="light"] .hero-finding-float {
+  border-color: rgba(217, 79, 104, 0.22);
+  background: #fff7f8;
+  box-shadow: 0 9px 25px rgba(48, 39, 78, 0.08);
+}
+
+html[data-theme="light"] .hero-finding-float strong {
+  color: #332d3a;
+}
+
+html[data-theme="light"] .hero-finding-float small,
+html[data-theme="light"] .hero-scan-status,
+html[data-theme="light"] .hero-art-chip {
+  color: var(--subtle);
+}
+
+html[data-theme="light"] .hero-critical-label,
+html[data-theme="light"] .batch-file-count {
+  color: #c13e58;
+}
+
+html[data-theme="light"] .hero-art-chip {
+  border-color: var(--line);
+  background: #ffffff;
+  box-shadow: 0 13px 35px rgba(48, 39, 78, 0.12);
+}
+
+html[data-theme="light"] .hero-orbit,
+html[data-theme="light"] .batch-visual-orbit {
+  border-color: rgba(118, 87, 213, 0.16);
+}
+
+html[data-theme="light"] .batch-visual {
+  border-color: #e0dceb;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(128, 90, 255, 0.075), transparent 66%),
+    #ffffff;
+  box-shadow: 0 22px 65px rgba(48, 39, 78, 0.12);
+}
+
+html[data-theme="light"] .batch-visual-heading,
+html[data-theme="light"] .batch-visual-note {
+  color: var(--subtle);
+}
+
+html[data-theme="light"] .batch-visual-heading > span {
+  color: var(--purple);
+}
+
+html[data-theme="light"] .batch-file-card {
+  border-color: #e4e1eb;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 22px rgba(48, 39, 78, 0.09);
+}
+
+html[data-theme="light"] .batch-file-card strong {
+  color: #302f40;
+}
+
+html[data-theme="light"] .batch-file-card small {
+  color: var(--subtle);
+}
+
+html[data-theme="light"] .batch-file-icon {
+  border-color: rgba(118, 87, 213, 0.2);
+  background: rgba(118, 87, 213, 0.08);
+  color: #7657d5;
+}
+
+html[data-theme="light"] .batch-file-icon-risk {
+  border-color: rgba(217, 79, 104, 0.2);
+  background: rgba(217, 79, 104, 0.08);
+  color: #c13e58;
+}
+
+html[data-theme="light"] .batch-progress > span {
+  background: linear-gradient(90deg, #7657d5, #b19cf0);
+  box-shadow: 0 0 12px rgba(118, 87, 213, 0.3);
+}
+
+html[data-theme="light"] .marketing-footer {
+  border-color: var(--line);
+}
+
+html[data-theme="light"] .process-steps article {
+  border-color: #d8d4e2;
+}
+
+html[data-theme="light"] .process-steps article > span {
+  border-color: #c9bee9;
+  background: #eee9fb;
+  color: #5d34c7;
+}
+
+html[data-theme="light"] .process-steps strong {
+  color: #29263a;
+}
+
+html[data-theme="light"] .process-steps p,
+html[data-theme="light"] .marketing-proof span,
+html[data-theme="light"] .integration-preview > p {
+  color: #565268;
+}
+
+html[data-theme="light"] .dashboard-risk-summary {
+  border-color: #c9c1df;
+  background: linear-gradient(105deg, #f1edfc, #ffffff 78%);
+  box-shadow: 0 8px 24px rgba(52, 39, 93, 0.08);
+}
+
+html[data-theme="light"] .dashboard-risk-summary-risk {
+  border-color: #e3b9c1;
+  background: linear-gradient(105deg, #fff0f2, #ffffff 78%);
+}
+
+html[data-theme="light"] .dashboard-score {
+  border-color: #a8c761;
+  background: #f3f8e6;
+  color: #527000;
+}
+
+html[data-theme="light"] .dashboard-score-risk {
+  border-color: #df8c9b;
+  background: #fff0f2;
+  color: #bd314d;
+}
+
+html[data-theme="light"] .dashboard-score span,
+html[data-theme="light"] .dashboard-risk-copy span {
+  color: #565268;
+}
+
+html[data-theme="light"] .dashboard-risk-copy strong {
+  color: #29263a;
+}
+
+html[data-theme="light"] .visual-glow {
+  background: rgba(112, 71, 216, 0.26);
+}
+
+html[data-theme="light"] .visual-orbit {
+  border-color: rgba(112, 71, 216, 0.24);
+}
+
+html[data-theme="light"] .visual-core {
+  border-color: #8c76c8;
+  background:
+    linear-gradient(145deg, rgba(170, 147, 235, 0.48), transparent 58%),
+    #33285c;
+  box-shadow:
+    0 0 0 9px rgba(112, 71, 216, 0.08),
+    0 0 45px rgba(112, 71, 216, 0.28),
+    inset 0 1px rgba(255, 255, 255, 0.28);
+}
+
+html[data-theme="light"] .visual-core-inner {
+  border-color: rgba(215, 241, 130, 0.45);
+  color: #c4ed54;
+}
+
+html[data-theme="light"] .visual-chip {
+  border-color: #cbc5de;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 28px rgba(43, 35, 75, 0.14);
+  color: #353148;
+}
+
+@media (max-width: 900px) {
+  .marketing-nav {
+    position: sticky;
+    padding-right: 22px;
+    padding-left: 22px;
+  }
+
+  .marketing-nav > nav.marketing-nav-links {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    display: none;
+    width: 100%;
+    height: auto;
+    align-items: stretch;
+    gap: 0;
+    padding: 8px 22px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: 0 12px 24px rgba(35, 29, 58, 0.12);
+  }
+
+  .marketing-nav > nav.marketing-nav-links.is-open {
+    display: grid;
+  }
+
+  .marketing-nav > nav.marketing-nav-links a {
+    min-height: 43px;
+    align-content: center;
+    border-bottom: 1px solid var(--line-soft);
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .marketing-nav > nav.marketing-nav-links a:last-child {
+    border-bottom: 0;
+  }
+
+  .marketing-nav > nav.marketing-nav-links a::after {
+    display: none;
+  }
+
+  .marketing-menu-toggle {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 420px) {
+  .marketing-nav {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .marketing-nav-actions {
+    gap: 7px;
+  }
+
+  .marketing-menu-toggle,
+  .marketing-theme-toggle {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+  }
+
+  .marketing-cta {
+    min-height: 32px;
+    padding: 0 7px;
+    font-size: 7px;
+  }
 }
 
 html[data-theme="light"] .code-editor,

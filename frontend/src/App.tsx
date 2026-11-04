@@ -526,18 +526,34 @@ function MarketingPage({
   theme: Theme;
   onToggleTheme: () => void;
 }) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   return (
     <div className="marketing-shell">
       <header className="marketing-nav">
         <Logo />
-        <nav aria-label="Navegação principal">
-          <a href="#recursos">Recursos</a>
-          <a href="#analise-em-lote">Análise em lote</a>
-          <a href="#como-funciona">Como funciona</a>
-          <a href="#cobertura">Cobertura</a>
-          <a href="#integracao">GitHub</a>
+        <nav
+          id="marketing-navigation"
+          className={`marketing-nav-links ${mobileNavOpen ? "is-open" : ""}`}
+          aria-label="Navegação principal"
+        >
+          <a href="#recursos" onClick={() => setMobileNavOpen(false)}>Recursos</a>
+          <a href="#analise-em-lote" onClick={() => setMobileNavOpen(false)}>Análise em lote</a>
+          <a href="#como-funciona" onClick={() => setMobileNavOpen(false)}>Como funciona</a>
+          <a href="#cobertura" onClick={() => setMobileNavOpen(false)}>Cobertura</a>
+          <a href="#integracao" onClick={() => setMobileNavOpen(false)}>GitHub</a>
         </nav>
         <div className="marketing-nav-actions">
+          <button
+            type="button"
+            className="marketing-menu-toggle"
+            aria-label={mobileNavOpen ? "Fechar menu de navegação" : "Abrir menu de navegação"}
+            aria-controls="marketing-navigation"
+            aria-expanded={mobileNavOpen}
+            onClick={() => setMobileNavOpen((open) => !open)}
+          >
+            {mobileNavOpen ? <X size={19} /> : <Menu size={19} />}
+          </button>
           <ThemeToggle theme={theme} onToggle={onToggleTheme} className="marketing-theme-toggle" />
           <button type="button" className="marketing-login" onClick={onLogin}>Entrar</button>
           <button type="button" className="button-primary marketing-cta" onClick={onSignup}>
@@ -1434,7 +1450,7 @@ function App() {
 
                     {latestScan ? (
                       <>
-                        <div className="dashboard-risk-summary">
+                        <div className={`dashboard-risk-summary ${latestRiskScore !== null && latestRiskScore < 55 ? "dashboard-risk-summary-risk" : ""}`}>
                           <div className={`dashboard-score ${latestRiskScore !== null && latestRiskScore < 55 ? "dashboard-score-risk" : ""}`}>
                             <strong>{latestRiskScore}</strong><span>/100</span>
                           </div>
