@@ -20,6 +20,9 @@ backend/data/*
 frontend/node_modules/
 frontend/dist/
 frontend/*.tsbuildinfo
+frontend/.tsupgrader/
+frontend/.vscode/settings.json
+mobile-check.png
 # OS / editor
 .DS_Store
 Thumbs.db

@@ -1,17 +1,13 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { Finding } from "../types";
 import { scanSource } from "./scanner";
 
 const backendPath = resolve(process.cwd(), "..", "backend");
 const samplePath = resolve(backendPath, "tests", "samples");
-const findingFields: (keyof Finding)[] = [
-  "id", "title", "severity", "cwe", "owaspId", "owaspName", "description",
-  "recommendation", "impact", "prevention", "locations", "evidence",
-];
 const pythonScan = [
   "import json, pathlib, sys",
   "sys.path.insert(0, sys.argv[1])",
@@ -21,16 +17,28 @@ const pythonScan = [
   "print(json.dumps({'findings': [f.to_dict() for f in r.findings], 'rulesRun': r.rules_run}, ensure_ascii=False))",
 ].join("; ");
 
+function findPython(): string {
+  for (const executable of ["python", "python3"]) {
+    const result = spawnSync(executable, ["--version"], { encoding: "utf-8" });
+    if (result.status === 0) return executable;
+  }
+  throw new Error("Python interpreter not found; install python or python3.");
+}
+
+const pythonExecutable = findPython();
+
 describe("scanner implementations on the measurement samples", () => {
   it.each(["amostra_vulneravel.py", "amostra_segura.py"])(
-    "lists detection and metadata divergences for %s without changing scanner behavior",
+    "matches detection rules, lines, and evidence for %s",
     (filename) => {
       const source = readFileSync(resolve(samplePath, filename), "utf-8");
       const typescriptResult = scanSource(source, filename);
       const pythonResult = JSON.parse(
-        execFileSync("python", ["-c", pythonScan, backendPath, resolve(samplePath, filename)], {
-          encoding: "utf-8",
-        }),
+        execFileSync(
+          pythonExecutable,
+          ["-c", pythonScan, backendPath, resolve(samplePath, filename)],
+          { encoding: "utf-8" },
+        ),
       ) as typeof typescriptResult;
       const sameDetection = (left: Finding, right: Finding) =>
         left.id === right.id &&
@@ -42,24 +50,8 @@ describe("scanner implementations on the measurement samples", () => {
       const typescriptOnly = typescriptResult.findings.filter(
         (finding) => !pythonResult.findings.some((other) => sameDetection(other, finding)),
       );
-      const fieldDifferences = pythonResult.findings.flatMap((finding) => {
-        const other = typescriptResult.findings.find(
-          (candidate) => sameDetection(candidate, finding),
-        );
-        if (!other) return [];
-        const fields = findingFields.filter(
-          (key) => !isDeepStrictEqual(finding[key], other[key]),
-        );
-        return fields.length ? [{ id: finding.id, fields }] : [];
-      });
-
-      console.log(
-        `${filename}: ${JSON.stringify({
-          pythonOnly: pythonOnly.map(({ id, locations }) => ({ id, locations })),
-          typescriptOnly: typescriptOnly.map(({ id, locations }) => ({ id, locations })),
-          fieldDifferences,
-        })}`,
-      );
+      expect(pythonOnly).toEqual([]);
+      expect(typescriptOnly).toEqual([]);
     },
   );
 });
