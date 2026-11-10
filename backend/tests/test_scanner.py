@@ -1,4 +1,5 @@
 import json
+import time
 import unittest
 from pathlib import Path
 
@@ -116,6 +117,39 @@ class ParityTests(unittest.TestCase):
                 self.assertEqual(got, expected[case["name"]])
 
 
+class AddedRuleTests(unittest.TestCase):
+    def test_each_added_rule_has_a_positive_and_negative_golden_case(self):
+        corpus = json.loads((GOLDEN / "corpus.json").read_text(encoding="utf-8"))
+        cases = [case for case in corpus if "ruleCheck" in case]
+        self.assertEqual(len(cases), 21)
+        for case in cases:
+            check = case["ruleCheck"]
+            with self.subTest(case=case["name"]):
+                result = scan_source(case["source"], case["filename"])
+                finding = next(
+                    (item for item in result.findings if item.id == check["ruleId"]),
+                    None,
+                )
+                self.assertIsNotNone(finding, f"positive case for {check['ruleId']}")
+                self.assertIn(check["positiveLine"], finding.locations)
+                self.assertNotIn(check["negativeLine"], finding.locations)
+
+    def test_password_hash_rule_does_not_misclassify_token_hash(self):
+        source = 'return {"token": hashlib.md5(email.encode()).hexdigest()}'
+        result = scan_source(source, "auth.py")
+        self.assertIn("weak-token-hash", ids(result))
+        self.assertNotIn("weak-password-hash", ids(result))
+
+    def test_rules_include_confidence_and_all_owasp_2025_categories(self):
+        rules = json.loads((Path(__file__).parents[1] / "app" / "rules.json").read_text(encoding="utf-8"))
+        self.assertTrue(all(rule["confidence"] in {"alta", "média", "baixa"} for rule in rules))
+        self.assertEqual({rule["owaspId"] for rule in rules}, {f"A{number:02}" for number in range(1, 11)})
+        self.assertEqual(
+            {rule["id"] for rule in rules if rule["confidence"] == "baixa"},
+            {"mass-assignment", "missing-authentication", "csrf-get-mutable", "toctou", "user-enumeration"},
+        )
+
+
 class HardeningTests(unittest.TestCase):
     def test_long_lines_are_truncated_for_matching(self):
         line = "x" * 2000 + " DEBUG = True"
@@ -130,6 +164,13 @@ class HardeningTests(unittest.TestCase):
     def test_evidence_is_capped_at_500_chars(self):
         result = scan_source("DEBUG = True  #" + "x" * 900, "a.py")
         self.assertEqual(len(result.findings[0].evidence[0]), 500)
+
+    def test_all_rules_handle_1000_character_near_match_lines(self):
+        line = "re.match(r'^(a+)+$'," + "a" * 975
+        line = line[:1000].ljust(1000, "x")
+        started = time.perf_counter()
+        scan_source(line, "long.py", max_line_chars=1000, time_budget_seconds=1.0)
+        self.assertLess(time.perf_counter() - started, 1.0)
 
 
 if __name__ == "__main__":

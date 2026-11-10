@@ -1,6 +1,6 @@
-// Gera tests/golden/expected.json rodando o scanner TypeScript ORIGINAL do frontend.
-// Uso (Node 22.6+):
-//   node --experimental-strip-types scripts/generate_golden.mjs ../VibeCheck_Lobios-frontend
+// Gera tests/golden/expected.json usando o scanner TypeScript e o rules.json compartilhado.
+// Execute no diretório backend com Node 22.6+:
+//   node --experimental-strip-types scripts/generate_golden.mjs ../frontend
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";

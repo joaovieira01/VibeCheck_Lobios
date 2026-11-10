@@ -45,6 +45,7 @@ O **VibeCheck** é uma aplicação web para auditoria de código, pensada para q
 - 🔍 **Análise de código** por upload de arquivo ou colagem de trecho
 - 🧠 **Contexto do achado:** linha, severidade, evidência, impacto e recomendação
 - 📚 **Mapeamento OWASP Top 10:2025** e referências CWE
+- 🧰 **41 regras compartilhadas** entre Python e TypeScript, mapeadas pelas dez categorias OWASP Top 10:2025 (A01–A10); o mapeamento heurístico não implica cobertura exaustiva
 - 📄 **Relatório em PDF** com prioridades e localização dos problemas
 - 🕘 **Histórico de análises** persistido no banco (modo com API)
 - 🔐 **Cadastro e login** com autenticação no backend

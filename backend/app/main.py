@@ -186,7 +186,7 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
 
     @app.get("/api/health", response_model=HealthOut)
     def health() -> dict[str, object]:
-        return {"status": "ok", "rules": len(RULES) + 1}
+        return {"status": "ok", "rules": len(RULES)}
 
     @app.get("/api/rules", response_model=list[RuleOut])
     def list_rules() -> list[dict[str, str]]:
@@ -198,6 +198,11 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
                 "cwe": rule.cwe,
                 "owaspId": rule.owasp_id,
                 "owaspName": rule.owasp_name,
+                "description": rule.description,
+                "recommendation": rule.recommendation,
+                "impact": rule.impact,
+                "prevention": rule.prevention,
+                "confidence": rule.confidence,
             }
             for rule in RULES
         ]

@@ -35,16 +35,45 @@ def _measure(path: Path) -> tuple[dict[str, Any], float]:
     )
 
 
-def _recall(items: list[dict[str, Any]], findings: list[dict[str, Any]]) -> dict[str, Any]:
-    recalled = 0
+def _strict_recall(
+    items: list[dict[str, Any]], findings: list[dict[str, Any]]
+) -> dict[str, Any]:
+    correct: list[dict[str, Any]] = []
+    wrong_rule: list[dict[str, Any]] = []
+    missing: list[dict[str, Any]] = []
     for item in items:
         expected_lines = set(item["lines"])
-        if any(expected_lines.intersection(finding["locations"]) for finding in findings):
-            recalled += 1
+        expected_rule = item["expectedRuleId"]
+        correct_findings = [
+            finding
+            for finding in findings
+            if finding["id"] == expected_rule
+            and expected_lines.intersection(finding["locations"])
+        ]
+        if correct_findings:
+            correct.append(item)
+            continue
+        other_rules = sorted(
+            {
+                finding["id"]
+                for finding in findings
+                if finding["id"] != expected_rule
+                and expected_lines.intersection(finding["locations"])
+            }
+        )
+        if other_rules:
+            wrong_rule.append({**item, "foundRuleIds": other_rules})
+        else:
+            missing.append(item)
     return {
-        "detected": recalled,
+        "detectedByCorrectRule": len(correct),
+        "detectedByWrongRule": len(wrong_rule),
+        "notDetected": len(missing),
         "total": len(items),
-        "recall": recalled / len(items) if items else None,
+        "recall": len(correct) / len(items) if items else None,
+        "correctItems": correct,
+        "wrongRuleItems": wrong_rule,
+        "notDetectedItems": missing,
     }
 
 
@@ -53,17 +82,12 @@ def collect_metrics() -> dict[str, Any]:
     vulnerable, vulnerable_seconds = _measure(VULNERABLE_PATH)
     safe, safe_seconds = _measure(SAFE_PATH)
     items = answer_key["itens"]
+    expected_findings = answer_key.get("expectedFindings", [])
     vulnerable_findings = vulnerable["findings"]
-    categories: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for item in items:
-        if item.get("owasp"):
-            categories[item["owasp"]].append(item)
-
     expected_rules_by_line: dict[int, set[str]] = defaultdict(set)
-    for item in items:
-        if item["kind"] == "control":
-            for line in item["lines"]:
-                expected_rules_by_line[line].add(item["expectedRuleId"])
+    for item in [*items, *expected_findings]:
+        for line in item["lines"]:
+            expected_rules_by_line[line].add(item["expectedRuleId"])
     unmatched_findings = []
     for finding in vulnerable_findings:
         unmatched_locations = [
@@ -76,14 +100,21 @@ def collect_metrics() -> dict[str, Any]:
                 {**finding, "unmatchedLocations": unmatched_locations}
             )
 
+    categories = {
+        category: _strict_recall(
+            [item for item in items if item.get("owasp") == category],
+            vulnerable_findings,
+        )
+        for category in sorted({item["owasp"] for item in items if item.get("owasp")})
+    }
     return {
         "sample": answer_key["arquivo"],
         "rulesRun": vulnerable["rulesRun"],
-        "recallTotal": _recall(items, vulnerable_findings),
-        "recallByOwasp": {
-            category: _recall(category_items, vulnerable_findings)
-            for category, category_items in sorted(categories.items())
-        },
+        "recallTotal": _strict_recall(items, vulnerable_findings),
+        "additionalExpectedFindings": _strict_recall(
+            expected_findings, vulnerable_findings
+        ),
+        "recallByOwasp": categories,
         "findingsWithoutAnswerKeyMatch": unmatched_findings,
         "safeSampleFindings": safe["findings"],
         "analysisSeconds": {
@@ -100,12 +131,32 @@ def main() -> None:
     print("Métricas da linha de base")
     total = metrics["recallTotal"]
     print(
-        f"Recall total: {total['detected']}/{total['total']} "
+        f"Recall pela regra correta: {total['detectedByCorrectRule']}/{total['total']} "
         f"({total['recall']:.1%})"
+    )
+    print(f"Detectado por regra errada na linha: {total['detectedByWrongRule']}")
+    print(f"Não detectado: {total['notDetected']}")
+    wrong_ids = ", ".join(
+        f"{item['id']} ({', '.join(item['foundRuleIds'])})"
+        for item in total["wrongRuleItems"]
+    )
+    missing_ids = ", ".join(item["id"] for item in total["notDetectedItems"])
+    print(f"Itens detectados pela regra errada: {wrong_ids or 'nenhum'}")
+    print(f"Itens não detectados: {missing_ids or 'nenhum'}")
+    additional = metrics["additionalExpectedFindings"]
+    print(
+        "Achados adicionais esperados: "
+        f"{additional['detectedByCorrectRule']}/{additional['total']} corretos; "
+        f"{additional['detectedByWrongRule']} por regra errada; "
+        f"{additional['notDetected']} não detectados"
     )
     print("Recall por categoria OWASP:")
     for category, result in metrics["recallByOwasp"].items():
-        print(f"  {category}: {result['detected']}/{result['total']} ({result['recall']:.1%})")
+        print(
+            f"  {category}: {result['detectedByCorrectRule']}/{result['total']} "
+            f"({result['recall']:.1%}); regra errada "
+            f"{result['detectedByWrongRule']}; não detectado {result['notDetected']}"
+        )
     print(
         "Achados sem correspondência no gabarito: "
         f"{len(metrics['findingsWithoutAnswerKeyMatch'])}"

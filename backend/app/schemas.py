@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 Severity = Literal["Crítica", "Alta", "Média", "Baixa"]
+Confidence = Literal["alta", "média", "baixa"]
 
 
 class CamelModel(BaseModel):
@@ -56,6 +57,11 @@ class RuleOut(CamelModel):
     cwe: str
     owasp_id: str
     owasp_name: str
+    description: str
+    recommendation: str
+    impact: str
+    prevention: str
+    confidence: Confidence
 
 
 class HealthOut(CamelModel):

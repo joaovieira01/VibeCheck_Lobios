@@ -54,8 +54,16 @@ class ApiTestBase(unittest.TestCase):
 @unittest.skipUnless(HAVE_FASTAPI, "fastapi/httpx não instalados")
 class ApiTests(ApiTestBase):
     def test_health_and_rules(self):
-        self.assertEqual(self.client.get("/api/health").json(), {"status": "ok", "rules": 20})
-        self.assertEqual(len(self.client.get("/api/rules").json()), 19)
+        self.assertEqual(self.client.get("/api/health").json(), {"status": "ok", "rules": 41})
+        rules = self.client.get("/api/rules").json()
+        self.assertEqual(len(rules), 41)
+        self.assertEqual(
+            set(rules[0]),
+            {
+                "id", "title", "severity", "cwe", "owaspId", "owaspName",
+                "description", "recommendation", "impact", "prevention", "confidence",
+            },
+        )
 
     def test_full_flow(self):
         auth = self.register()

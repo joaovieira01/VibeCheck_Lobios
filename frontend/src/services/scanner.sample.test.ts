@@ -1,13 +1,12 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { isDeepStrictEqual } from "node:util";
 import { describe, expect, it } from "vitest";
-import type { Finding } from "../types";
 import { scanSource } from "./scanner";
 
 const backendPath = resolve(process.cwd(), "..", "backend");
 const samplePath = resolve(backendPath, "tests", "samples");
+const goldenPath = resolve(backendPath, "tests", "golden");
 const pythonScan = [
   "import json, pathlib, sys",
   "sys.path.insert(0, sys.argv[1])",
@@ -37,21 +36,47 @@ describe("scanner implementations on the measurement samples", () => {
         execFileSync(
           pythonExecutable,
           ["-c", pythonScan, backendPath, resolve(samplePath, filename)],
-          { encoding: "utf-8" },
+          {
+            encoding: "utf-8",
+            env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+          },
         ),
       ) as typeof typescriptResult;
-      const sameDetection = (left: Finding, right: Finding) =>
-        left.id === right.id &&
-        isDeepStrictEqual(left.locations, right.locations) &&
-        isDeepStrictEqual(left.evidence, right.evidence);
-      const pythonOnly = pythonResult.findings.filter(
-        (finding) => !typescriptResult.findings.some((other) => sameDetection(other, finding)),
-      );
-      const typescriptOnly = typescriptResult.findings.filter(
-        (finding) => !pythonResult.findings.some((other) => sameDetection(other, finding)),
-      );
-      expect(pythonOnly).toEqual([]);
-      expect(typescriptOnly).toEqual([]);
+      expect(pythonResult).toEqual(typescriptResult);
     },
   );
+
+  it("detects every added rule in its positive golden case and not its negative case", () => {
+    const corpus = JSON.parse(
+      readFileSync(resolve(goldenPath, "corpus.json"), "utf-8"),
+    ) as Array<{
+      name: string;
+      filename: string;
+      source: string;
+      ruleCheck?: {
+        ruleId: string;
+        positiveLine: number;
+        negativeLine: number;
+      };
+    }>;
+    const cases = corpus.filter((item) => item.ruleCheck);
+    expect(cases).toHaveLength(21);
+    for (const testCase of cases) {
+      const { ruleId, positiveLine, negativeLine } = testCase.ruleCheck!;
+      const finding = scanSource(testCase.source, testCase.filename).findings.find(
+        (item) => item.id === ruleId,
+      );
+      expect(finding, testCase.name).toBeDefined();
+      expect(finding?.locations ?? [], testCase.name).toContain(positiveLine);
+      expect(finding?.locations ?? [], testCase.name).not.toContain(negativeLine);
+    }
+  });
+
+  it("handles a 1,000-character near-match line within the scan budget", () => {
+    const line = `re.match(r'^(a+)+$',${"a".repeat(975)})`.slice(0, 1000).padEnd(1000, "x");
+    const started = performance.now();
+    scanSource(line, "long.py");
+    expect(line).toHaveLength(1000);
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
 });

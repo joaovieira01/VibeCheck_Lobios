@@ -43,7 +43,13 @@ class Rule:
     recommendation: str
     impact: str
     prevention: str
+    confidence: str
     safe_on_line: re.Pattern[str] | None = None
+    safe_on_context: re.Pattern[str] | None = None
+    context_lines: int = 0
+    required_context: re.Pattern[str] | None = None
+    required_context_lines: int = 0
+    manifest_only: bool = False
 
 
 @dataclass
@@ -91,6 +97,7 @@ def _load_rules() -> list[Rule]:
     rules: list[Rule] = []
     for item in raw_rules:
         safe = item.get("safePattern")
+        safe_context = item.get("safeContextPattern")
         rules.append(
             Rule(
                 id=item["id"],
@@ -104,40 +111,29 @@ def _load_rules() -> list[Rule]:
                 recommendation=item["recommendation"],
                 impact=item["impact"],
                 prevention=item["prevention"],
+                confidence=item["confidence"],
                 safe_on_line=re.compile(safe, _FLAGS) if safe else None,
+                safe_on_context=(
+                    re.compile(safe_context, _FLAGS) if safe_context else None
+                ),
+                context_lines=item.get("contextLines", 0),
+                required_context=(
+                    re.compile(item["requiredContextPattern"], _FLAGS)
+                    if item.get("requiredContextPattern")
+                    else None
+                ),
+                required_context_lines=item.get("requiredContextLines", 0),
+                manifest_only=item.get("manifestOnly", False),
             )
         )
     return rules
 
 
 RULES: list[Rule] = _load_rules()
-
-# Regra sintética para manifestos de dependência (requirements.txt / package.json).
-DEPENDENCY_RULE = Rule(
-    id="unlocked-dependency",
-    title="Dependência sem versão fixada",
-    severity="Média",
-    cwe="CWE-1104",
-    owasp_id="A03",
-    owasp_name="Falhas na cadeia de suprimentos",
-    expression=re.compile(r"^"),
-    description="Uma dependência não especifica uma versão verificável.",
-    recommendation=(
-        "Fixe versões revisadas, mantenha lockfile e use ferramenta SCA para "
-        "verificar CVEs e dependências transitivas."
-    ),
-    impact=(
-        "Instalações em momentos diferentes podem resolver versões distintas, "
-        "inclusive versões comprometidas."
-    ),
-    prevention=(
-        "Gere e revise lockfiles, monitore avisos de segurança e valide "
-        "dependências em CI. Esta regra não verifica CVEs."
-    ),
-)
-
-# Total de regras executadas: as regex por linha + a regra de manifesto.
-RULE_COUNT = len(RULES) + 1
+RULES_BY_ID = {rule.id: rule for rule in RULES}
+SCANNABLE_RULES = [rule for rule in RULES if not rule.manifest_only]
+DEPENDENCY_RULE = RULES_BY_ID["unlocked-dependency"]
+RULE_COUNT = len(RULES)
 
 _REQUIREMENT_LINE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)\s*(?:#.*)?$")
 _LOOSE_JSON_VERSION = re.compile(r"[\"']([@a-zA-Z0-9/_.-]+)[\"']\s*:\s*[\"'](?:\*|latest)[\"']")
@@ -154,7 +150,8 @@ def _scan_dependency_manifest(
     hits: list[tuple[Rule, int, str]] = []
 
     if name == "requirements.txt":
-        for index, line in enumerate(re.split(r"\r?\n", source)):
+        lines = re.split(r"\r?\n", source)
+        for index, line in enumerate(lines):
             trimmed = line.strip()
             if (
                 _REQUIREMENT_LINE.match(trimmed)
@@ -235,15 +232,30 @@ def scan_source(
         finding.locations.append(line)
         finding.evidence.append(evidence)
 
-    for index, line in enumerate(re.split(r"\r?\n", source)):
+    lines = re.split(r"\r?\n", source)
+    for index, line in enumerate(lines):
         if deadline is not None and time.perf_counter() > deadline:
             raise ScanTimeout()
         candidate = line[:max_line_chars]
-        for rule in RULES:
+        for rule in SCANNABLE_RULES:
             if not rule.expression.search(candidate):
                 continue
             if rule.safe_on_line and rule.safe_on_line.search(candidate):
                 continue
+            if rule.safe_on_context or rule.required_context:
+                context_radius = max(
+                    rule.context_lines, rule.required_context_lines
+                )
+                context_start = max(0, index - context_radius)
+                context_end = min(len(lines), index + context_radius + 1)
+                context = "\n".join(lines[context_start:context_end])
+                if (
+                    rule.safe_on_context
+                    and rule.safe_on_context.search(context)
+                ):
+                    continue
+                if rule.required_context and not rule.required_context.search(context):
+                    continue
             add(rule, index + 1, line.strip()[:500])
 
     for rule, line, evidence in _scan_dependency_manifest(source, filename):
