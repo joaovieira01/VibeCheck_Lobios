@@ -100,4 +100,60 @@ describe("scanSource", () => {
     const finding = result.findings.find((item) => item.id === "unlocked-dependency");
     expect(finding?.locations).toEqual([1]);
   });
+
+  it("ignores comments and Python block strings while preserving line locations", () => {
+    const python = [
+      "# eval(expression)",
+      '"""',
+      "return {'error': 'user not found'}",
+      '"""',
+      "# pickle.loads(payload)",
+      "DEBUG = True  # eval(expression)",
+    ].join("\n");
+    const pythonResult = scanSource(python, "security.py");
+    expect(pythonResult.findings.map((item) => item.id)).toEqual(["debug-mode"]);
+    expect(pythonResult.findings[0].locations).toEqual([6]);
+
+    const javascript = [
+      "// eval(expression)",
+      "/* pickle.loads(payload)",
+      "user not found */",
+      "const value = true; // yaml.load(raw)",
+    ].join("\n");
+    expect(scanSource(javascript, "security.ts").findings).toEqual([]);
+  });
+
+  it("reports missing authentication on the Python handler and accepts auth dependencies", () => {
+    const result = scanSource(
+      [
+        "@router.delete('/items/{item_id}')",
+        "def remove_item(item_id):",
+        "    db.items.delete_one({'id': item_id})",
+        "@router.delete('/private/{item_id}')",
+        "def remove_private(item_id: int = Depends(get_current_user)):",
+        "    db.items.delete_one({'id': item_id})",
+      ].join("\n"),
+      "routes.py",
+    );
+    expect(
+      result.findings.find((finding) => finding.id === "missing-authentication")?.locations,
+    ).toEqual([2]);
+  });
+
+  it("accepts Express authentication middleware and recognizes unprotected handlers", () => {
+    const result = scanSource(
+      [
+        "router.delete('/items/:id', (req, res) => {",
+        "  db.items.deleteMany({ id: req.params.id });",
+        "});",
+        "router.patch('/private/:id', authMiddleware, (req, res) => {",
+        "  db.items.updateMany({ id: req.params.id }, req.body);",
+        "});",
+      ].join("\n"),
+      "routes.js",
+    );
+    expect(
+      result.findings.find((finding) => finding.id === "missing-authentication")?.locations,
+    ).toEqual([1]);
+  });
 });

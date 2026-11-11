@@ -55,19 +55,22 @@ describe("scanner implementations on the measurement samples", () => {
       source: string;
       ruleCheck?: {
         ruleId: string;
-        positiveLine: number;
+        positiveLine?: number;
+        positiveLines?: number[];
         negativeLine: number;
       };
     }>;
     const cases = corpus.filter((item) => item.ruleCheck);
-    expect(cases).toHaveLength(21);
+    expect(cases.length).toBeGreaterThanOrEqual(21);
     for (const testCase of cases) {
-      const { ruleId, positiveLine, negativeLine } = testCase.ruleCheck!;
+      const { ruleId, positiveLine, positiveLines, negativeLine } = testCase.ruleCheck!;
       const finding = scanSource(testCase.source, testCase.filename).findings.find(
         (item) => item.id === ruleId,
       );
       expect(finding, testCase.name).toBeDefined();
-      expect(finding?.locations ?? [], testCase.name).toContain(positiveLine);
+      for (const line of positiveLines ?? [positiveLine!]) {
+        expect(finding?.locations ?? [], testCase.name).toContain(line);
+      }
       expect(finding?.locations ?? [], testCase.name).not.toContain(negativeLine);
     }
   });

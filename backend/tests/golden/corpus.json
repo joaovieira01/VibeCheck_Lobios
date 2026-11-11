@@ -219,5 +219,149 @@
   "filename": "users.py",
   "source": "return {'error': 'email not found'}, 404\nreturn {'message': 'If the account exists, we will send a message'}, 200",
   "ruleCheck": {"ruleId": "user-enumeration", "positiveLine": 1, "negativeLine": 2}
+ },
+ {
+  "name": "generalized-ssrf-python",
+  "filename": "views.py",
+  "source": "urllib.request.urlopen(request.GET['target'])\nhttpx.get(request.POST.get('endpoint'))\nawait session.get(request.args['target'])\nrequests.get('https://api.example.test')",
+  "ruleCheck": {"ruleId": "ssrf", "positiveLines": [1, 2, 3], "negativeLine": 4}
+ },
+ {
+  "name": "generalized-ssrf-javascript",
+  "filename": "routes.js",
+  "source": "axios.get(req.query.url)\nfetch(req.body.destination)\ngot.get('https://api.example.test')",
+  "ruleCheck": {"ruleId": "ssrf", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-token-hash-python",
+  "filename": "tokens.py",
+  "source": "reset_token = hashlib.sha1(user_id.encode()).hexdigest()\ntoken = sha1(value).hexdigest()\ntoken = secrets.token_urlsafe(32)",
+  "ruleCheck": {"ruleId": "weak-token-hash", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-token-hash-javascript",
+  "filename": "tokens.ts",
+  "source": "const resetToken = crypto.createHash('md5').update(userId).digest('hex');\nconst sessionToken = createHash('sha1').update(seed).digest('hex');\nconst sessionToken = crypto.randomBytes(32).toString('hex');",
+  "ruleCheck": {"ruleId": "weak-token-hash", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-secret-comparison-python",
+  "filename": "verify.py",
+  "source": "if supplied_signature == stored_digest:\nif expected_hash == received_hash:\nif hmac.compare_digest(supplied_signature, stored_digest):",
+  "ruleCheck": {"ruleId": "token-timing-comparison", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-secret-comparison-javascript",
+  "filename": "verify.js",
+  "source": "if (requestSignature === storedSignature) {}\nif (providedHash == expectedHash) {}\ncrypto.timingSafeEqual(providedSignature, storedSignature);",
+  "ruleCheck": {"ruleId": "token-timing-comparison", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-mass-assignment-python",
+  "filename": "serializers.py",
+  "source": "user.update(**request.data)\nAccount.objects.filter(pk=account_id).update(**dados)\nuser.update(name=validated['name'])",
+  "ruleCheck": {"ruleId": "mass-assignment", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-mass-assignment-javascript",
+  "filename": "models.js",
+  "source": "User.findByIdAndUpdate(req.params.id, req.body)\naccount.update(payload)\naccount.update({ displayName: validatedName })",
+  "ruleCheck": {"ruleId": "mass-assignment", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-template-injection-python",
+  "filename": "templates.py",
+  "source": "render_template_string(f'<p>{request.GET[\"name\"]}</p>')\nTemplate('<h1>%s</h1>' % request.POST['title'])\nrender_template_string('<p>{{ name }}</p>', name=request.GET['name'])",
+  "ruleCheck": {"ruleId": "template-injection", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-template-injection-javascript",
+  "filename": "templates.js",
+  "source": "new Function(req.body.expression)\ncompile(`Hello ${req.query.name}`)\nres.render('profile', { name: req.query.name })",
+  "ruleCheck": {"ruleId": "template-injection", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-aes-ecb-python",
+  "filename": "crypto.py",
+  "source": "Cipher(algorithms.AES(key), modes.ECB())\nAES.new(key, MODE_ECB)\nCipher(algorithms.AES(key), modes.GCM(nonce))",
+  "ruleCheck": {"ruleId": "aes-ecb", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-aes-ecb-javascript",
+  "filename": "crypto.js",
+  "source": "crypto.createCipheriv('aes-256-ecb', key, null)\ncreateCipher('aes-128-ecb', secret)\ncrypto.createCipheriv('aes-256-gcm', key, nonce)",
+  "ruleCheck": {"ruleId": "aes-ecb", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-log-input-python",
+  "filename": "audit.py",
+  "source": "logger.warning(f\"search={request.GET['q']}\")\nlogging.info('event %s' % request.POST['event'])\nlogger.info('event received')",
+  "ruleCheck": {"ruleId": "log-injection", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-log-input-javascript",
+  "filename": "audit.js",
+  "source": "console.warn(`search ${req.query.q}`)\nlogger.info('event=' + payload)\nconsole.info('event received')",
+  "ruleCheck": {"ruleId": "log-injection", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-pagination-python",
+  "filename": "pagination.py",
+  "source": "page_size = int(request.GET.get('size', 20))\nper_page = int(request.POST['per_page'])\npage_size = min(int(request.GET.get('size', 20)), 100)",
+  "ruleCheck": {"ruleId": "unbounded-pagination", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-pagination-javascript",
+  "filename": "pagination.js",
+  "source": "const limit = req.query.limit;\nconst pageSize = req.params.pageSize;\nconst limit = Math.min(Number(req.query.limit), 100);",
+  "ruleCheck": {"ruleId": "unbounded-pagination", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-upload-python",
+  "filename": "upload.py",
+  "source": "file.save(path / file.filename)\narquivo.save(destination / arquivo.filename)\n\n\n\n\nfile.save(path / secure_filename(file.filename))",
+  "ruleCheck": {"ruleId": "unvalidated-upload", "positiveLines": [1, 2], "negativeLine": 7}
+ },
+ {
+  "name": "generalized-upload-javascript",
+  "filename": "upload.js",
+  "source": "fs.writeFileSync(destination, req.file.originalname)\nfs.createWriteStream(req.file.originalname)\nmulter.diskStorage({ filename: (req, file, cb) => cb(null, file.originalname) })\nfs.writeFileSync(destination, generatedFilename)",
+  "ruleCheck": {"ruleId": "unvalidated-upload", "positiveLines": [1, 2, 3], "negativeLine": 4}
+ },
+ {
+  "name": "generalized-xpath-python",
+  "filename": "xpath.py",
+  "source": "tree.xpath(f\"//user[@id='{request.args['id']}']\")\ntree.xpath(\"//user[@name='%s']\" % request.GET['name'])\ntree.xpath('//user[@id=$id]', id=request.args['id'])",
+  "ruleCheck": {"ruleId": "xpath-injection", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-xpath-javascript",
+  "filename": "xpath.js",
+  "source": "doc.xpath(`//user[@id='${req.query.id}']`)\ndoc.xpath('//user[@name=' + req.params.name + ']')\ndoc.xpath('//user[@id=$id]', { id: req.query.id })",
+  "ruleCheck": {"ruleId": "xpath-injection", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-enumeration-python",
+  "filename": "accounts.py",
+  "source": "raise Http404('Account does not exist')\nreturn {'error': 'unknown user'}, 404\nreturn {'error': 'Invalid credentials'}, 401",
+  "ruleCheck": {"ruleId": "user-enumeration", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-enumeration-javascript",
+  "filename": "accounts.js",
+  "source": "return res.status(404).json({ error: 'Account does not exist' });\nreturn res.status(404).json({ error: 'Unknown user' });\nreturn res.status(401).json({ error: 'Invalid credentials' });",
+  "ruleCheck": {"ruleId": "user-enumeration", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "generalized-missing-auth-python",
+  "filename": "routes.py",
+  "source": "@router.delete('/users/{user_id}')\ndef remove_user(user_id):\n    db.users.delete_one({'id': user_id})\n\n\ndef delete_account(request, account_id):\n    if request.method == 'DELETE':\n        Account.objects.filter(pk=account_id).delete()\n\n\n@router.delete('/protected/{user_id}')\ndef protected_delete(user_id: int = Depends(get_current_user)):\n    db.users.delete_one({'id': user_id})",
+  "ruleCheck": {"ruleId": "missing-authentication", "positiveLines": [2, 6], "negativeLine": 12}
+ },
+ {
+  "name": "generalized-missing-auth-javascript",
+  "filename": "routes.js",
+  "source": "router.delete('/users/:id', (req, res) => {\n  db.users.deleteOne({ id: req.params.id });\n});\nrouter.patch('/users/:id', (req, res) => {\n  db.users.updateMany({ id: req.params.id }, req.body);\n});\nrouter.patch('/private/:id', authMiddleware, (req, res) => {\n  db.users.updateMany({ id: req.params.id }, req.body);\n});",
+  "ruleCheck": {"ruleId": "missing-authentication", "positiveLines": [1, 4], "negativeLine": 7}
  }
 ]

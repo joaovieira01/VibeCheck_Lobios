@@ -8,7 +8,7 @@
     {"id": "xxe", "lines": [36], "owasp": "A05", "kind": "gap", "expectedRuleId": "xxe"},
     {"id": "template-injection", "lines": [43], "owasp": "A05", "kind": "gap", "expectedRuleId": "template-injection"},
     {"id": "mass-assignment", "lines": [49], "owasp": "A01", "kind": "gap", "expectedRuleId": "mass-assignment"},
-    {"id": "admin-sem-autenticacao", "lines": [56], "owasp": "A01", "kind": "gap", "expectedRuleId": "missing-authentication"},
+    {"id": "admin-sem-autenticacao", "lines": [55], "owasp": "A01", "kind": "gap", "expectedRuleId": "missing-authentication"},
     {"id": "csrf-get-mutavel", "lines": [60], "owasp": "A01", "kind": "gap", "expectedRuleId": "csrf-get-mutable"},
     {"id": "token-md5-deterministico", "lines": [75], "owasp": "A07", "kind": "gap", "expectedRuleId": "weak-token-hash", "nota": "weak-password-hash nao deve sinalizar hash de token"},
     {"id": "enumeracao-de-usuarios", "lines": [74, 82], "owasp": "A07", "kind": "gap", "expectedRuleId": "user-enumeration"},
