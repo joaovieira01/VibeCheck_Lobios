@@ -74,9 +74,56 @@ Variáveis de ambiente (todas opcionais; veja `.env.example`):
 | `VIBECHECK_MAX_LINE_CHARS` | 1000 | Truncamento de linha antes das regex |
 | `VIBECHECK_SCAN_TIMEOUT_SECONDS` | 10 | Orçamento de tempo por análise |
 | `VIBECHECK_RATE_LIMIT` | true | Limites de taxa |
+| `AI_ENABLED` | false | Ativa a triagem opcional OpenAI-compatible |
+| `AI_BASE_URL` | — | Endpoint de chat completions (HTTPS; HTTP apenas localhost) |
+| `AI_API_KEY` | — | Chave do provedor, somente em variável de ambiente |
+| `AI_MODEL` | — | Identificador do modelo |
+| `AI_TIMEOUT_SECONDS` | 20 | Timeout da chamada |
+| `AI_MAX_CALLS_PER_SCAN` | 10 | Orçamento de chamadas por análise |
+| `AI_CONCURRENCY` | 2 | Concorrência máxima do cliente |
+| `AI_DISCOVERY` | false | Habilita revisão heurística de funções de risco |
 
 **Sem `VIBECHECK_SMTP_HOST`, o link de recuperação só é impresso no log do servidor.**
 Serve para desenvolver; em produção configure o SMTP (só STARTTLS, com validação de certificado).
+
+## IA opcional
+
+A camada é desativada por padrão e não muda a saída do scanner quando
+`AI_ENABLED=false`. Com a chave ligada, triageia achados de regras; `AI_DISCOVERY`
+também precisa estar ligado para enviar funções de risco e receber sugestões
+separadas. O backend usa o formato OpenAI-compatible com a biblioteca padrão,
+sem SDKs de fornecedor ou dependências adicionais. O código é enviado ao
+endpoint selecionado somente quando a IA está habilitada.
+
+Exemplos **a confirmar** (endpoints e modelos podem mudar; confira a documentação
+vigente e os termos do provedor):
+
+| Provedor | `AI_BASE_URL` | `AI_MODEL` ilustrativo |
+|---|---|---|
+| Gemini OpenAI-compatible | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.0-flash` |
+| OpenRouter | `https://openrouter.ai/api/v1` | `openai/gpt-4o-mini` |
+| Ollama local | `http://localhost:11434/v1` | `qwen2.5:3b` |
+
+Defina `AI_API_KEY` com a chave do provedor (para Ollama local, use o valor
+esperado pela sua configuração local). Não inclua credenciais na URL. Em planos
+gratuitos, o código enviado pode ser usado pelo provedor para treinamento ou
+melhoria do serviço; confirme as políticas antes de transmitir código
+confidencial e não envie segredos. A camada limita trechos, mascara padrões de
+segredo, não registra a chave e mantém os achados de regras no resultado.
+
+Ferramentas manuais, executadas a partir de `backend/`:
+
+```powershell
+python scripts/scan_file.py caminho\para\arquivo.py
+python scripts/scan_file.py caminho\para\arquivo.py --ai
+python scripts/metrics.py
+python scripts/metrics.py --ai
+```
+
+Se `--ai` for usado sem configuração válida, o script avisa e continua com
+regras. As métricas rules-only permanecem disponíveis. Não foram validados
+provedores/modelos reais nesta implementação; consulte `../README.md` para
+detalhes de privacidade.
 
 ## Estrutura
 

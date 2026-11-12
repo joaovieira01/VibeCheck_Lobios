@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+import argparse
 import json
+import sys
 import time
 from collections import defaultdict
 from pathlib import Path
-import sys
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
 
 from app.scanner import scan_source
+from app.ai.config import AIConfigurationError, AISettings
+from app.ai.provider import OpenAICompatibleClient
+from app.ai.triage import AIProvider
+from app.service import run_analysis
 
 
 SAMPLES = ROOT / "backend" / "tests" / "samples"
@@ -77,7 +82,135 @@ def _strict_recall(
     }
 
 
-def collect_metrics() -> dict[str, Any]:
+class _TimedProvider:
+    def __init__(self, provider: AIProvider):
+        self.provider = provider
+        self.elapsed_seconds = 0.0
+
+    def complete(self, **kwargs: Any) -> str:
+        started = time.perf_counter()
+        try:
+            return self.provider.complete(**kwargs)
+        finally:
+            self.elapsed_seconds += time.perf_counter() - started
+
+
+def _is_high_confidence_false_positive(finding: dict[str, Any]) -> bool:
+    return (
+        finding.get("aiVerdict") == "falso_positivo"
+        and finding.get("aiConfidence", 0) >= 0.85
+    )
+
+
+def _collect_ai_metrics(
+    *,
+    answer_key: dict[str, Any],
+    baseline: dict[str, Any],
+    settings: AISettings,
+    provider: AIProvider | None,
+) -> dict[str, Any]:
+    if not settings.enabled:
+        return {
+            "status": "desativada",
+            "warning": "AI_ENABLED não está true; foram mantidas as métricas somente por regras.",
+            "calls": 0,
+            "latencySeconds": 0,
+            "withoutAI": {
+                "recall": baseline["recallTotal"]["recall"],
+                "potentialFalsePositives": (
+                    len(baseline["findingsWithoutAnswerKeyMatch"])
+                    + len(baseline["safeSampleFindings"])
+                ),
+            },
+        }
+
+    timed_provider = _TimedProvider(
+        provider
+        or OpenAICompatibleClient(
+            settings.base_url, settings.api_key, settings.timeout_seconds
+        )
+    )
+    analyses: dict[str, dict[str, Any]] = {}
+    for path in (VULNERABLE_PATH, SAFE_PATH):
+        source = path.read_text(encoding="utf-8")
+        analyses[path.name] = run_analysis(
+            path.name,
+            source,
+            max_source_bytes=1_000_000,
+            max_line_chars=1000,
+            scan_timeout_seconds=10,
+            ai_settings=settings,
+            ai_provider=timed_provider,
+        )
+
+    vulnerable = analyses[VULNERABLE_PATH.name]
+    safe = analyses[SAFE_PATH.name]
+    expected_rules_by_line: dict[int, set[str]] = defaultdict(set)
+    for item in [*answer_key["itens"], *answer_key.get("expectedFindings", [])]:
+        for line in item["lines"]:
+            expected_rules_by_line[line].add(item["expectedRuleId"])
+
+    findings_with_ai = vulnerable["findings"]
+    effective_findings = [
+        finding
+        for finding in findings_with_ai
+        if not _is_high_confidence_false_positive(finding)
+    ]
+    flagged_false_positives = 0
+    for finding in findings_with_ai:
+        unmatched = any(
+            finding["id"] not in expected_rules_by_line.get(line, set())
+            for line in finding["locations"]
+        )
+        if unmatched and _is_high_confidence_false_positive(finding):
+            flagged_false_positives += 1
+    flagged_false_positives += sum(
+        _is_high_confidence_false_positive(finding) for finding in safe["findings"]
+    )
+
+    potential_false_positives = (
+        len(baseline["findingsWithoutAnswerKeyMatch"])
+        + len(baseline["safeSampleFindings"])
+    )
+    summary_statuses = {
+        analysis.get("aiSummary", {}).get("status", "indisponivel")
+        for analysis in analyses.values()
+    }
+    status = "indisponivel" if "indisponivel" in summary_statuses else "ativa"
+    return {
+        "status": status,
+        "model": settings.model,
+        "calls": sum(
+            analysis.get("aiSummary", {}).get("calls", 0)
+            for analysis in analyses.values()
+        ),
+        "latencySeconds": round(timed_provider.elapsed_seconds, 6),
+        "withoutAI": {
+            "recall": baseline["recallTotal"]["recall"],
+            "potentialFalsePositives": potential_false_positives,
+        },
+        "withAI": {
+            "recall": _strict_recall(
+                answer_key["itens"], effective_findings
+            )["recall"],
+            "potentialFalsePositives": max(
+                0, potential_false_positives - flagged_false_positives
+            ),
+            "flaggedFalsePositives": flagged_false_positives,
+        },
+        "note": (
+            "Estimativa de triagem: os achados continuam presentes; somente "
+            "falsos positivos com confiança >= 0,85 são descontados destas métricas."
+        ),
+    }
+
+
+def collect_metrics(
+    *,
+    ai: bool = False,
+    ai_settings: AISettings | None = None,
+    ai_provider: AIProvider | None = None,
+) -> dict[str, Any]:
     answer_key = json.loads(ANSWER_KEY_PATH.read_text(encoding="utf-8"))
     vulnerable, vulnerable_seconds = _measure(VULNERABLE_PATH)
     safe, safe_seconds = _measure(SAFE_PATH)
@@ -107,7 +240,7 @@ def collect_metrics() -> dict[str, Any]:
         )
         for category in sorted({item["owasp"] for item in items if item.get("owasp")})
     }
-    return {
+    metrics = {
         "sample": answer_key["arquivo"],
         "rulesRun": vulnerable["rulesRun"],
         "recallTotal": _strict_recall(items, vulnerable_findings),
@@ -123,11 +256,47 @@ def collect_metrics() -> dict[str, Any]:
             "total": vulnerable_seconds + safe_seconds,
         },
     }
+    if ai:
+        try:
+            settings = ai_settings or AISettings.from_env()
+            metrics["aiMetrics"] = _collect_ai_metrics(
+                answer_key=answer_key,
+                baseline=metrics,
+                settings=settings,
+                provider=ai_provider,
+            )
+        except AIConfigurationError as exc:
+            metrics["aiMetrics"] = {
+                "status": "indisponivel",
+                "warning": (
+                    f"Configuração de IA inválida ({exc}); foram mantidas as "
+                    "métricas somente por regras."
+                ),
+                "calls": 0,
+                "latencySeconds": 0,
+                "withoutAI": {
+                    "recall": metrics["recallTotal"]["recall"],
+                    "potentialFalsePositives": (
+                        len(metrics["findingsWithoutAnswerKeyMatch"])
+                        + len(metrics["safeSampleFindings"])
+                    ),
+                },
+            }
+    return metrics
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--ai",
+        action="store_true",
+        help="triagem opcional dos achados usando a configuração AI_*",
+    )
+    args = parser.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")
-    metrics = collect_metrics()
+    metrics = collect_metrics(ai=args.ai)
+    if args.ai and metrics["aiMetrics"].get("warning"):
+        print(f"Aviso: {metrics['aiMetrics']['warning']}", file=sys.stderr)
     print("Métricas da linha de base")
     total = metrics["recallTotal"]
     print(
@@ -162,6 +331,22 @@ def main() -> None:
         f"{len(metrics['findingsWithoutAnswerKeyMatch'])}"
     )
     print(f"Achados na amostra segura: {len(metrics['safeSampleFindings'])}")
+    if args.ai:
+        ai_metrics = metrics["aiMetrics"]
+        print(
+            "Triagem IA: "
+            f"status={ai_metrics['status']}; chamadas={ai_metrics['calls']}; "
+            f"latência={ai_metrics['latencySeconds']:.6f}s"
+        )
+        if "withAI" in ai_metrics:
+            print(
+                "Recall sem/com IA: "
+                f"{ai_metrics['withoutAI']['recall']:.1%}/"
+                f"{ai_metrics['withAI']['recall']:.1%}; falsos positivos "
+                "potenciais sem/com IA: "
+                f"{ai_metrics['withoutAI']['potentialFalsePositives']}/"
+                f"{ai_metrics['withAI']['potentialFalsePositives']}"
+            )
     timings = metrics["analysisSeconds"]
     print(
         f"Tempo de análise: {timings['total']:.6f}s "

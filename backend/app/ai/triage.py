@@ -38,7 +38,7 @@ _PRIVATE_KEY_BLOCK = re.compile(
     re.DOTALL,
 )
 _LONG_QUOTED_VALUE = re.compile(
-    r"""(["'])(?=[^"'\\]{24,}\1)[^"'\\]+\1"""
+    r"""(["'])(?=[^"'\\\r\n]{24,}\1)[^"'\\\r\n]+\1"""
 )
 _FUNCTION_START = re.compile(
     r"^\s*(?:(?:async\s+)?def\s+\w+\s*\(|"
@@ -121,8 +121,12 @@ class AIAnalyzer:
 
 def _mask_secrets(value: str) -> str:
     value = _PRIVATE_KEY_BLOCK.sub(
-        lambda match: "[REDACTED]"
-        + "".join("\n" for character in match.group(0) if character == "\n"),
+        lambda match: "".join(
+            "[REDACTED]" if index % 2 == 0 else part
+            for index, part in enumerate(
+                re.split(r"(\r\n|\r|\n)", match.group(0))
+            )
+        ),
         value,
     )
     value = _URL_CREDENTIALS.sub(r"\1[REDACTED]@", value)
@@ -186,28 +190,45 @@ def _snippet_for_finding(
     lines = source.splitlines()
     if not lines:
         return ""
-    fragments: list[str] = []
-    remaining = _MAX_SNIPPET_CHARS
+    selected_lines: list[tuple[int, str]] = []
+    selected_numbers: set[int] = set()
     for location in locations:
         if location < 1 or location > len(lines):
             continue
         start, end = _function_bounds(lines, location - 1, filename)
         if end - start > _MAX_SNIPPET_LINES:
             end = start + _MAX_SNIPPET_LINES
-        masked_lines = _mask_secrets("\n".join(lines[start:end])).splitlines()
-        block = [
-            f"{start + offset + 1}: {line}"
-            for offset, line in enumerate(masked_lines)
-        ]
-        text = "\n".join(block)
-        if len(text) > remaining:
-            text = text[:remaining]
-        if text:
-            fragments.append(text)
-            remaining -= len(text) + 1
-        if remaining <= 0:
+        for line_index in range(start, end):
+            line_number = line_index + 1
+            if line_number not in selected_numbers:
+                selected_lines.append((line_number, lines[line_index]))
+                selected_numbers.add(line_number)
+            if len(selected_lines) >= _MAX_SNIPPET_LINES:
+                break
+        if len(selected_lines) >= _MAX_SNIPPET_LINES:
             break
-    return "\n".join(fragments)[:_MAX_SNIPPET_CHARS]
+    if not selected_lines:
+        return ""
+
+    masked_lines = _mask_secrets(
+        "\n".join(line for _, line in selected_lines)
+    ).splitlines()
+    prefixes = [f"{line_number}: " for line_number, _ in selected_lines]
+    separator_chars = len(selected_lines) - 1
+    body_budget = _MAX_SNIPPET_CHARS - sum(map(len, prefixes)) - separator_chars
+    remaining_budget = max(0, body_budget)
+    remaining_lines = len(selected_lines)
+    numbered: list[str] = []
+    for prefix, body in zip(prefixes, masked_lines):
+        allowance = remaining_budget // remaining_lines
+        if len(body) > allowance and allowance >= 3:
+            body = body[: allowance - 3] + "..."
+        else:
+            body = body[:allowance]
+        numbered.append(prefix + body)
+        remaining_budget -= len(body)
+        remaining_lines -= 1
+    return "\n".join(numbered)
 
 
 def _cache_key(rule_id: str, snippet: str, model: str) -> str:

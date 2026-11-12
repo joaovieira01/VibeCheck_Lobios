@@ -170,6 +170,58 @@ Abra http://localhost:5173.
 
 > Sem `VITE_API_URL`, o frontend funciona em **modo local**: cadastro, análise e histórico ficam no navegador.
 
+## 🤖 IA opcional (backend)
+
+A análise por regras continua sendo o padrão. A camada de IA do backend é
+independente de fornecedor, usa a API OpenAI-compatible de chat completions e
+fica desligada por padrão. Quando ativada, pode triar os achados existentes;
+revisar funções de risco e acrescentar sugestões separadas exige também
+`AI_DISCOVERY=true`. A IA não remove achados das regras.
+
+Configure somente por variáveis de ambiente no backend (por exemplo, no `.env`
+local, nunca commitado):
+
+```dotenv
+AI_ENABLED=true
+AI_BASE_URL=https://api.example.invalid/v1
+AI_API_KEY=replace-with-provider-key
+AI_MODEL=replace-with-model-id
+AI_TIMEOUT_SECONDS=20
+AI_MAX_CALLS_PER_SCAN=10
+AI_CONCURRENCY=2
+AI_DISCOVERY=false
+```
+
+Exemplos de endpoint/modelo **a confirmar** com a documentação e disponibilidade
+atuais de cada provedor:
+
+| Provedor | `AI_BASE_URL` de exemplo | `AI_MODEL` de exemplo |
+|---|---|---|
+| Gemini OpenAI-compatible | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.0-flash` |
+| OpenRouter | `https://openrouter.ai/api/v1` | `openai/gpt-4o-mini` |
+| Ollama local | `http://localhost:11434/v1` | `qwen2.5:3b` |
+
+Use a chave fornecida pelo provedor em `AI_API_KEY`; não coloque credenciais na
+URL. Exige HTTPS, exceto HTTP para `localhost`/`127.0.0.1`. Endpoints gratuitos
+podem usar o código enviado para treinamento ou melhoria do serviço: confira os
+termos de privacidade antes de habilitar e não envie segredos, código
+confidencial ou dados pessoais sem autorização. O código é enviado ao endpoint
+configurado para análise; a chave, URL e trecho de prompt não são incluídos nos
+resultados da análise.
+
+Sem configuração válida, a API preserva o resultado das regras e informa a IA
+como indisponível. A integração não instala SDK de fornecedor e usa somente
+bibliotecas já disponíveis. Para experimentar as ferramentas locais:
+
+```powershell
+cd backend
+python scripts/scan_file.py caminho\para\arquivo.py --ai
+python scripts/metrics.py --ai
+```
+
+Sem `--ai`, `scan_file.py` executa somente as regras. A IA não é usada no modo
+local do frontend nem pelo bot de revisão de Pull Requests.
+
 ## 🔌 Integração frontend ↔ API
 
 Com `VITE_API_URL` definido em `frontend/.env.local`:

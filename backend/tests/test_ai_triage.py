@@ -6,6 +6,7 @@ import json
 import secrets
 import socket
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from app.ai.config import AISettings
@@ -18,6 +19,8 @@ from app.ai.triage import (
     triage_findings,
     validate_triage_response,
 )
+
+CORPUS_PATH = Path(__file__).parent / "fixtures" / "ai_triage_corpus.json"
 
 
 class FakeProvider:
@@ -349,7 +352,7 @@ class TriageTests(unittest.TestCase):
             f'api_key="{secret_value}"',
             f"Authorization: Bearer {secret_value}",
             f"auth = {jwt}",
-            f"endpoint=https://{url_user}:{secret_value}@example.invalid/path",
+            f"endpoint=" + "https://" + f"{url_user}:{secret_value}@example.invalid/path",
             "-----BEGIN PRIVATE KEY-----",
             private_payload,
             "-----END PRIVATE KEY-----",
@@ -366,6 +369,175 @@ class TriageTests(unittest.TestCase):
         snippet = _snippet_for_finding(source, "module.py", [6])
         line_numbers = [int(line.split(":", 1)[0]) for line in snippet.splitlines()]
         self.assertEqual(list(range(1, len(lines) + 1)), line_numbers)
+
+
+    def test_masking_redacts_runtime_secret_shapes_and_preserves_every_line(self):
+        password = secrets.token_urlsafe(32)
+        secret = secrets.token_urlsafe(32)
+        token = secrets.token_urlsafe(32)
+        api_key = secrets.token_urlsafe(32)
+        bearer = "Bearer " + secrets.token_urlsafe(32)
+        jwt = ".".join(secrets.token_urlsafe(18) for _ in range(3))
+        entropy_value = secrets.token_urlsafe(48)
+        url_user = "user-" + secrets.token_hex(8)
+        url_password = secrets.token_urlsafe(24)
+        private_payload = secrets.token_urlsafe(48)
+        lines = [
+            "def handler():",
+            f'    password = "{password}"',
+            f'    secret = "{secret}"',
+            f'    token = "{token}"',
+            f'    api_key = "{api_key}"',
+            f"    authorization = \"{bearer}\"",
+            f"    jwt_value = \"{jwt}\"",
+            f'    long_value = "{entropy_value}"',
+            f"    endpoint = \""
+            + "https://"
+            + f"{url_user}:{url_password}@example.invalid/path\"",
+            "    private_key = '''-----BEGIN PRIVATE KEY-----",
+            private_payload,
+            "-----END PRIVATE KEY-----'''",
+            "    return True",
+        ]
+        source = "\n".join(lines)
+        masked = _mask_secrets(source)
+
+        for value in (
+            password,
+            secret,
+            token,
+            api_key,
+            bearer,
+            jwt,
+            entropy_value,
+            url_user,
+            url_password,
+            private_payload,
+        ):
+            self.assertNotIn(value, masked)
+        self.assertEqual(len(source.splitlines()), len(masked.splitlines()))
+
+        provider = FakeProvider()
+        triage_findings([finding(line=13)], source, "handler.py", analyzer(provider))
+        payload = json.loads(provider.calls[0]["messages"][-1]["content"])
+        snippet = payload["findings"][0]["code"].splitlines()[1:-1]
+        self.assertEqual(len(lines), len(snippet))
+        self.assertEqual(
+            list(range(1, len(lines) + 1)),
+            [int(line.split(":", 1)[0]) for line in snippet],
+        )
+
+    def test_private_key_block_is_marked_per_line_in_the_sent_snippet(self):
+        private_payload = secrets.token_urlsafe(48)
+        lines = [
+            "def load_key():",
+            "    key = '''",
+            "-----BEGIN PRIVATE KEY-----",
+            "",
+            private_payload,
+            "-----END PRIVATE KEY-----",
+            "'''",
+            "    return key",
+        ]
+        source = "\n".join(lines)
+        masked = _mask_secrets(source)
+        self.assertEqual(len(source.splitlines()), len(masked.splitlines()))
+        self.assertEqual(
+            ["[REDACTED]"] * 4,
+            [line.strip() for line in masked.splitlines()[2:6]],
+        )
+
+        provider = FakeProvider()
+        triage_findings([finding(line=4)], source, "handler.py", analyzer(provider))
+        payload = json.loads(provider.calls[0]["messages"][-1]["content"])
+        sent_lines = payload["findings"][0]["code"].splitlines()[1:-1]
+        self.assertEqual(len(lines), len(sent_lines))
+        self.assertEqual(
+            ["[REDACTED]"] * 4,
+            [line.split(": ", 1)[1].strip() for line in sent_lines[2:6]],
+        )
+
+    def test_labeled_triage_corpus_with_fake_provider_preserves_snippet_lines(self):
+        corpus = json.loads(CORPUS_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(len(corpus), 20)
+        self.assertEqual(
+            {item["expectedVerdict"] for item in corpus},
+            {"confirmado", "falso_positivo"},
+        )
+        verdicts = {item["id"]: item["expectedVerdict"] for item in corpus}
+        cases_by_id = {item["id"]: item for item in corpus}
+
+        class LabeledFakeProvider:
+            def __init__(self):
+                self.calls = []
+
+            def complete(self, *, model, messages, max_tokens, temperature=0):
+                self.calls.append(messages)
+                user = json.loads(messages[-1]["content"])
+                return json.dumps(
+                    {
+                        "results": [
+                            {
+                                "id": item["id"],
+                                "verdict": verdicts[item["id"]],
+                                "confidence": 0.96,
+                                "reason": "Rótulo de teste offline.",
+                            }
+                            for item in user["findings"]
+                        ]
+                    }
+                )
+
+        provider = LabeledFakeProvider()
+        current = analyzer(provider)
+        results_by_id = {}
+        calls_per_language = {"python": [], "javascript": []}
+        for case in corpus:
+            language = "python" if case["filename"].endswith(".py") else "javascript"
+            calls_per_language[language].append(case)
+
+        for language, cases in calls_per_language.items():
+            lines = []
+            items = []
+            for case in cases:
+                start_line = len(lines) + 1
+                lines.extend(case["source"].splitlines())
+                absolute_line = start_line + case["line"] - 1
+                items.append(
+                    finding(
+                        case["id"],
+                        title=case["title"],
+                        cwe=case["cwe"],
+                        line=absolute_line,
+                    )
+                )
+            filename = "corpus.py" if language == "python" else "corpus.js"
+            results_by_id.update(
+                triage_findings(items, "\n".join(lines), filename, current)
+            )
+
+        for case in corpus:
+            with self.subTest(case=case["id"]):
+                self.assertEqual(
+                    results_by_id[case["id"]]["verdict"], case["expectedVerdict"]
+                )
+        self.assertEqual(current.calls, 4)
+        self.assertEqual(len(provider.calls), 4)
+        for request in provider.calls:
+            user = json.loads(request[-1]["content"])
+            for sent_item in user["findings"]:
+                snippet_lines = sent_item["code"].splitlines()[1:-1]
+                numbers = [
+                    int(line.split(":", 1)[0]) for line in snippet_lines
+                ]
+                self.assertTrue(numbers)
+                self.assertEqual(
+                    len(snippet_lines),
+                    len(cases_by_id[sent_item["id"]]["source"].splitlines()),
+                )
+                self.assertEqual(
+                    numbers, list(range(numbers[0], numbers[-1] + 1))
+                )
 
 
 if __name__ == "__main__":

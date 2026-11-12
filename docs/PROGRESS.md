@@ -106,3 +106,19 @@ O caso previamente observado em `backend/app/main.py:296` deixou de aparecer: a 
 - As regras continuam heurísticas por linha/função, não fazem análise completa de fluxo de dados. Não generalizam automaticamente variáveis intermediárias, wrappers próprios, aliases arbitrários de bibliotecas, middleware customizado não nomeado como autenticação, nem construções multilinha complexas.
 - A proteção de upload e extração reconhece APIs/validações comuns; callbacks próprios e sanitizadores customizados precisam ser adicionados quando usados. `filter=` é aceito como sinal seguro sem avaliar a implementação do filtro.
 - Os dois resultados da autovarredura em `scanner.ts` ficam documentados como legítimos porque são os próprios padrões textuais das regexes de rota, não uso de SQL.
+
+## Etapa 3A — Camada de IA opcional
+
+**Estado:** concluída; sem commit ou push.
+
+- A IA é opcional e desligada por padrão. O backend usa chat completions OpenAI-compatible pela biblioteca padrão; não foram adicionados SDKs nem dependências.
+- Mantida a triagem separada dos achados de regras; a descoberta opcional depende de `AI_DISCOVERY=true`. A máscara preserva linhas e substitui cada linha de um bloco PEM por `[REDACTED]`. Literais longos são limitados a uma linha para evitar colapsar trechos multilinha.
+- Criado corpus rotulado de **20 trechos** (10 confirmados e 10 falsos positivos) e teste de fluxo offline com provedor falso. Os rótulos exercitam o protocolo; não foram usados para ajustar o prompt.
+- Criado `scripts/scan_file.py [--ai]`; sem configuração válida, avisa e segue somente com as regras. `scripts/metrics.py --ai` acrescenta estimativas de recall/possíveis falsos positivos, chamadas e latência, sem alterar a linha de base rules-only.
+- Documentação e `.env.example` descrevem configuração, limites, privacidade e exemplos Gemini/OpenRouter/Ollama marcados como “a confirmar”. Planos gratuitos podem usar código para treinamento; nenhuma integração real de provedor/modelo foi validada.
+- Testes direcionados: triagem/corpus **16/16**; scripts/métricas **4/4**, incluindo a linha de base **28/28**.
+- Verificação final: `python -m pytest` **107 passaram**, um aviso conhecido de depreciação Starlette/httpx; `npm test` **14 passaram**; `npm run build` passou.
+- `npm ci` foi executado uma vez: **112 pacotes adicionados, 113 auditados, 0 vulnerabilidades**. O npm avisou que os scripts `postinstall` de `core-js` e `esbuild` não estão aprovados por `allowScripts`; não alterei essa configuração. `frontend/package-lock.json` e `backend/requirements*.txt` permaneceram intactos.
+- Métrica rules-only final: **28/28 (100%)**, **0** itens por regra errada, **0** não detectados, achado adicional **1/1**, **0** achados sem correspondência e **0** na amostra segura.
+- `git diff --check` passou. Busca por formatos comuns de chaves/tokens reais e URLs com credenciais não encontrou correspondências no repositório.
+- Não houve chamada a provedor real. Configuração, endpoint, modelo, qualidade dos rótulos e comportamento de rate limit/termos de retenção de qualquer serviço externo seguem sem validação real; os testes de IA usam apenas provedor falso sem sockets.
