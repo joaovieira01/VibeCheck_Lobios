@@ -2,7 +2,7 @@
 
 Ferramenta de auditoria de segurança para código gerado por IA e escrito com pressa. Você envia um arquivo ou cola um trecho, e o VibeCheck aponta padrões de risco com a linha exata, o impacto provável, as referências CWE e OWASP e uma recomendação de correção.
 
-**Demo:** https://vibecheck-website-ten.vercel.app/
+**Demo:** https://vibechecklobios.vercel.app/
 
 **Status:** MVP em desenvolvimento ativo. As funcionalidades e os formatos de resposta ainda podem mudar.
 
