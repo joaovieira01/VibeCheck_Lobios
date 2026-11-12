@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 
 try:
     from fastapi.testclient import TestClient
@@ -88,6 +89,35 @@ class ApiTests(ApiTestBase):
 
         self.assertEqual(self.client.delete("/api/analyses", headers=headers).status_code, 204)
         self.assertEqual(self.client.get("/api/analyses", headers=headers).json(), [])
+
+    def test_ai_disabled_preserves_analysis_and_history_response_shape(self):
+        auth = self.register()
+        headers = self.bearer(auth["token"])
+        with patch.dict(os.environ, {"AI_ENABLED": "false"}):
+            created = self.client.post(
+                "/api/analyses",
+                headers=headers,
+                json={"filename": "app.py", "source": "DEBUG = True"},
+            )
+            self.assertEqual(created.status_code, 201, created.text)
+            body = created.json()
+            self.assertEqual(
+                set(body),
+                {
+                    "id", "filename", "language", "linesAnalyzed", "createdAt",
+                    "durationMs", "findings", "rulesRun",
+                },
+            )
+            self.assertEqual(
+                self.client.get("/api/analyses", headers=headers).json(),
+                [body],
+            )
+            self.assertEqual(
+                self.client.get(
+                    f"/api/analyses/{body['id']}", headers=headers
+                ).json(),
+                body,
+            )
 
     def test_requires_authentication(self):
         for method, url in [("get", "/api/analyses"), ("get", "/api/auth/me"), ("delete", "/api/analyses")]:

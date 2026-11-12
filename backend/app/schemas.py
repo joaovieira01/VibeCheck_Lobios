@@ -37,6 +37,27 @@ class FindingOut(CamelModel):
     prevention: str
     locations: list[int]
     evidence: list[str]
+    ai_verdict: Literal["confirmado", "falso_positivo", "incerto"] | None = None
+    ai_confidence: float | None = Field(default=None, ge=0, le=1)
+    ai_reason: str | None = Field(default=None, max_length=200)
+
+
+class AIFindingOut(CamelModel):
+    id: str = Field(max_length=80)
+    title: str = Field(max_length=100)
+    category: str = Field(max_length=30)
+    line: int = Field(ge=1)
+    severity: Literal["Alta"]
+    origin: Literal["ia"]
+    confidence: float = Field(ge=0, le=1)
+    reason: str = Field(max_length=200)
+    notice: str = Field(max_length=100)
+
+
+class AISummaryOut(CamelModel):
+    status: Literal["ativa", "desativada", "indisponivel"]
+    calls: int = Field(ge=0)
+    model: str | None = Field(default=None, max_length=100)
 
 
 class AnalysisOut(CamelModel):
@@ -48,6 +69,8 @@ class AnalysisOut(CamelModel):
     duration_ms: int
     findings: list[FindingOut]
     rules_run: int
+    ai_findings: list[AIFindingOut] = Field(default_factory=list, max_length=20)
+    ai_summary: AISummaryOut | None = None
 
 
 class RuleOut(CamelModel):

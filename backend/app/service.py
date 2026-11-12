@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
+import logging
 import re
 import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from .ai.config import AIConfigurationError, AISettings
+from .ai.discovery import discover_risky_functions
+from .ai.provider import OpenAICompatibleClient
+from .ai.triage import AIAnalyzer, AIProvider, triage_findings
 from .errors import ApiError
 from .scanner import ScanTimeout, scan_source
+
+_MAX_AI_FINDINGS = 20
+_CREDENTIAL_URL = re.compile(r"(?i)https?://[^\s/@:]+:[^\s/@]+@")
+_LOGGER = logging.getLogger("vibecheck.ai")
 
 
 _LANGUAGES = {
@@ -47,6 +56,12 @@ def _iso_now() -> str:
     )
 
 
+def _safe_ai_text(value: str, api_key: str, limit: int) -> str:
+    value = value.replace(api_key, "[REDACTED]") if api_key else value
+    value = _CREDENTIAL_URL.sub("[URL REDACTED]", value)
+    return value.replace("\r", " ").replace("\n", " ")[:limit]
+
+
 def run_analysis(
     filename: str,
     source: str,
@@ -54,6 +69,8 @@ def run_analysis(
     max_source_bytes: int,
     max_line_chars: int,
     scan_timeout_seconds: float | None = None,
+    ai_settings: AISettings | None = None,
+    ai_provider: AIProvider | None = None,
 ) -> dict[str, Any]:
     """Retorna um dict no formato ``Analysis`` do frontend (camelCase)."""
     try:
@@ -82,7 +99,7 @@ def run_analysis(
         ) from exc
     duration_ms = round((time.perf_counter() - start) * 1000)
 
-    return {
+    analysis = {
         "id": str(uuid.uuid4()),
         "filename": filename,
         "language": detect_language(filename),
@@ -92,3 +109,68 @@ def run_analysis(
         "findings": [finding.to_dict() for finding in result.findings],
         "rulesRun": result.rules_run,
     }
+
+    try:
+        ai_settings = ai_settings or AISettings.from_env()
+    except AIConfigurationError:
+        analysis["aiSummary"] = {"status": "indisponivel", "calls": 0}
+        return analysis
+    if not ai_settings.enabled:
+        return analysis
+
+    analyzer: AIAnalyzer | None = None
+    try:
+        provider = ai_provider or OpenAICompatibleClient(
+            ai_settings.base_url,
+            ai_settings.api_key,
+            ai_settings.timeout_seconds,
+        )
+        analyzer = AIAnalyzer(ai_settings, provider)
+        rule_findings = analysis["findings"]
+        annotations = triage_findings(
+            rule_findings, source, filename, analyzer
+        )
+        for finding in rule_findings:
+            annotation = annotations.get(finding["id"])
+            if annotation is None:
+                continue
+            finding["aiVerdict"] = annotation["verdict"]
+            finding["aiConfidence"] = annotation["confidence"]
+            finding["aiReason"] = _safe_ai_text(
+                annotation["reason"], ai_settings.api_key, 200
+            )
+
+        if ai_settings.discovery:
+            suggestions = discover_risky_functions(
+                source, filename, rule_findings, analyzer
+            )
+            analysis["aiFindings"] = [
+                {
+                    **suggestion,
+                    "reason": _safe_ai_text(
+                        suggestion["reason"], ai_settings.api_key, 200
+                    ),
+                }
+                for suggestion in suggestions[:_MAX_AI_FINDINGS]
+            ]
+
+        model = _safe_ai_text(ai_settings.model, ai_settings.api_key, 100)
+        if "://" in model:
+            model = ""
+        analysis["aiSummary"] = {
+            "status": "indisponivel" if analyzer.status == "indisponivel" else "ativa",
+            "calls": analyzer.calls,
+            **({"model": model} if model else {}),
+        }
+    except Exception:
+        _LOGGER.warning("A camada de IA falhou; mantendo o resultado das regras.")
+        analysis["aiSummary"] = {
+            "status": "indisponivel",
+            "calls": analyzer.calls if analyzer is not None else 0,
+            **(
+                {"model": _safe_ai_text(ai_settings.model, ai_settings.api_key, 100)}
+                if ai_settings.model and "://" not in ai_settings.model
+                else {}
+            ),
+        }
+    return analysis
