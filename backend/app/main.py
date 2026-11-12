@@ -186,7 +186,7 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
 
     @app.get("/api/health", response_model=HealthOut)
     def health() -> dict[str, object]:
-        return {"status": "ok", "rules": len(RULES) + 1}
+        return {"status": "ok", "rules": len(RULES)}
 
     @app.get("/api/rules", response_model=list[RuleOut])
     def list_rules() -> list[dict[str, str]]:
@@ -198,6 +198,11 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
                 "cwe": rule.cwe,
                 "owaspId": rule.owasp_id,
                 "owaspName": rule.owasp_name,
+                "description": rule.description,
+                "recommendation": rule.recommendation,
+                "impact": rule.impact,
+                "prevention": rule.prevention,
+                "confidence": rule.confidence,
             }
             for rule in RULES
         ]
@@ -263,7 +268,12 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
 
     # ---------- análises ----------
 
-    @app.post("/api/analyses", response_model=AnalysisOut, status_code=201)
+    @app.post(
+        "/api/analyses",
+        response_model=AnalysisOut,
+        response_model_exclude_unset=True,
+        status_code=201,
+    )
     def create_analysis(body: AnalysisRequest, user: User) -> dict[str, Any]:
         if not analysis_limit.hit(user["id"]):
             raise too_many(60)
@@ -277,11 +287,19 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
         store.save(user["id"], analysis)
         return analysis
 
-    @app.get("/api/analyses", response_model=list[AnalysisOut])
+    @app.get(
+        "/api/analyses",
+        response_model=list[AnalysisOut],
+        response_model_exclude_unset=True,
+    )
     def list_analyses(user: User) -> list[dict[str, Any]]:
         return store.list(user["id"])
 
-    @app.get("/api/analyses/{analysis_id}", response_model=AnalysisOut)
+    @app.get(
+        "/api/analyses/{analysis_id}",
+        response_model=AnalysisOut,
+        response_model_exclude_unset=True,
+    )
     def get_analysis(analysis_id: str, user: User) -> dict[str, Any]:
         analysis = store.get(user["id"], analysis_id)
         if analysis is None:

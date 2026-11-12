@@ -1,0 +1,182 @@
+[
+  {
+    "id": "corpus-python-sql-interpolation",
+    "title": "Interpolacao SQL",
+    "cwe": "CWE-89",
+    "expectedVerdict": "confirmado",
+    "filename": "sql.py",
+    "line": 2,
+    "source": "def find_account(account_id):\n    return db.execute(f\"SELECT * FROM accounts WHERE id = {account_id}\")"
+  },
+  {
+    "id": "corpus-python-sql-parameters",
+    "title": "SQL parametrizado",
+    "cwe": "CWE-89",
+    "expectedVerdict": "falso_positivo",
+    "filename": "sql.py",
+    "line": 2,
+    "source": "def find_account(account_id):\n    return db.execute(\"SELECT * FROM accounts WHERE id = ?\", (account_id,))"
+  },
+  {
+    "id": "corpus-python-unsafe-extract",
+    "title": "Extracao de arquivo",
+    "cwe": "CWE-22",
+    "expectedVerdict": "confirmado",
+    "filename": "archive.py",
+    "line": 2,
+    "source": "def unpack(archive, target):\n    archive.extractall(target)"
+  },
+  {
+    "id": "corpus-python-filtered-extract",
+    "title": "Extracao filtrada",
+    "cwe": "CWE-22",
+    "expectedVerdict": "falso_positivo",
+    "filename": "archive.py",
+    "line": 2,
+    "source": "def unpack(archive, target):\n    archive.extractall(target, filter=\"data\")"
+  },
+  {
+    "id": "corpus-python-route-without-auth",
+    "title": "Rota sem autenticacao",
+    "cwe": "CWE-306",
+    "expectedVerdict": "confirmado",
+    "filename": "routes.py",
+    "line": 2,
+    "source": "def remove_account(request):\n    return delete_account(request.path_params[\"id\"])"
+  },
+  {
+    "id": "corpus-python-route-depends",
+    "title": "Rota com autenticacao",
+    "cwe": "CWE-306",
+    "expectedVerdict": "falso_positivo",
+    "filename": "routes.py",
+    "line": 2,
+    "source": "def remove_account(request, user=Depends(require_user)):\n    return delete_account(request.path_params[\"id\"])"
+  },
+  {
+    "id": "corpus-python-unsafe-log",
+    "title": "Log com entrada externa",
+    "cwe": "CWE-117",
+    "expectedVerdict": "confirmado",
+    "filename": "logs.py",
+    "line": 2,
+    "source": "def record_login(request):\n    logger.warning(\"Login failed: %s\", request.args[\"name\"])"
+  },
+  {
+    "id": "corpus-python-sanitized-log",
+    "title": "Log sanitizado",
+    "cwe": "CWE-117",
+    "expectedVerdict": "falso_positivo",
+    "filename": "logs.py",
+    "line": 2,
+    "source": "def record_login(request):\n    logger.warning(\"Login failed for %s\", sanitize(request.args[\"name\"]))"
+  },
+  {
+    "id": "corpus-python-weak-token-hash",
+    "title": "Hash fraco de token",
+    "cwe": "CWE-328",
+    "expectedVerdict": "confirmado",
+    "filename": "tokens.py",
+    "line": 2,
+    "source": "def token_digest(token):\n    return hashlib.md5(token.encode()).hexdigest()"
+  },
+  {
+    "id": "corpus-python-constant-time-compare",
+    "title": "Comparacao constante",
+    "cwe": "CWE-208",
+    "expectedVerdict": "falso_positivo",
+    "filename": "tokens.py",
+    "line": 2,
+    "source": "def verify_signature(expected, received):\n    return hmac.compare_digest(expected, received)"
+  },
+  {
+    "id": "corpus-js-mass-assignment",
+    "title": "Atribuicao em massa",
+    "cwe": "CWE-915",
+    "expectedVerdict": "confirmado",
+    "filename": "routes.js",
+    "line": 2,
+    "source": "function updateProfile(req, res) {\n  return User.findByIdAndUpdate(req.params.id, req.body);\n}"
+  },
+  {
+    "id": "corpus-js-allowlisted-update",
+    "title": "Atualizacao por allowlist",
+    "cwe": "CWE-915",
+    "expectedVerdict": "falso_positivo",
+    "filename": "routes.js",
+    "line": 2,
+    "source": "function updateProfile(req, res) {\n  const fields = pick(req.body, [\"displayName\"]);\n  return User.findByIdAndUpdate(req.params.id, fields);\n}"
+  },
+  {
+    "id": "corpus-js-client-upload-name",
+    "title": "Nome de upload controlado pelo cliente",
+    "cwe": "CWE-434",
+    "expectedVerdict": "confirmado",
+    "filename": "upload.js",
+    "line": 2,
+    "source": "function storeFile(req, res) {\n  return saveFile(path.join(uploadDir, req.file.originalname), req.file.buffer);\n}"
+  },
+  {
+    "id": "corpus-js-generated-upload-name",
+    "title": "Nome de upload gerado",
+    "cwe": "CWE-434",
+    "expectedVerdict": "falso_positivo",
+    "filename": "upload.js",
+    "line": 2,
+    "source": "function storeFile(req, res) {\n  return saveFile(path.join(uploadDir, randomUUID()), req.file.buffer);\n}"
+  },
+  {
+    "id": "corpus-js-user-template",
+    "title": "Template criado com entrada externa",
+    "cwe": "CWE-1336",
+    "expectedVerdict": "confirmado",
+    "filename": "templates.js",
+    "line": 2,
+    "source": "function renderPreview(req, res) {\n  return new Template(req.body.template).render();\n}"
+  },
+  {
+    "id": "corpus-js-static-template",
+    "title": "Template estatico",
+    "cwe": "CWE-1336",
+    "expectedVerdict": "falso_positivo",
+    "filename": "templates.js",
+    "line": 2,
+    "source": "function renderPreview(req, res) {\n  return templates.preview.render({ name: req.body.name });\n}"
+  },
+  {
+    "id": "corpus-js-unbounded-pagination",
+    "title": "Paginacao sem limite",
+    "cwe": "CWE-400",
+    "expectedVerdict": "confirmado",
+    "filename": "pagination.js",
+    "line": 2,
+    "source": "function listItems(req, res) {\n  return Item.find().limit(Number(req.query.limit));\n}"
+  },
+  {
+    "id": "corpus-js-capped-pagination",
+    "title": "Paginacao limitada",
+    "cwe": "CWE-400",
+    "expectedVerdict": "falso_positivo",
+    "filename": "pagination.js",
+    "line": 2,
+    "source": "function listItems(req, res) {\n  const limit = Math.min(Number(req.query.limit) || 20, 100);\n  return Item.find().limit(limit);\n}"
+  },
+  {
+    "id": "corpus-js-direct-signature-compare",
+    "title": "Comparacao direta de assinatura",
+    "cwe": "CWE-347",
+    "expectedVerdict": "confirmado",
+    "filename": "signatures.js",
+    "line": 2,
+    "source": "function verifySignature(expected, received) {\n  return expected === received;\n}"
+  },
+  {
+    "id": "corpus-js-timing-safe-compare",
+    "title": "Comparacao em tempo constante",
+    "cwe": "CWE-208",
+    "expectedVerdict": "falso_positivo",
+    "filename": "signatures.js",
+    "line": 2,
+    "source": "function verifySignature(expected, received) {\n  return crypto.timingSafeEqual(expected, received);\n}"
+  }
+]

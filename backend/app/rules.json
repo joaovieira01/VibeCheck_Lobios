@@ -13,7 +13,8 @@
     "description": "Uma senha, chave ou token parece estar definido como texto literal no código.",
     "recommendation": "Revogue e substitua o segredo exposto. Leia o novo valor de um gerenciador de segredos ou variável de ambiente.",
     "impact": "Quem obtiver acesso ao repositório pode usar a credencial para acessar sistemas, dados ou contas associados.",
-    "prevention": "Adicione secret scanning ao pre-commit e CI, não versione arquivos locais de configuração e rotacione segredos após qualquer exposição."
+    "prevention": "Adicione secret scanning ao pre-commit e CI, não versione arquivos locais de configuração e rotacione segredos após qualquer exposição.",
+    "confidence": "alta"
   },
   {
     "id": "weak-password-hash",
@@ -22,14 +23,15 @@
     "cwe": "CWE-328",
     "owaspId": "A04",
     "owaspName": "Falhas criptográficas",
-    "pattern": "\\b(?:hashlib\\.)?(?:md5|sha1)\\s*\\(|\\bcrypto\\.createHash\\s*\\(\\s*[\"'](?:md5|sha1)[\"']",
+    "pattern": "(?=[^\\r\\n]*\\b(?:password|passwd|senha|pwd)\\b)(?:\\b(?:hashlib\\.)?(?:md5|sha1)\\s*\\(|\\bcrypto\\.createHash\\s*\\(\\s*[\"\\'](?:md5|sha1)[\"\\'])",
     "flags": "i",
     "safePattern": null,
     "safeFlags": null,
     "description": "MD5 e SHA-1 são algoritmos rápidos e inadequados para armazenamento de senhas.",
     "recommendation": "Migre para Argon2id, scrypt ou bcrypt com salt individual e custo atual; re-hashe senhas durante o próximo login.",
     "impact": "Após vazamento do banco, atacantes podem quebrar hashes offline e reutilizar senhas descobertas em outros serviços.",
-    "prevention": "Use uma biblioteca mantida de password hashing e adicione uma regra de lint que bloqueie algoritmos obsoletos para credenciais."
+    "prevention": "Use uma biblioteca mantida de password hashing e adicione uma regra de lint que bloqueie algoritmos obsoletos para credenciais.",
+    "confidence": "média"
   },
   {
     "id": "sql-injection",
@@ -45,7 +47,8 @@
     "description": "A consulta SQL parece misturar instruções e valores dinâmicos por interpolação ou concatenação.",
     "recommendation": "Use parâmetros vinculados (prepared statements) para todos os valores. Não concatene entradas externas no texto SQL.",
     "impact": "Um atacante pode alterar consultas, ler ou modificar dados, contornar autenticação ou destruir informações.",
-    "prevention": "Prefira ORM/consultas parametrizadas e teste entradas manipuladas nos limites da aplicação."
+    "prevention": "Prefira ORM/consultas parametrizadas e teste entradas manipuladas nos limites da aplicação.",
+    "confidence": "média"
   },
   {
     "id": "jwt-algorithm",
@@ -61,7 +64,8 @@
     "description": "A chamada de verificação do JWT não demonstra, na mesma linha, uma allowlist explícita de algoritmos.",
     "recommendation": "Defina os algoritmos confiáveis e valide também emissor, audiência, expiração e permissões do token.",
     "impact": "Uma verificação permissiva pode aceitar tokens forjados ou assinados com um algoritmo inesperado.",
-    "prevention": "Centralize validação de tokens numa função testada e rejeite algoritmos e claims não autorizados."
+    "prevention": "Centralize validação de tokens numa função testada e rejeite algoritmos e claims não autorizados.",
+    "confidence": "média"
   },
   {
     "id": "idor-project",
@@ -77,7 +81,8 @@
     "description": "A consulta ao projeto usa o identificador do recurso sem evidenciar uma verificação de propriedade na mesma instrução.",
     "recommendation": "Restrinja a consulta pelo usuário/tenant autenticado e negue acesso quando o recurso não pertencer a ele.",
     "impact": "Uma pessoa autenticada pode trocar o identificador e visualizar ou alterar projetos de outras pessoas.",
-    "prevention": "Implemente autorização no servidor para cada operação e teste acesso cruzado entre contas."
+    "prevention": "Implemente autorização no servidor para cada operação e teste acesso cruzado entre contas.",
+    "confidence": "média"
   },
   {
     "id": "dynamic-eval",
@@ -93,7 +98,8 @@
     "description": "eval() interpreta uma string como código executável.",
     "recommendation": "Remova eval() e use um parser limitado ou operações explícitas permitidas.",
     "impact": "Entradas controladas por terceiros podem executar código com as permissões do processo.",
-    "prevention": "Trate entrada como dado, evite avaliação dinâmica e bloqueie essa API via lint e revisão de código."
+    "prevention": "Trate entrada como dado, evite avaliação dinâmica e bloqueie essa API via lint e revisão de código.",
+    "confidence": "alta"
   },
   {
     "id": "command-injection",
@@ -109,7 +115,8 @@
     "description": "Um comando do sistema parece incorporar entrada dinâmica ou ser interpretado por um shell.",
     "recommendation": "Evite shell e strings concatenadas. Passe argumentos separados, valide-os com allowlists e defina limites de tempo.",
     "impact": "Um atacante pode executar comandos arbitrários com as permissões do processo e comprometer o servidor.",
-    "prevention": "Use APIs de processo com lista de argumentos, sem shell, e teste entradas com metacaracteres."
+    "prevention": "Use APIs de processo com lista de argumentos, sem shell, e teste entradas com metacaracteres.",
+    "confidence": "média"
   },
   {
     "id": "pickle",
@@ -125,7 +132,8 @@
     "description": "pickle pode executar código durante a desserialização de conteúdo manipulado.",
     "recommendation": "Não use pickle com dados não confiáveis. Prefira JSON ou um formato sem execução de objetos.",
     "impact": "Um payload malicioso pode executar código no servidor durante a importação.",
-    "prevention": "Use formatos de dados simples e valide esquemas antes de processar conteúdo externo."
+    "prevention": "Use formatos de dados simples e valide esquemas antes de processar conteúdo externo.",
+    "confidence": "alta"
   },
   {
     "id": "unsafe-yaml",
@@ -141,7 +149,8 @@
     "description": "yaml.load() pode instanciar objetos quando não usa um loader seguro.",
     "recommendation": "Use yaml.safe_load() ou especifique explicitamente SafeLoader.",
     "impact": "Configurações manipuladas podem causar execução de código ou efeitos inesperados durante o carregamento.",
-    "prevention": "Prefira loaders seguros por padrão e teste a rejeição de tags e objetos não permitidos."
+    "prevention": "Prefira loaders seguros por padrão e teste a rejeição de tags e objetos não permitidos.",
+    "confidence": "alta"
   },
   {
     "id": "tls-disabled",
@@ -157,7 +166,8 @@
     "description": "A validação de certificado TLS está desabilitada para uma conexão.",
     "recommendation": "Remova verify=False e configure uma cadeia de certificados confiável.",
     "impact": "Uma conexão pode ser interceptada para expor credenciais ou adulterar respostas.",
-    "prevention": "Mantenha a validação habilitada em todos os ambientes e monitore erros de certificado."
+    "prevention": "Mantenha a validação habilitada em todos os ambientes e monitore erros de certificado.",
+    "confidence": "alta"
   },
   {
     "id": "path-traversal",
@@ -173,7 +183,8 @@
     "description": "Um caminho de arquivo parece ser construído com dados de uma solicitação.",
     "recommendation": "Normalize o caminho e confirme que ele permanece dentro do diretório permitido. Prefira identificadores a caminhos fornecidos pelo usuário.",
     "impact": "Um atacante pode ler ou sobrescrever arquivos fora da pasta esperada, incluindo configurações e segredos.",
-    "prevention": "Valide caminhos após canonicalização e teste ../, barras invertidas e codificações alternativas."
+    "prevention": "Valide caminhos após canonicalização e teste ../, barras invertidas e codificações alternativas.",
+    "confidence": "média"
   },
   {
     "id": "weak-random-token",
@@ -189,7 +200,8 @@
     "description": "Um token de segurança parece ser criado com um gerador não criptográfico.",
     "recommendation": "Use crypto.randomBytes() ou secrets.token_urlsafe() e limite validade e uso do token.",
     "impact": "Tokens previsíveis podem permitir redefinição de senha ou sequestro de sessão.",
-    "prevention": "Use APIs criptográficas para tokens de autenticação e teste sua entropia e expiração."
+    "prevention": "Use APIs criptográficas para tokens de autenticação e teste sua entropia e expiração.",
+    "confidence": "alta"
   },
   {
     "id": "insecure-cookie",
@@ -205,7 +217,8 @@
     "description": "A configuração do cookie não mostra todas as flags de proteção na mesma linha.",
     "recommendation": "Configure httpOnly, secure: true e sameSite: 'lax' (ou 'strict' conforme o fluxo), usando HTTPS.",
     "impact": "O cookie pode ser exposto sem TLS ou enviado em contextos cross-site, aumentando risco de roubo de sessão e CSRF.",
-    "prevention": "Defina opções seguras por padrão num helper de sessão e teste os headers de cookie."
+    "prevention": "Defina opções seguras por padrão num helper de sessão e teste os headers de cookie.",
+    "confidence": "média"
   },
   {
     "id": "xss-innerhtml",
@@ -221,7 +234,8 @@
     "description": "HTML bruto está sendo inserido no DOM, possivelmente sem escape ou sanitização.",
     "recommendation": "Prefira textContent e renderização escapada. Se HTML for necessário, sanitize com uma biblioteca mantida.",
     "impact": "Conteúdo controlado por usuários pode executar JavaScript no navegador de outras pessoas.",
-    "prevention": "Escape de acordo com o contexto, evite HTML bruto e use CSP como defesa complementar."
+    "prevention": "Escape de acordo com o contexto, evite HTML bruto e use CSP como defesa complementar.",
+    "confidence": "média"
   },
   {
     "id": "debug-mode",
@@ -237,7 +251,8 @@
     "description": "O modo de depuração está habilitado no código-fonte.",
     "recommendation": "Desative debug em ambientes acessíveis e controle a configuração por ambiente seguro.",
     "impact": "Mensagens detalhadas ou consoles de depuração podem revelar informações internas ou permitir ações não autorizadas.",
-    "prevention": "Mantenha debug desligado por padrão e valide a configuração antes de publicar."
+    "prevention": "Mantenha debug desligado por padrão e valide a configuração antes de publicar.",
+    "confidence": "média"
   },
   {
     "id": "wildcard-cors",
@@ -253,7 +268,8 @@
     "description": "A configuração CORS parece permitir requisições de qualquer origem.",
     "recommendation": "Restrinja origens aos domínios confiáveis e não combine origem curinga com credenciais.",
     "impact": "Sites externos podem conseguir acessar respostas da API em contextos com credenciais.",
-    "prevention": "Mantenha uma allowlist por ambiente e teste os cabeçalhos CORS publicados."
+    "prevention": "Mantenha uma allowlist por ambiente e teste os cabeçalhos CORS publicados.",
+    "confidence": "média"
   },
   {
     "id": "server-all-interfaces",
@@ -269,7 +285,8 @@
     "description": "O servidor está configurado para escutar em todas as interfaces de rede.",
     "recommendation": "Use servidor de produção adequado e restrinja exposição e firewall conforme o ambiente.",
     "impact": "Um servidor de desenvolvimento pode ficar acessível a redes não confiáveis.",
-    "prevention": "Separe configurações locais e de produção e revise a exposição de rede antes do deploy."
+    "prevention": "Separe configurações locais e de produção e revise a exposição de rede antes do deploy.",
+    "confidence": "média"
   },
   {
     "id": "empty-exception",
@@ -285,7 +302,8 @@
     "description": "Uma exceção ampla parece ser descartada sem tratamento ou registro.",
     "recommendation": "Trate exceções esperadas, registre contexto sem dados sensíveis e retorne erro seguro; preserve rollback e limpeza.",
     "impact": "Falhas podem passar despercebidas, deixar estado inconsistente ou permitir que uma operação continue sem validação.",
-    "prevention": "Evite blocos vazios e teste erros em autenticação, autorização e dependências."
+    "prevention": "Evite blocos vazios e teste erros em autenticação, autorização e dependências.",
+    "confidence": "média"
   },
   {
     "id": "sensitive-logging",
@@ -301,6 +319,400 @@
     "description": "Uma chamada de logging parece incluir senha, token ou credencial.",
     "recommendation": "Remova segredos e dados pessoais dos logs; registre somente metadados necessários e aplique redação.",
     "impact": "Segredos podem permanecer em sistemas de observabilidade com retenção e acesso amplos.",
-    "prevention": "Defina campos permitidos para logs, use redaction centralizada e teste que tokens não sejam registrados."
+    "prevention": "Defina campos permitidos para logs, use redaction centralizada e teste que tokens não sejam registrados.",
+    "confidence": "média"
+  },
+  {
+    "id": "ssrf",
+    "title": "Requisição a destino controlado pelo usuário",
+    "severity": "Alta",
+    "cwe": "CWE-918",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "pattern": "\\b(?:(?:requests|httpx|urllib\\.request|aiohttp)\\.(?:get|post|put|patch|delete|request|urlopen)|(?:axios|got)\\.(?:get|post|put|patch|delete|request)|session\\.(?:get|post|put|patch|delete)|fetch)\\s*\\([^\\r\\n)]{0,350}(?:request\\.(?:GET|POST|args|values|form|json|query_params|data|body)\\b|request\\.(?:GET|POST|args|values|form|json|query_params|data|body)\\s*(?:\\[|\\.get\\s*\\(|\\.)|req\\.(?:query|params|body)\\b|req\\.(?:query|params|body)\\s*(?:\\[|\\.)|payload\\b)",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "safeContextPattern": "allowlist|startswith\\s*\\(\\s*[\"']https?://|urlparse.*hostname|is_allowed_host",
+    "contextLines": 3,
+    "description": "Uma URL recebida da solicitação é usada diretamente para iniciar uma conexão.",
+    "recommendation": "Permita apenas destinos e esquemas explicitamente autorizados; valide host e IP após resolver DNS e bloqueie redes internas.",
+    "impact": "Um atacante pode induzir o servidor a consultar serviços internos ou metadados de infraestrutura.",
+    "prevention": "Use allowlist de destinos, bloqueio de endereços privados e proteção contra redirecionamentos e rebinding DNS.",
+    "confidence": "média"
+  },
+  {
+    "id": "open-redirect",
+    "title": "Redirecionamento para destino controlado pelo usuário",
+    "severity": "Média",
+    "cwe": "CWE-601",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "pattern": "\\bredirect\\s*\\([^\\r\\n)]{0,250}(?:request\\.(?:GET|POST|args|values|form|json|query_params)\\s*(?:\\[|\\.get\\s*\\(|\\.)|req\\.(?:query|params|body)\\s*(?:\\[|\\.|\\b)|payload\\b)",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "safeContextPattern": "is_safe_redirect|allowed_hosts|allowlisted|urlparse.*netloc|url_for\\s*\\(|startswith\\s*\\(\\s*[\"']/",
+    "contextLines": 3,
+    "description": "O destino de um redirecionamento parece vir diretamente de parâmetros da solicitação.",
+    "recommendation": "Redirecione para caminhos locais ou valide o destino contra uma allowlist de hosts.",
+    "impact": "Links legítimos podem ser usados para encaminhar vítimas a páginas de phishing ou conteúdo malicioso.",
+    "prevention": "Centralize redirecionamentos seguros e teste URLs externas, esquemas alternativos e caminhos codificados.",
+    "confidence": "média"
+  },
+  {
+    "id": "xxe",
+    "title": "Parser XML com entidades externas habilitadas",
+    "severity": "Alta",
+    "cwe": "CWE-611",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "pattern": "\\b(?:XMLParser|DocumentBuilderFactory)\\s*\\([^\\r\\n)]{0,200}(?:resolve_entities\\s*=\\s*True|load_dtd\\s*=\\s*True|setExpandEntityReferences\\s*\\(\\s*true)",
+    "flags": "i",
+    "safePattern": "resolve_entities\\s*=\\s*False|load_dtd\\s*=\\s*False|no_network\\s*=\\s*True|setExpandEntityReferences\\s*\\(\\s*false",
+    "safeFlags": "i",
+    "description": "A configuração do parser XML permite resolução de entidades externas ou DTD.",
+    "recommendation": "Desabilite DTDs e entidades externas e use um parser seguro por padrão.",
+    "impact": "XML malicioso pode ler arquivos locais, consultar serviços internos ou consumir recursos.",
+    "prevention": "Fixe opções seguras do parser e teste payloads XML com entidades externas e DTD.",
+    "confidence": "média"
+  },
+  {
+    "id": "template-injection",
+    "title": "Possível injeção em template do servidor",
+    "severity": "Alta",
+    "cwe": "CWE-1336",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "pattern": "\\b(?:render_template_string|Template|new\\s+Function|compile|createTemplate|template)\\s*\\(\\s*(?:request\\.|req\\.|payload\\b|[^\\r\\n)]{0,350}(?:\\s\\+\\s|\\.format\\s*\\(|%\\s*[A-Za-z_(]|\\bf[\"']|\\$\\{))",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "description": "Dados parecem ser concatenados ao texto de um template interpretado no servidor.",
+    "recommendation": "Mantenha o template constante e passe dados como parâmetros escapados pelo mecanismo de templates.",
+    "impact": "Expressões fornecidas por usuários podem ser avaliadas no servidor e expor dados ou executar ações.",
+    "prevention": "Evite construir templates com concatenação e teste entradas com sintaxe de template.",
+    "confidence": "média"
+  },
+  {
+    "id": "mass-assignment",
+    "title": "Atualização de objeto com dados não filtrados",
+    "severity": "Alta",
+    "cwe": "CWE-915",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "pattern": "(?:\\.update\\s*\\(\\s*(?:\\*\\*\\s*)?(?:request\\.(?:json|form|data|POST)|req\\.(?:body|params)|(?:data|dados|payload|body|attrs)\\b)|Object\\.assign\\s*\\([^,\\r\\n]{0,100},\\s*(?:req\\.(?:body|params)|request\\.(?:json|form|data|POST))|findByIdAndUpdate\\s*\\([^,\\r\\n]{0,150},\\s*(?:req\\.(?:body|params)|request\\.(?:json|form|data|POST)))",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "safeContextPattern": "campos_permitidos|allowed_fields|pick\\s*\\(|permit\\s*\\(",
+    "contextLines": 3,
+    "description": "Um objeto parece aceitar diretamente campos enviados pelo cliente sem filtragem visível.",
+    "recommendation": "Construa a atualização apenas com campos explicitamente permitidos e valide cada valor.",
+    "impact": "Campos internos como papel, proprietário ou estado podem ser alterados por um cliente.",
+    "prevention": "Use DTOs com allowlist, valide autorização por campo e teste propriedades inesperadas.",
+    "confidence": "baixa"
+  },
+  {
+    "id": "missing-authentication",
+    "title": "Operação sensível sem verificação de autenticação visível",
+    "severity": "Alta",
+    "cwe": "CWE-306",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "pattern": "\\b(?:delete_one|deleteMany|delete|drop|update_one|updateMany)\\s*\\(",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "safeContextPattern": "login_required|current_?user|session.{0,30}(?:uid|user|admin)|is_admin|authorize|authenticated_?user|require_auth|permission_classes|Depends\\s*\\(|jwt_required|requires_auth|request\\.user\\.is_authenticated|req\\.user\\b|auth(?:entication)?Middleware|requireAuth|passport\\.authenticate",
+    "contextLines": 4,
+    "description": "Uma operação destrutiva ou sensível não mostra uma verificação de autenticação próxima.",
+    "recommendation": "Exija autenticação e autorização do lado do servidor antes de modificar ou excluir recursos.",
+    "impact": "Chamadores não autenticados podem alterar dados ou executar operações administrativas.",
+    "prevention": "Aplique middleware de autorização e teste acesso anônimo para cada rota sensível.",
+    "confidence": "baixa"
+  },
+  {
+    "id": "csrf-get-mutable",
+    "title": "Rota GET pode alterar estado",
+    "severity": "Alta",
+    "cwe": "CWE-352",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "pattern": "@(?:\\w+\\.)*route\\s*\\([^\\r\\n)]{0,180}methods\\s*=\\s*\\[[^\\]]{0,80}[\"']GET[\"']",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "safeContextPattern": "csrf|csrf_token|CSRFProtect",
+    "contextLines": 5,
+    "requiredContextPattern": "\\.(?:update\\w*|delete\\w*|save|insert|commit|execute)\\s*\\(",
+    "requiredContextLines": 5,
+    "description": "Uma rota declarada como GET parece executar uma operação que altera estado.",
+    "recommendation": "Use POST, PUT, PATCH ou DELETE para mutações e valide um token anti-CSRF.",
+    "impact": "Um site externo pode induzir o navegador autenticado a disparar uma ação sem consentimento.",
+    "prevention": "Mantenha GET sem efeitos colaterais, use proteção CSRF e teste fluxos com cookies de sessão.",
+    "confidence": "baixa"
+  },
+  {
+    "id": "weak-token-hash",
+    "title": "Token de autenticação derivado de hash previsível",
+    "severity": "Alta",
+    "cwe": "CWE-330",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "pattern": "(?=[^\\r\\n]*\\b\\w*(?:token|access_?token|session_?token|reset_?token)\\w*\\b)[^\\r\\n]*(?:\\b(?:hashlib\\.)?(?:md5|sha1)\\s*\\(|\\b(?:crypto\\.)?createHash\\s*\\(\\s*[\"'](?:md5|sha1)[\"']|\\bhashlib\\.(?:md5|sha1)\\s*\\()",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "description": "Um token parece ser derivado de MD5 ou SHA-1 em vez de uma fonte aleatória segura.",
+    "recommendation": "Gere tokens com CSPRNG, com entropia suficiente, validade curta e uso único quando aplicável.",
+    "impact": "Tokens determinísticos ou previsíveis podem permitir falsificação ou sequestro de sessão.",
+    "prevention": "Use secrets.token_urlsafe ou crypto.randomBytes e evite derivar tokens de identificadores previsíveis.",
+    "confidence": "média"
+  },
+  {
+    "id": "token-timing-comparison",
+    "title": "Comparação de token potencialmente vulnerável a timing",
+    "severity": "Média",
+    "cwe": "CWE-208",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "pattern": "\\b\\w*(?:token|secret|signature|sign|digest|hash)\\w*\\b\\s*={2,3}\\s*[^=\\r\\n]+|[^=\\r\\n]+\\s*={2,3}\\s*\\b\\w*(?:token|secret|signature|sign|digest|hash)\\w*\\b",
+    "flags": "i",
+    "safePattern": "compare_digest|timingSafeEqual",
+    "safeFlags": "i",
+    "description": "Um token parece ser comparado com igualdade comum, que pode revelar tempo dependente do conteúdo.",
+    "recommendation": "Use comparação em tempo constante fornecida pela biblioteca criptográfica da plataforma.",
+    "impact": "Medições repetidas podem ajudar a inferir bytes de um segredo em certos ambientes.",
+    "prevention": "Use compare_digest ou timingSafeEqual e evite comparação manual de credenciais.",
+    "confidence": "média"
+  },
+  {
+    "id": "assert-authorization",
+    "title": "Assert usado como controle de autorização",
+    "severity": "Alta",
+    "cwe": "CWE-617",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "pattern": "\\bassert\\s+(?:session\\.(?:get\\s*\\(|\\[)|current_user\\.|user\\.is_admin|is_admin)",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "description": "Uma condição assert parece ser usada para proteger uma operação de acesso.",
+    "recommendation": "Substitua assert por uma verificação explícita que retorne ou lance erro de autorização.",
+    "impact": "Assertions podem ser removidas em execução otimizada e não devem ser barreiras de segurança.",
+    "prevention": "Use controles de acesso explícitos e teste a aplicação também com otimizações habilitadas.",
+    "confidence": "média"
+  },
+  {
+    "id": "unbounded-pagination",
+    "title": "Paginação sem limite máximo visível",
+    "severity": "Média",
+    "cwe": "CWE-400",
+    "owaspId": "A06",
+    "owaspName": "Design inseguro",
+    "pattern": "\\b(?:limit|limite|page_size|per_page|pageSize)\\s*=\\s*(?:int\\s*\\(\\s*)?(?:request\\.(?:GET|POST|args|values|query_params|query)\\s*(?:\\[|\\.get)|req\\.(?:query|params)\\s*(?:\\[|\\.)|payload\\.(?:limit|page_size|pageSize))",
+    "flags": "i",
+    "safePattern": "min\\s*\\(|max\\s*\\(|clamp\\s*\\(",
+    "safeFlags": "i",
+    "description": "O tamanho da página parece ser controlado pelo cliente sem teto visível.",
+    "recommendation": "Defina um valor padrão e limite o tamanho máximo permitido no servidor.",
+    "impact": "Solicitações grandes podem consumir memória, CPU e conexões do banco.",
+    "prevention": "Aplique limites de paginação no servidor e teste entradas nulas, negativas e excessivas.",
+    "confidence": "média"
+  },
+  {
+    "id": "unvalidated-upload",
+    "title": "Upload salvo com nome fornecido pelo cliente",
+    "severity": "Alta",
+    "cwe": "CWE-434",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "pattern": "\\b(?:file|arquivo|upload|req\\.file)\\.(?:save|saveAs|write|writeFile)\\s*\\([^\\r\\n]{0,300}(?:filename|originalname)|\\b(?:writeFile|writeFileSync|createWriteStream)\\s*\\([^\\r\\n]{0,250}(?:originalname|file\\.originalname)|\\bfilename\\s*:\\s*[^,\\r\\n]{0,200}file\\.originalname|\\bcb\\s*\\([^\\r\\n)]{0,150}originalname",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "safeContextPattern": "secure_filename|allowed_extensions|allowed_file|content_type|file_signature",
+    "contextLines": 3,
+    "description": "Um arquivo enviado parece ser salvo usando o nome ou extensão controlados pelo cliente.",
+    "recommendation": "Gere nome interno, valide tipo e conteúdo, limite tamanho e armazene fora da raiz pública.",
+    "impact": "Uploads podem sobrescrever arquivos, escapar do diretório ou introduzir conteúdo executável.",
+    "prevention": "Use allowlist de tipos, nomes seguros, limites e inspeção de conteúdo no servidor.",
+    "confidence": "média"
+  },
+  {
+    "id": "tempfile-mktemp",
+    "title": "Criação insegura de arquivo temporário",
+    "severity": "Alta",
+    "cwe": "CWE-377",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "pattern": "\\btempfile\\.mktemp\\s*\\(",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "description": "tempfile.mktemp escolhe um nome sem criar o arquivo atomicamente.",
+    "recommendation": "Use NamedTemporaryFile, TemporaryDirectory ou uma API segura equivalente.",
+    "impact": "Outro processo pode ocupar o caminho entre a escolha do nome e a criação do arquivo.",
+    "prevention": "Use criação atômica de arquivos temporários com permissões restritas.",
+    "confidence": "alta"
+  },
+  {
+    "id": "zip-slip",
+    "title": "Extração de arquivo compactado sem validação de caminhos",
+    "severity": "Alta",
+    "cwe": "CWE-22",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "pattern": "\\b(?:extractall|extractTo)\\s*\\(",
+    "flags": "i",
+    "safePattern": "filter\\s*=",
+    "safeFlags": "i",
+    "safeContextPattern": "realpath|commonpath|is_relative_to|resolve\\s*\\(|startswith\\s*\\(|relative_to\\s*\\(",
+    "contextLines": 4,
+    "description": "Um arquivo compactado é extraído sem validação visível de que os caminhos permaneçam no diretório alvo.",
+    "recommendation": "Canonicalize cada destino e rejeite caminhos fora da raiz antes de extrair.",
+    "impact": "Entradas manipuladas podem gravar arquivos em locais arbitrários do sistema.",
+    "prevention": "Valide todos os membros do arquivo e teste caminhos absolutos, ../ e separadores alternativos.",
+    "confidence": "média"
+  },
+  {
+    "id": "xpath-injection",
+    "title": "Possível injeção XPath",
+    "severity": "Alta",
+    "cwe": "CWE-643",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "pattern": "\\b(?:\\.xpath|xpath)\\s*\\([^\\r\\n)]{0,350}(?:\\+\\s*[A-Za-z_]|\\.format\\s*\\(|%\\s*[A-Za-z_(]|\\bf[\"']|\\$\\{)",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "description": "Uma expressão XPath parece ser construída por concatenação com dados variáveis.",
+    "recommendation": "Use variáveis parametrizadas da biblioteca XPath em vez de concatenar entrada.",
+    "impact": "Uma entrada pode alterar a consulta e revelar ou selecionar nós não autorizados.",
+    "prevention": "Parametrize consultas e teste nomes contendo aspas, operadores e predicados XPath.",
+    "confidence": "média"
+  },
+  {
+    "id": "redos",
+    "title": "Expressão regular com repetição aninhada",
+    "severity": "Alta",
+    "cwe": "CWE-1333",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "pattern": "\\b(?:re\\.(?:match|search|fullmatch|compile))\\s*\\([^\\r\\n]{0,250}\\([^\\r\\n)]{0,100}[+*][^\\r\\n)]{0,100}\\)[+*{]",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "description": "Uma expressão regular parece aplicar quantificação repetida a um grupo que já contém repetição.",
+    "recommendation": "Simplifique o padrão e evite quantificadores aninhados em texto controlado por usuários.",
+    "impact": "Entradas especialmente construídas podem causar consumo excessivo de CPU no matching.",
+    "prevention": "Teste padrões com entradas longas e use mecanismos com limites ou garantias de tempo linear.",
+    "confidence": "média"
+  },
+  {
+    "id": "log-injection",
+    "title": "Entrada não confiável concatenada em log",
+    "severity": "Média",
+    "cwe": "CWE-117",
+    "owaspId": "A09",
+    "owaspName": "Falhas de registro e alerta",
+    "pattern": "\\b(?:logging|logger|console)\\.(?:debug|info|warn|warning|error|log)\\s*\\([^\\r\\n)]{0,300}(?:request\\.(?:GET|POST|args|form|json|query_params|data|body)\\b|req\\.(?:query|params|body)\\b|payload\\b)(?:[^\\r\\n)]{0,100})",
+    "flags": "i",
+    "safePattern": "extra\\s*=",
+    "safeFlags": "i",
+    "description": "Dados da solicitação parecem ser concatenados diretamente em uma mensagem de log.",
+    "recommendation": "Registre campos estruturados e neutralize caracteres de controle e quebras de linha.",
+    "impact": "Um atacante pode forjar ou confundir registros e alertas de segurança.",
+    "prevention": "Use logging estruturado, sanitização central e testes para CR/LF em entradas.",
+    "confidence": "média"
+  },
+  {
+    "id": "toctou",
+    "title": "Verificação de arquivo separada do uso",
+    "severity": "Alta",
+    "cwe": "CWE-367",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "pattern": "\\bos\\.path\\.(?:exists|isfile|access)\\s*\\(",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "safeContextPattern": "lock|atomic|commonpath|realpath|open\\s*\\([^\\r\\n)]{0,100}[\"'][wax]",
+    "contextLines": 3,
+    "description": "Uma verificação de existência ou permissão pode estar separada da operação posterior sobre o arquivo.",
+    "recommendation": "Abra o arquivo diretamente com flags apropriadas e trate a falha sem uma checagem prévia vulnerável.",
+    "impact": "Um concorrente pode trocar o arquivo entre a verificação e seu uso.",
+    "prevention": "Prefira operações atômicas e descritores já abertos; teste condições de corrida.",
+    "confidence": "baixa"
+  },
+  {
+    "id": "stack-trace-exposure",
+    "title": "Detalhes internos da exceção expostos",
+    "severity": "Média",
+    "cwe": "CWE-209",
+    "owaspId": "A10",
+    "owaspName": "Tratamento incorreto de condições excepcionais",
+    "pattern": "__traceback__|traceback\\.(?:format_exc|print_exc)\\s*\\(|\\bprint_exc\\s*\\(",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "description": "A resposta ou fluxo da aplicação parece expor traceback ou detalhes internos de uma exceção.",
+    "recommendation": "Retorne uma mensagem genérica ao cliente e registre detalhes apenas em logs protegidos.",
+    "impact": "Caminhos, componentes e dados internos podem facilitar ataques posteriores.",
+    "prevention": "Centralize tratamento de erros e teste respostas de falha para ausência de stack traces.",
+    "confidence": "média"
+  },
+  {
+    "id": "aes-ecb",
+    "title": "Criptografia AES em modo ECB",
+    "severity": "Alta",
+    "cwe": "CWE-327",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "pattern": "\\b(?:AES|algorithms\\.AES)\\.MODE_ECB\\b|\\bAES\\.new\\s*\\([^\\r\\n)]{0,180}\\bMODE_ECB\\b|\\bmodes\\.ECB\\b|\\b(?:createCipheriv|createCipher)\\s*\\([^\\r\\n)]{0,100}[\"']aes-(?:128|192|256)-ecb[\"']",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "description": "AES está configurado no modo ECB, que não oculta padrões repetidos dos dados.",
+    "recommendation": "Use um modo autenticado como AES-GCM com nonce único e validação de integridade.",
+    "impact": "Padrões no texto claro podem permanecer visíveis no texto cifrado e permitir adulteração.",
+    "prevention": "Use bibliotecas criptográficas de alto nível e evite construir modos de operação manualmente.",
+    "confidence": "alta"
+  },
+  {
+    "id": "user-enumeration",
+    "title": "Resposta revela se uma conta existe",
+    "severity": "Média",
+    "cwe": "CWE-204",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "pattern": "(?:(?:e-?mail|usu[aá]rio|account|user|conta).{0,100}(?:n[aã]o cadastrad[oa]|inexistente|not found|does not exist|unknown|doesn't exist)|(?:not found|does not exist|unknown).{0,100}(?:e-?mail|usu[aá]rio|account|user|conta)|(?:404|status\\s*[:=]?\\s*404).{0,100}(?:account|user|conta).{0,60}(?:exist|found|cadastrad|inexistente)|if\\s+(?:not\\s+)?(?:user|account)\\b.{0,100}(?:404|status_code\\s*=\\s*404)|(?:404|status_code\\s*=\\s*404).{0,100}\\b(?:user|account)\\b)",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "description": "Uma mensagem parece distinguir contas existentes de contas ausentes.",
+    "recommendation": "Use mensagens e códigos de resposta equivalentes para contas existentes e inexistentes.",
+    "impact": "Atacantes podem identificar usuários válidos para direcionar tentativas de login ou fraude.",
+    "prevention": "Normalize respostas e tempos de autenticação e monitore tentativas de enumeração.",
+    "confidence": "baixa"
+  },
+  {
+    "id": "unlocked-dependency",
+    "title": "Dependência sem versão fixada",
+    "severity": "Média",
+    "cwe": "CWE-1104",
+    "owaspId": "A03",
+    "owaspName": "Falhas na cadeia de suprimentos",
+    "pattern": "^",
+    "flags": "i",
+    "safePattern": null,
+    "safeFlags": null,
+    "description": "Uma dependência não especifica uma versão verificável.",
+    "recommendation": "Fixe versões revisadas, mantenha lockfile e use ferramenta SCA para verificar CVEs e dependências transitivas.",
+    "impact": "Instalações em momentos diferentes podem resolver versões distintas, inclusive versões comprometidas.",
+    "prevention": "Gere e revise lockfiles, monitore avisos de segurança e valide dependências em CI. Esta regra não verifica CVEs.",
+    "manifestOnly": true,
+    "confidence": "média"
   }
 ]

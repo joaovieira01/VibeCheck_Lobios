@@ -1,4 +1,5 @@
 import json
+import time
 import unittest
 from pathlib import Path
 
@@ -98,6 +99,22 @@ class ScannerPortTests(unittest.TestCase):
         finding = next(f for f in result.findings if f.id == "unlocked-dependency")
         self.assertEqual(finding.locations, [1])
 
+    def test_comments_and_python_block_strings_are_ignored_without_shifting_lines(self):
+        source = (
+            "# eval(expression)\n"
+            '"""\n'
+            "return {'error': 'user not found'}\n"
+            '"""\n'
+            "# pickle.loads(payload)\n"
+            "DEBUG = True  # eval(expression)\n"
+        )
+        result = scan_source(source, "security.py")
+        self.assertEqual(ids(result), ["debug-mode"])
+        self.assertEqual(result.findings[0].locations, [6])
+
+        js = "/* eval(x)\nuser not found\n*/\nconst safe = true; // pickle.loads(x)"
+        self.assertEqual(scan_source(js, "security.js").findings, [])
+
 
 class ParityTests(unittest.TestCase):
     """Compara com a saída do scanner TypeScript original (tests/golden/expected.json).
@@ -116,6 +133,123 @@ class ParityTests(unittest.TestCase):
                 self.assertEqual(got, expected[case["name"]])
 
 
+class AddedRuleTests(unittest.TestCase):
+    def test_each_added_rule_has_a_positive_and_negative_golden_case(self):
+        corpus = json.loads((GOLDEN / "corpus.json").read_text(encoding="utf-8"))
+        cases = [case for case in corpus if "ruleCheck" in case]
+        self.assertGreaterEqual(len(cases), 21)
+        for case in cases:
+            check = case["ruleCheck"]
+            with self.subTest(case=case["name"]):
+                result = scan_source(case["source"], case["filename"])
+                finding = next(
+                    (item for item in result.findings if item.id == check["ruleId"]),
+                    None,
+                )
+                self.assertIsNotNone(finding, f"positive case for {check['ruleId']}")
+                positive_lines = check.get("positiveLines") or [check["positiveLine"]]
+                for line in positive_lines:
+                    self.assertIn(line, finding.locations)
+                self.assertNotIn(check["negativeLine"], finding.locations)
+
+    def test_safe_extractall_forms_are_not_reported(self):
+        source = (
+            "archive.extractall(destination, filter='data')\n"
+            "root = os.path.realpath(destination)\n"
+            "if not target.resolve().is_relative_to(root): raise ValueError()\n"
+            "archive.extractall(destination)\n"
+        )
+        result = scan_source(source, "archive.py")
+        self.assertEqual(ids(result), [])
+
+    def test_missing_authentication_reports_route_handler_and_honors_auth_signals(self):
+        source = (
+            "AuthUser = Annotated[dict, Depends(get_current_user)]\n"
+            "@app.delete('/items/{item_id}')\n"
+            "def remove_item(item_id):\n"
+            "    db.items.delete_one({'id': item_id})\n"
+            "@app.delete('/accounts/{account_id}')\n"
+            "def remove_account(user: UserModel):\n"
+            "    db.accounts.delete_one({'id': user.id})\n\n"
+            "@app.delete('/alias/{item_id}')\n"
+            "def remove_alias(user: AuthUser):\n"
+            "    db.items.delete_one({'id': user.id})\n\n"
+            "@router.delete('/private/{item_id}')\n"
+            "def remove_private(item_id: int = Depends(get_current_user)):\n"
+            "    db.items.delete_one({'id': item_id})\n"
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "routes.py").findings
+            if item.id == "missing-authentication"
+        )
+        self.assertEqual(finding.locations, [3, 6])
+
+    def test_missing_authentication_accepts_common_framework_authorization_signals(self):
+        source = (
+            "@permission_classes([IsAuthenticated])\n"
+            "def update_profile(request):\n"
+            "    db.users.update_one({'id': request.user.id}, request.data)\n\n"
+            "@login_required\n"
+            "def delete_profile(request):\n"
+            "    db.users.delete_one({'id': request.user.id})\n\n"
+            "@jwt_required()\n"
+            "@app.delete('/secured/{item_id}')\n"
+            "def delete_secured(item_id):\n"
+            "    db.items.delete_one({'id': item_id})\n"
+        )
+        self.assertNotIn(
+            "missing-authentication",
+            ids(scan_source(source, "views.py")),
+        )
+
+    def test_authenticated_destructive_route_is_not_reported_on_its_decorator(self):
+        source = (
+            "User = Annotated[dict, Depends(get_current_user)]\n"
+            "@app.delete('/history')\n"
+            "def clear_history(user: User):\n"
+            "    store.clear(user['id'])\n"
+        )
+        self.assertNotIn(
+            "missing-authentication",
+            ids(scan_source(source, "main.py")),
+        )
+
+    def test_unprotected_destructive_route_reports_handler_without_database_call(self):
+        source = (
+            "@app.delete('/clear')\n"
+            "def clear_history():\n"
+            "    return Response(status_code=204)\n"
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "routes.py").findings
+            if item.id == "missing-authentication"
+        )
+        self.assertEqual(finding.locations, [2])
+
+    def test_frontend_rule_copy_is_generated_from_backend_rules(self):
+        root = Path(__file__).parents[2]
+        backend_rules = root / "backend" / "app" / "rules.json"
+        frontend_rules = root / "frontend" / "src" / "data" / "rules.generated.json"
+        self.assertEqual(backend_rules.read_bytes(), frontend_rules.read_bytes())
+
+    def test_password_hash_rule_does_not_misclassify_token_hash(self):
+        source = 'return {"token": hashlib.md5(email.encode()).hexdigest()}'
+        result = scan_source(source, "auth.py")
+        self.assertIn("weak-token-hash", ids(result))
+        self.assertNotIn("weak-password-hash", ids(result))
+
+    def test_rules_include_confidence_and_all_owasp_2025_categories(self):
+        rules = json.loads((Path(__file__).parents[1] / "app" / "rules.json").read_text(encoding="utf-8"))
+        self.assertTrue(all(rule["confidence"] in {"alta", "média", "baixa"} for rule in rules))
+        self.assertEqual({rule["owaspId"] for rule in rules}, {f"A{number:02}" for number in range(1, 11)})
+        self.assertEqual(
+            {rule["id"] for rule in rules if rule["confidence"] == "baixa"},
+            {"mass-assignment", "missing-authentication", "csrf-get-mutable", "toctou", "user-enumeration"},
+        )
+
+
 class HardeningTests(unittest.TestCase):
     def test_long_lines_are_truncated_for_matching(self):
         line = "x" * 2000 + " DEBUG = True"
@@ -130,6 +264,13 @@ class HardeningTests(unittest.TestCase):
     def test_evidence_is_capped_at_500_chars(self):
         result = scan_source("DEBUG = True  #" + "x" * 900, "a.py")
         self.assertEqual(len(result.findings[0].evidence[0]), 500)
+
+    def test_all_rules_handle_1000_character_near_match_lines(self):
+        line = "re.match(r'^(a+)+$'," + "a" * 975
+        line = line[:1000].ljust(1000, "x")
+        started = time.perf_counter()
+        scan_source(line, "long.py", max_line_chars=1000, time_budget_seconds=1.0)
+        self.assertLess(time.perf_counter() - started, 1.0)
 
 
 if __name__ == "__main__":

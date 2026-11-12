@@ -112,24 +112,6 @@
     ]
    },
    {
-    "id": "weak-password-hash",
-    "title": "Hash criptográfico fraco para senha",
-    "severity": "Alta",
-    "cwe": "CWE-328",
-    "owaspId": "A04",
-    "owaspName": "Falhas criptográficas",
-    "description": "MD5 e SHA-1 são algoritmos rápidos e inadequados para armazenamento de senhas.",
-    "recommendation": "Migre para Argon2id, scrypt ou bcrypt com salt individual e custo atual; re-hashe senhas durante o próximo login.",
-    "impact": "Após vazamento do banco, atacantes podem quebrar hashes offline e reutilizar senhas descobertas em outros serviços.",
-    "prevention": "Use uma biblioteca mantida de password hashing e adicione uma regra de lint que bloqueie algoritmos obsoletos para credenciais.",
-    "locations": [
-     35
-    ],
-    "evidence": [
-     "return hashlib.md5(value.encode()).hexdigest()"
-    ]
-   },
-   {
     "id": "debug-mode",
     "title": "Modo debug habilitado",
     "severity": "Alta",
@@ -184,7 +166,7 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "demo-javascript": {
   "findings": [
@@ -242,24 +224,6 @@
     ],
     "evidence": [
      "const query = \"SELECT * FROM users WHERE id = \" + req.params.id;"
-    ]
-   },
-   {
-    "id": "weak-password-hash",
-    "title": "Hash criptográfico fraco para senha",
-    "severity": "Alta",
-    "cwe": "CWE-328",
-    "owaspId": "A04",
-    "owaspName": "Falhas criptográficas",
-    "description": "MD5 e SHA-1 são algoritmos rápidos e inadequados para armazenamento de senhas.",
-    "recommendation": "Migre para Argon2id, scrypt ou bcrypt com salt individual e custo atual; re-hashe senhas durante o próximo login.",
-    "impact": "Após vazamento do banco, atacantes podem quebrar hashes offline e reutilizar senhas descobertas em outros serviços.",
-    "prevention": "Use uma biblioteca mantida de password hashing e adicione uma regra de lint que bloqueie algoritmos obsoletos para credenciais.",
-    "locations": [
-     11
-    ],
-    "evidence": [
-     "return crypto.createHash(\"md5\").update(value).digest(\"hex\");"
     ]
    },
    {
@@ -335,11 +299,11 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "safe-controls": {
   "findings": [],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "crlf": {
   "findings": [
@@ -398,7 +362,7 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "repeated": {
   "findings": [
@@ -437,7 +401,7 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "pkg-star": {
   "findings": [
@@ -466,7 +430,7 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "pkg-nested-path": {
   "findings": [
@@ -489,7 +453,7 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "pkg-invalid-json": {
   "findings": [
@@ -514,11 +478,11 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "pkg-not-object": {
   "findings": [],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "requirements": {
   "findings": [
@@ -545,7 +509,7 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "requirements-upper": {
   "findings": [
@@ -570,11 +534,11 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "clean": {
   "findings": [],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "unicode": {
   "findings": [
@@ -615,7 +579,7 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "evidence-trim": {
   "findings": [
@@ -638,7 +602,7 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "sql-variants": {
   "findings": [
@@ -667,7 +631,7 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "misc-rules": {
   "findings": [
@@ -860,7 +824,7 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "cmd-variants": {
   "findings": [
@@ -889,11 +853,11 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "empty-lines": {
   "findings": [],
-  "rulesRun": 20
+  "rulesRun": 41
  },
  "no-ext": {
   "findings": [
@@ -916,6 +880,1129 @@
     ]
    }
   ],
-  "rulesRun": 20
+  "rulesRun": 41
+ },
+ "new-ssrf": {
+  "findings": [
+   {
+    "id": "ssrf",
+    "title": "Requisição a destino controlado pelo usuário",
+    "severity": "Alta",
+    "cwe": "CWE-918",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma URL recebida da solicitação é usada diretamente para iniciar uma conexão.",
+    "recommendation": "Permita apenas destinos e esquemas explicitamente autorizados; valide host e IP após resolver DNS e bloqueie redes internas.",
+    "impact": "Um atacante pode induzir o servidor a consultar serviços internos ou metadados de infraestrutura.",
+    "prevention": "Use allowlist de destinos, bloqueio de endereços privados e proteção contra redirecionamentos e rebinding DNS.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "requests.get(request.args['url'])"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-open-redirect": {
+  "findings": [
+   {
+    "id": "open-redirect",
+    "title": "Redirecionamento para destino controlado pelo usuário",
+    "severity": "Média",
+    "cwe": "CWE-601",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "O destino de um redirecionamento parece vir diretamente de parâmetros da solicitação.",
+    "recommendation": "Redirecione para caminhos locais ou valide o destino contra uma allowlist de hosts.",
+    "impact": "Links legítimos podem ser usados para encaminhar vítimas a páginas de phishing ou conteúdo malicioso.",
+    "prevention": "Centralize redirecionamentos seguros e teste URLs externas, esquemas alternativos e caminhos codificados.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "return redirect(request.args.get('next'))"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-xxe": {
+  "findings": [
+   {
+    "id": "xxe",
+    "title": "Parser XML com entidades externas habilitadas",
+    "severity": "Alta",
+    "cwe": "CWE-611",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "A configuração do parser XML permite resolução de entidades externas ou DTD.",
+    "recommendation": "Desabilite DTDs e entidades externas e use um parser seguro por padrão.",
+    "impact": "XML malicioso pode ler arquivos locais, consultar serviços internos ou consumir recursos.",
+    "prevention": "Fixe opções seguras do parser e teste payloads XML com entidades externas e DTD.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "etree.XMLParser(resolve_entities=True, load_dtd=True)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-template-injection": {
+  "findings": [
+   {
+    "id": "template-injection",
+    "title": "Possível injeção em template do servidor",
+    "severity": "Alta",
+    "cwe": "CWE-1336",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "Dados parecem ser concatenados ao texto de um template interpretado no servidor.",
+    "recommendation": "Mantenha o template constante e passe dados como parâmetros escapados pelo mecanismo de templates.",
+    "impact": "Expressões fornecidas por usuários podem ser avaliadas no servidor e expor dados ou executar ações.",
+    "prevention": "Evite construir templates com concatenação e teste entradas com sintaxe de template.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "render_template_string('<p>' + request.args['name'] + '</p>')"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-mass-assignment": {
+  "findings": [
+   {
+    "id": "mass-assignment",
+    "title": "Atualização de objeto com dados não filtrados",
+    "severity": "Alta",
+    "cwe": "CWE-915",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um objeto parece aceitar diretamente campos enviados pelo cliente sem filtragem visível.",
+    "recommendation": "Construa a atualização apenas com campos explicitamente permitidos e valide cada valor.",
+    "impact": "Campos internos como papel, proprietário ou estado podem ser alterados por um cliente.",
+    "prevention": "Use DTOs com allowlist, valide autorização por campo e teste propriedades inesperadas.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "user.update(request.json)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-missing-authentication": {
+  "findings": [
+   {
+    "id": "missing-authentication",
+    "title": "Operação sensível sem verificação de autenticação visível",
+    "severity": "Alta",
+    "cwe": "CWE-306",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma operação destrutiva ou sensível não mostra uma verificação de autenticação próxima.",
+    "recommendation": "Exija autenticação e autorização do lado do servidor antes de modificar ou excluir recursos.",
+    "impact": "Chamadores não autenticados podem alterar dados ou executar operações administrativas.",
+    "prevention": "Aplique middleware de autorização e teste acesso anônimo para cada rota sensível.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "db.users.delete_one({'id': user_id})"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-csrf-get-mutable": {
+  "findings": [
+   {
+    "id": "missing-authentication",
+    "title": "Operação sensível sem verificação de autenticação visível",
+    "severity": "Alta",
+    "cwe": "CWE-306",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma operação destrutiva ou sensível não mostra uma verificação de autenticação próxima.",
+    "recommendation": "Exija autenticação e autorização do lado do servidor antes de modificar ou excluir recursos.",
+    "impact": "Chamadores não autenticados podem alterar dados ou executar operações administrativas.",
+    "prevention": "Aplique middleware de autorização e teste acesso anônimo para cada rota sensível.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "def transfer():"
+    ]
+   },
+   {
+    "id": "csrf-get-mutable",
+    "title": "Rota GET pode alterar estado",
+    "severity": "Alta",
+    "cwe": "CWE-352",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma rota declarada como GET parece executar uma operação que altera estado.",
+    "recommendation": "Use POST, PUT, PATCH ou DELETE para mutações e valide um token anti-CSRF.",
+    "impact": "Um site externo pode induzir o navegador autenticado a disparar uma ação sem consentimento.",
+    "prevention": "Mantenha GET sem efeitos colaterais, use proteção CSRF e teste fluxos com cookies de sessão.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "@app.route('/transfer', methods=['GET'])"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-weak-token-hash": {
+  "findings": [
+   {
+    "id": "weak-password-hash",
+    "title": "Hash criptográfico fraco para senha",
+    "severity": "Alta",
+    "cwe": "CWE-328",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "MD5 e SHA-1 são algoritmos rápidos e inadequados para armazenamento de senhas.",
+    "recommendation": "Migre para Argon2id, scrypt ou bcrypt com salt individual e custo atual; re-hashe senhas durante o próximo login.",
+    "impact": "Após vazamento do banco, atacantes podem quebrar hashes offline e reutilizar senhas descobertas em outros serviços.",
+    "prevention": "Use uma biblioteca mantida de password hashing e adicione uma regra de lint que bloqueie algoritmos obsoletos para credenciais.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "hash_value = hashlib.md5(password.encode()).hexdigest()"
+    ]
+   },
+   {
+    "id": "weak-token-hash",
+    "title": "Token de autenticação derivado de hash previsível",
+    "severity": "Alta",
+    "cwe": "CWE-330",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Um token parece ser derivado de MD5 ou SHA-1 em vez de uma fonte aleatória segura.",
+    "recommendation": "Gere tokens com CSPRNG, com entropia suficiente, validade curta e uso único quando aplicável.",
+    "impact": "Tokens determinísticos ou previsíveis podem permitir falsificação ou sequestro de sessão.",
+    "prevention": "Use secrets.token_urlsafe ou crypto.randomBytes e evite derivar tokens de identificadores previsíveis.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "return {'token': hashlib.md5(user_id.encode()).hexdigest()}"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-token-timing-comparison": {
+  "findings": [
+   {
+    "id": "token-timing-comparison",
+    "title": "Comparação de token potencialmente vulnerável a timing",
+    "severity": "Média",
+    "cwe": "CWE-208",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "Um token parece ser comparado com igualdade comum, que pode revelar tempo dependente do conteúdo.",
+    "recommendation": "Use comparação em tempo constante fornecida pela biblioteca criptográfica da plataforma.",
+    "impact": "Medições repetidas podem ajudar a inferir bytes de um segredo em certos ambientes.",
+    "prevention": "Use compare_digest ou timingSafeEqual e evite comparação manual de credenciais.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "if received_token == expected_token:"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-assert-authorization": {
+  "findings": [
+   {
+    "id": "assert-authorization",
+    "title": "Assert usado como controle de autorização",
+    "severity": "Alta",
+    "cwe": "CWE-617",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma condição assert parece ser usada para proteger uma operação de acesso.",
+    "recommendation": "Substitua assert por uma verificação explícita que retorne ou lance erro de autorização.",
+    "impact": "Assertions podem ser removidas em execução otimizada e não devem ser barreiras de segurança.",
+    "prevention": "Use controles de acesso explícitos e teste a aplicação também com otimizações habilitadas.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "assert session.get('is_admin')"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-unbounded-pagination": {
+  "findings": [
+   {
+    "id": "unbounded-pagination",
+    "title": "Paginação sem limite máximo visível",
+    "severity": "Média",
+    "cwe": "CWE-400",
+    "owaspId": "A06",
+    "owaspName": "Design inseguro",
+    "description": "O tamanho da página parece ser controlado pelo cliente sem teto visível.",
+    "recommendation": "Defina um valor padrão e limite o tamanho máximo permitido no servidor.",
+    "impact": "Solicitações grandes podem consumir memória, CPU e conexões do banco.",
+    "prevention": "Aplique limites de paginação no servidor e teste entradas nulas, negativas e excessivas.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "limit = int(request.args['limit'])"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-unvalidated-upload": {
+  "findings": [
+   {
+    "id": "unvalidated-upload",
+    "title": "Upload salvo com nome fornecido pelo cliente",
+    "severity": "Alta",
+    "cwe": "CWE-434",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um arquivo enviado parece ser salvo usando o nome ou extensão controlados pelo cliente.",
+    "recommendation": "Gere nome interno, valide tipo e conteúdo, limite tamanho e armazene fora da raiz pública.",
+    "impact": "Uploads podem sobrescrever arquivos, escapar do diretório ou introduzir conteúdo executável.",
+    "prevention": "Use allowlist de tipos, nomes seguros, limites e inspeção de conteúdo no servidor.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "arquivo.save(os.path.join('uploads', arquivo.filename))"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-tempfile-mktemp": {
+  "findings": [
+   {
+    "id": "tempfile-mktemp",
+    "title": "Criação insegura de arquivo temporário",
+    "severity": "Alta",
+    "cwe": "CWE-377",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "tempfile.mktemp escolhe um nome sem criar o arquivo atomicamente.",
+    "recommendation": "Use NamedTemporaryFile, TemporaryDirectory ou uma API segura equivalente.",
+    "impact": "Outro processo pode ocupar o caminho entre a escolha do nome e a criação do arquivo.",
+    "prevention": "Use criação atômica de arquivos temporários com permissões restritas.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "path = tempfile.mktemp()"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-zip-slip": {
+  "findings": [
+   {
+    "id": "zip-slip",
+    "title": "Extração de arquivo compactado sem validação de caminhos",
+    "severity": "Alta",
+    "cwe": "CWE-22",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um arquivo compactado é extraído sem validação visível de que os caminhos permaneçam no diretório alvo.",
+    "recommendation": "Canonicalize cada destino e rejeite caminhos fora da raiz antes de extrair.",
+    "impact": "Entradas manipuladas podem gravar arquivos em locais arbitrários do sistema.",
+    "prevention": "Valide todos os membros do arquivo e teste caminhos absolutos, ../ e separadores alternativos.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "archive.extractall(destination)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-xpath-injection": {
+  "findings": [
+   {
+    "id": "xpath-injection",
+    "title": "Possível injeção XPath",
+    "severity": "Alta",
+    "cwe": "CWE-643",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "Uma expressão XPath parece ser construída por concatenação com dados variáveis.",
+    "recommendation": "Use variáveis parametrizadas da biblioteca XPath em vez de concatenar entrada.",
+    "impact": "Uma entrada pode alterar a consulta e revelar ou selecionar nós não autorizados.",
+    "prevention": "Parametrize consultas e teste nomes contendo aspas, operadores e predicados XPath.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "tree.xpath(\"//user[@name='\" + name + \"']\")"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-redos": {
+  "findings": [
+   {
+    "id": "redos",
+    "title": "Expressão regular com repetição aninhada",
+    "severity": "Alta",
+    "cwe": "CWE-1333",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "Uma expressão regular parece aplicar quantificação repetida a um grupo que já contém repetição.",
+    "recommendation": "Simplifique o padrão e evite quantificadores aninhados em texto controlado por usuários.",
+    "impact": "Entradas especialmente construídas podem causar consumo excessivo de CPU no matching.",
+    "prevention": "Teste padrões com entradas longas e use mecanismos com limites ou garantias de tempo linear.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "re.match(r'^(\\\\d+)+$', value)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-log-injection": {
+  "findings": [
+   {
+    "id": "log-injection",
+    "title": "Entrada não confiável concatenada em log",
+    "severity": "Média",
+    "cwe": "CWE-117",
+    "owaspId": "A09",
+    "owaspName": "Falhas de registro e alerta",
+    "description": "Dados da solicitação parecem ser concatenados diretamente em uma mensagem de log.",
+    "recommendation": "Registre campos estruturados e neutralize caracteres de controle e quebras de linha.",
+    "impact": "Um atacante pode forjar ou confundir registros e alertas de segurança.",
+    "prevention": "Use logging estruturado, sanitização central e testes para CR/LF em entradas.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "logging.info('event: ' + request.args['event'])"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-toctou": {
+  "findings": [
+   {
+    "id": "toctou",
+    "title": "Verificação de arquivo separada do uso",
+    "severity": "Alta",
+    "cwe": "CWE-367",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma verificação de existência ou permissão pode estar separada da operação posterior sobre o arquivo.",
+    "recommendation": "Abra o arquivo diretamente com flags apropriadas e trate a falha sem uma checagem prévia vulnerável.",
+    "impact": "Um concorrente pode trocar o arquivo entre a verificação e seu uso.",
+    "prevention": "Prefira operações atômicas e descritores já abertos; teste condições de corrida.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "if os.path.exists(path):"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-stack-trace-exposure": {
+  "findings": [
+   {
+    "id": "stack-trace-exposure",
+    "title": "Detalhes internos da exceção expostos",
+    "severity": "Média",
+    "cwe": "CWE-209",
+    "owaspId": "A10",
+    "owaspName": "Tratamento incorreto de condições excepcionais",
+    "description": "A resposta ou fluxo da aplicação parece expor traceback ou detalhes internos de uma exceção.",
+    "recommendation": "Retorne uma mensagem genérica ao cliente e registre detalhes apenas em logs protegidos.",
+    "impact": "Caminhos, componentes e dados internos podem facilitar ataques posteriores.",
+    "prevention": "Centralize tratamento de erros e teste respostas de falha para ausência de stack traces.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "return str(error) + repr(error.__traceback__)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-aes-ecb": {
+  "findings": [
+   {
+    "id": "aes-ecb",
+    "title": "Criptografia AES em modo ECB",
+    "severity": "Alta",
+    "cwe": "CWE-327",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "AES está configurado no modo ECB, que não oculta padrões repetidos dos dados.",
+    "recommendation": "Use um modo autenticado como AES-GCM com nonce único e validação de integridade.",
+    "impact": "Padrões no texto claro podem permanecer visíveis no texto cifrado e permitir adulteração.",
+    "prevention": "Use bibliotecas criptográficas de alto nível e evite construir modos de operação manualmente.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "cipher = AES.new(key, AES.MODE_ECB)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "new-user-enumeration": {
+  "findings": [
+   {
+    "id": "user-enumeration",
+    "title": "Resposta revela se uma conta existe",
+    "severity": "Média",
+    "cwe": "CWE-204",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Uma mensagem parece distinguir contas existentes de contas ausentes.",
+    "recommendation": "Use mensagens e códigos de resposta equivalentes para contas existentes e inexistentes.",
+    "impact": "Atacantes podem identificar usuários válidos para direcionar tentativas de login ou fraude.",
+    "prevention": "Normalize respostas e tempos de autenticação e monitore tentativas de enumeração.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "return {'error': 'email not found'}, 404"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-ssrf-python": {
+  "findings": [
+   {
+    "id": "ssrf",
+    "title": "Requisição a destino controlado pelo usuário",
+    "severity": "Alta",
+    "cwe": "CWE-918",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma URL recebida da solicitação é usada diretamente para iniciar uma conexão.",
+    "recommendation": "Permita apenas destinos e esquemas explicitamente autorizados; valide host e IP após resolver DNS e bloqueie redes internas.",
+    "impact": "Um atacante pode induzir o servidor a consultar serviços internos ou metadados de infraestrutura.",
+    "prevention": "Use allowlist de destinos, bloqueio de endereços privados e proteção contra redirecionamentos e rebinding DNS.",
+    "locations": [
+     1,
+     2,
+     3
+    ],
+    "evidence": [
+     "urllib.request.urlopen(request.GET['target'])",
+     "httpx.get(request.POST.get('endpoint'))",
+     "await session.get(request.args['target'])"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-ssrf-javascript": {
+  "findings": [
+   {
+    "id": "ssrf",
+    "title": "Requisição a destino controlado pelo usuário",
+    "severity": "Alta",
+    "cwe": "CWE-918",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma URL recebida da solicitação é usada diretamente para iniciar uma conexão.",
+    "recommendation": "Permita apenas destinos e esquemas explicitamente autorizados; valide host e IP após resolver DNS e bloqueie redes internas.",
+    "impact": "Um atacante pode induzir o servidor a consultar serviços internos ou metadados de infraestrutura.",
+    "prevention": "Use allowlist de destinos, bloqueio de endereços privados e proteção contra redirecionamentos e rebinding DNS.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "axios.get(req.query.url)",
+     "fetch(req.body.destination)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-token-hash-python": {
+  "findings": [
+   {
+    "id": "weak-token-hash",
+    "title": "Token de autenticação derivado de hash previsível",
+    "severity": "Alta",
+    "cwe": "CWE-330",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Um token parece ser derivado de MD5 ou SHA-1 em vez de uma fonte aleatória segura.",
+    "recommendation": "Gere tokens com CSPRNG, com entropia suficiente, validade curta e uso único quando aplicável.",
+    "impact": "Tokens determinísticos ou previsíveis podem permitir falsificação ou sequestro de sessão.",
+    "prevention": "Use secrets.token_urlsafe ou crypto.randomBytes e evite derivar tokens de identificadores previsíveis.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "reset_token = hashlib.sha1(user_id.encode()).hexdigest()",
+     "token = sha1(value).hexdigest()"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-token-hash-javascript": {
+  "findings": [
+   {
+    "id": "weak-token-hash",
+    "title": "Token de autenticação derivado de hash previsível",
+    "severity": "Alta",
+    "cwe": "CWE-330",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Um token parece ser derivado de MD5 ou SHA-1 em vez de uma fonte aleatória segura.",
+    "recommendation": "Gere tokens com CSPRNG, com entropia suficiente, validade curta e uso único quando aplicável.",
+    "impact": "Tokens determinísticos ou previsíveis podem permitir falsificação ou sequestro de sessão.",
+    "prevention": "Use secrets.token_urlsafe ou crypto.randomBytes e evite derivar tokens de identificadores previsíveis.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "const resetToken = crypto.createHash('md5').update(userId).digest('hex');",
+     "const sessionToken = createHash('sha1').update(seed).digest('hex');"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-secret-comparison-python": {
+  "findings": [
+   {
+    "id": "token-timing-comparison",
+    "title": "Comparação de token potencialmente vulnerável a timing",
+    "severity": "Média",
+    "cwe": "CWE-208",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "Um token parece ser comparado com igualdade comum, que pode revelar tempo dependente do conteúdo.",
+    "recommendation": "Use comparação em tempo constante fornecida pela biblioteca criptográfica da plataforma.",
+    "impact": "Medições repetidas podem ajudar a inferir bytes de um segredo em certos ambientes.",
+    "prevention": "Use compare_digest ou timingSafeEqual e evite comparação manual de credenciais.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "if supplied_signature == stored_digest:",
+     "if expected_hash == received_hash:"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-secret-comparison-javascript": {
+  "findings": [
+   {
+    "id": "token-timing-comparison",
+    "title": "Comparação de token potencialmente vulnerável a timing",
+    "severity": "Média",
+    "cwe": "CWE-208",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "Um token parece ser comparado com igualdade comum, que pode revelar tempo dependente do conteúdo.",
+    "recommendation": "Use comparação em tempo constante fornecida pela biblioteca criptográfica da plataforma.",
+    "impact": "Medições repetidas podem ajudar a inferir bytes de um segredo em certos ambientes.",
+    "prevention": "Use compare_digest ou timingSafeEqual e evite comparação manual de credenciais.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "if (requestSignature === storedSignature) {}",
+     "if (providedHash == expectedHash) {}"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-mass-assignment-python": {
+  "findings": [
+   {
+    "id": "mass-assignment",
+    "title": "Atualização de objeto com dados não filtrados",
+    "severity": "Alta",
+    "cwe": "CWE-915",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um objeto parece aceitar diretamente campos enviados pelo cliente sem filtragem visível.",
+    "recommendation": "Construa a atualização apenas com campos explicitamente permitidos e valide cada valor.",
+    "impact": "Campos internos como papel, proprietário ou estado podem ser alterados por um cliente.",
+    "prevention": "Use DTOs com allowlist, valide autorização por campo e teste propriedades inesperadas.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "user.update(**request.data)",
+     "Account.objects.filter(pk=account_id).update(**dados)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-mass-assignment-javascript": {
+  "findings": [
+   {
+    "id": "mass-assignment",
+    "title": "Atualização de objeto com dados não filtrados",
+    "severity": "Alta",
+    "cwe": "CWE-915",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um objeto parece aceitar diretamente campos enviados pelo cliente sem filtragem visível.",
+    "recommendation": "Construa a atualização apenas com campos explicitamente permitidos e valide cada valor.",
+    "impact": "Campos internos como papel, proprietário ou estado podem ser alterados por um cliente.",
+    "prevention": "Use DTOs com allowlist, valide autorização por campo e teste propriedades inesperadas.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "User.findByIdAndUpdate(req.params.id, req.body)",
+     "account.update(payload)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-template-injection-python": {
+  "findings": [
+   {
+    "id": "template-injection",
+    "title": "Possível injeção em template do servidor",
+    "severity": "Alta",
+    "cwe": "CWE-1336",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "Dados parecem ser concatenados ao texto de um template interpretado no servidor.",
+    "recommendation": "Mantenha o template constante e passe dados como parâmetros escapados pelo mecanismo de templates.",
+    "impact": "Expressões fornecidas por usuários podem ser avaliadas no servidor e expor dados ou executar ações.",
+    "prevention": "Evite construir templates com concatenação e teste entradas com sintaxe de template.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "render_template_string(f'<p>{request.GET[\"name\"]}</p>')",
+     "Template('<h1>%s</h1>' % request.POST['title'])"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-template-injection-javascript": {
+  "findings": [
+   {
+    "id": "template-injection",
+    "title": "Possível injeção em template do servidor",
+    "severity": "Alta",
+    "cwe": "CWE-1336",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "Dados parecem ser concatenados ao texto de um template interpretado no servidor.",
+    "recommendation": "Mantenha o template constante e passe dados como parâmetros escapados pelo mecanismo de templates.",
+    "impact": "Expressões fornecidas por usuários podem ser avaliadas no servidor e expor dados ou executar ações.",
+    "prevention": "Evite construir templates com concatenação e teste entradas com sintaxe de template.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "new Function(req.body.expression)",
+     "compile(`Hello ${req.query.name}`)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-aes-ecb-python": {
+  "findings": [
+   {
+    "id": "aes-ecb",
+    "title": "Criptografia AES em modo ECB",
+    "severity": "Alta",
+    "cwe": "CWE-327",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "AES está configurado no modo ECB, que não oculta padrões repetidos dos dados.",
+    "recommendation": "Use um modo autenticado como AES-GCM com nonce único e validação de integridade.",
+    "impact": "Padrões no texto claro podem permanecer visíveis no texto cifrado e permitir adulteração.",
+    "prevention": "Use bibliotecas criptográficas de alto nível e evite construir modos de operação manualmente.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "Cipher(algorithms.AES(key), modes.ECB())",
+     "AES.new(key, MODE_ECB)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-aes-ecb-javascript": {
+  "findings": [
+   {
+    "id": "aes-ecb",
+    "title": "Criptografia AES em modo ECB",
+    "severity": "Alta",
+    "cwe": "CWE-327",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "AES está configurado no modo ECB, que não oculta padrões repetidos dos dados.",
+    "recommendation": "Use um modo autenticado como AES-GCM com nonce único e validação de integridade.",
+    "impact": "Padrões no texto claro podem permanecer visíveis no texto cifrado e permitir adulteração.",
+    "prevention": "Use bibliotecas criptográficas de alto nível e evite construir modos de operação manualmente.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "crypto.createCipheriv('aes-256-ecb', key, null)",
+     "createCipher('aes-128-ecb', secret)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-log-input-python": {
+  "findings": [
+   {
+    "id": "log-injection",
+    "title": "Entrada não confiável concatenada em log",
+    "severity": "Média",
+    "cwe": "CWE-117",
+    "owaspId": "A09",
+    "owaspName": "Falhas de registro e alerta",
+    "description": "Dados da solicitação parecem ser concatenados diretamente em uma mensagem de log.",
+    "recommendation": "Registre campos estruturados e neutralize caracteres de controle e quebras de linha.",
+    "impact": "Um atacante pode forjar ou confundir registros e alertas de segurança.",
+    "prevention": "Use logging estruturado, sanitização central e testes para CR/LF em entradas.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "logger.warning(f\"search={request.GET['q']}\")",
+     "logging.info('event %s' % request.POST['event'])"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-log-input-javascript": {
+  "findings": [
+   {
+    "id": "log-injection",
+    "title": "Entrada não confiável concatenada em log",
+    "severity": "Média",
+    "cwe": "CWE-117",
+    "owaspId": "A09",
+    "owaspName": "Falhas de registro e alerta",
+    "description": "Dados da solicitação parecem ser concatenados diretamente em uma mensagem de log.",
+    "recommendation": "Registre campos estruturados e neutralize caracteres de controle e quebras de linha.",
+    "impact": "Um atacante pode forjar ou confundir registros e alertas de segurança.",
+    "prevention": "Use logging estruturado, sanitização central e testes para CR/LF em entradas.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "console.warn(`search ${req.query.q}`)",
+     "logger.info('event=' + payload)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-pagination-python": {
+  "findings": [
+   {
+    "id": "unbounded-pagination",
+    "title": "Paginação sem limite máximo visível",
+    "severity": "Média",
+    "cwe": "CWE-400",
+    "owaspId": "A06",
+    "owaspName": "Design inseguro",
+    "description": "O tamanho da página parece ser controlado pelo cliente sem teto visível.",
+    "recommendation": "Defina um valor padrão e limite o tamanho máximo permitido no servidor.",
+    "impact": "Solicitações grandes podem consumir memória, CPU e conexões do banco.",
+    "prevention": "Aplique limites de paginação no servidor e teste entradas nulas, negativas e excessivas.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "page_size = int(request.GET.get('size', 20))",
+     "per_page = int(request.POST['per_page'])"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-pagination-javascript": {
+  "findings": [
+   {
+    "id": "unbounded-pagination",
+    "title": "Paginação sem limite máximo visível",
+    "severity": "Média",
+    "cwe": "CWE-400",
+    "owaspId": "A06",
+    "owaspName": "Design inseguro",
+    "description": "O tamanho da página parece ser controlado pelo cliente sem teto visível.",
+    "recommendation": "Defina um valor padrão e limite o tamanho máximo permitido no servidor.",
+    "impact": "Solicitações grandes podem consumir memória, CPU e conexões do banco.",
+    "prevention": "Aplique limites de paginação no servidor e teste entradas nulas, negativas e excessivas.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "const limit = req.query.limit;",
+     "const pageSize = req.params.pageSize;"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-upload-python": {
+  "findings": [
+   {
+    "id": "unvalidated-upload",
+    "title": "Upload salvo com nome fornecido pelo cliente",
+    "severity": "Alta",
+    "cwe": "CWE-434",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um arquivo enviado parece ser salvo usando o nome ou extensão controlados pelo cliente.",
+    "recommendation": "Gere nome interno, valide tipo e conteúdo, limite tamanho e armazene fora da raiz pública.",
+    "impact": "Uploads podem sobrescrever arquivos, escapar do diretório ou introduzir conteúdo executável.",
+    "prevention": "Use allowlist de tipos, nomes seguros, limites e inspeção de conteúdo no servidor.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "file.save(path / file.filename)",
+     "arquivo.save(destination / arquivo.filename)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-upload-javascript": {
+  "findings": [
+   {
+    "id": "unvalidated-upload",
+    "title": "Upload salvo com nome fornecido pelo cliente",
+    "severity": "Alta",
+    "cwe": "CWE-434",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um arquivo enviado parece ser salvo usando o nome ou extensão controlados pelo cliente.",
+    "recommendation": "Gere nome interno, valide tipo e conteúdo, limite tamanho e armazene fora da raiz pública.",
+    "impact": "Uploads podem sobrescrever arquivos, escapar do diretório ou introduzir conteúdo executável.",
+    "prevention": "Use allowlist de tipos, nomes seguros, limites e inspeção de conteúdo no servidor.",
+    "locations": [
+     1,
+     2,
+     3
+    ],
+    "evidence": [
+     "fs.writeFileSync(destination, req.file.originalname)",
+     "fs.createWriteStream(req.file.originalname)",
+     "multer.diskStorage({ filename: (req, file, cb) => cb(null, file.originalname) })"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-xpath-python": {
+  "findings": [
+   {
+    "id": "xpath-injection",
+    "title": "Possível injeção XPath",
+    "severity": "Alta",
+    "cwe": "CWE-643",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "Uma expressão XPath parece ser construída por concatenação com dados variáveis.",
+    "recommendation": "Use variáveis parametrizadas da biblioteca XPath em vez de concatenar entrada.",
+    "impact": "Uma entrada pode alterar a consulta e revelar ou selecionar nós não autorizados.",
+    "prevention": "Parametrize consultas e teste nomes contendo aspas, operadores e predicados XPath.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "tree.xpath(f\"//user[@id='{request.args['id']}']\")",
+     "tree.xpath(\"//user[@name='%s']\" % request.GET['name'])"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-xpath-javascript": {
+  "findings": [
+   {
+    "id": "xpath-injection",
+    "title": "Possível injeção XPath",
+    "severity": "Alta",
+    "cwe": "CWE-643",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "Uma expressão XPath parece ser construída por concatenação com dados variáveis.",
+    "recommendation": "Use variáveis parametrizadas da biblioteca XPath em vez de concatenar entrada.",
+    "impact": "Uma entrada pode alterar a consulta e revelar ou selecionar nós não autorizados.",
+    "prevention": "Parametrize consultas e teste nomes contendo aspas, operadores e predicados XPath.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "doc.xpath(`//user[@id='${req.query.id}']`)",
+     "doc.xpath('//user[@name=' + req.params.name + ']')"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-enumeration-python": {
+  "findings": [
+   {
+    "id": "user-enumeration",
+    "title": "Resposta revela se uma conta existe",
+    "severity": "Média",
+    "cwe": "CWE-204",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Uma mensagem parece distinguir contas existentes de contas ausentes.",
+    "recommendation": "Use mensagens e códigos de resposta equivalentes para contas existentes e inexistentes.",
+    "impact": "Atacantes podem identificar usuários válidos para direcionar tentativas de login ou fraude.",
+    "prevention": "Normalize respostas e tempos de autenticação e monitore tentativas de enumeração.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "raise Http404('Account does not exist')",
+     "return {'error': 'unknown user'}, 404"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-enumeration-javascript": {
+  "findings": [
+   {
+    "id": "user-enumeration",
+    "title": "Resposta revela se uma conta existe",
+    "severity": "Média",
+    "cwe": "CWE-204",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Uma mensagem parece distinguir contas existentes de contas ausentes.",
+    "recommendation": "Use mensagens e códigos de resposta equivalentes para contas existentes e inexistentes.",
+    "impact": "Atacantes podem identificar usuários válidos para direcionar tentativas de login ou fraude.",
+    "prevention": "Normalize respostas e tempos de autenticação e monitore tentativas de enumeração.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "return res.status(404).json({ error: 'Account does not exist' });",
+     "return res.status(404).json({ error: 'Unknown user' });"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-missing-auth-python": {
+  "findings": [
+   {
+    "id": "missing-authentication",
+    "title": "Operação sensível sem verificação de autenticação visível",
+    "severity": "Alta",
+    "cwe": "CWE-306",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma operação destrutiva ou sensível não mostra uma verificação de autenticação próxima.",
+    "recommendation": "Exija autenticação e autorização do lado do servidor antes de modificar ou excluir recursos.",
+    "impact": "Chamadores não autenticados podem alterar dados ou executar operações administrativas.",
+    "prevention": "Aplique middleware de autorização e teste acesso anônimo para cada rota sensível.",
+    "locations": [
+     2,
+     6
+    ],
+    "evidence": [
+     "def remove_user(user_id):",
+     "def delete_account(request, account_id):"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "generalized-missing-auth-javascript": {
+  "findings": [
+   {
+    "id": "missing-authentication",
+    "title": "Operação sensível sem verificação de autenticação visível",
+    "severity": "Alta",
+    "cwe": "CWE-306",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma operação destrutiva ou sensível não mostra uma verificação de autenticação próxima.",
+    "recommendation": "Exija autenticação e autorização do lado do servidor antes de modificar ou excluir recursos.",
+    "impact": "Chamadores não autenticados podem alterar dados ou executar operações administrativas.",
+    "prevention": "Aplique middleware de autorização e teste acesso anônimo para cada rota sensível.",
+    "locations": [
+     1,
+     4
+    ],
+    "evidence": [
+     "router.delete('/users/:id', (req, res) => {",
+     "router.patch('/users/:id', (req, res) => {"
+    ]
+   }
+  ],
+  "rulesRun": 41
  }
 }

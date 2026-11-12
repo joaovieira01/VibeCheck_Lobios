@@ -27,6 +27,11 @@ npm run build
 Os arquivos estáticos ficam em `dist/` e podem ser publicados no GitHub Pages ou
 em outro host de frontend.
 
+As regras são mantidas em `backend/app/rules.json`; a cópia versionada em
+`src/data/rules.generated.json` permite builds isolados do frontend, incluindo
+Docker e Vercel. Ao alterar as regras, execute `npm run sync:rules` neste
+diretório. Os testes backend verificam que a cópia gerada está sincronizada.
+
 ## O que o protótipo faz
 
 - Analisa trechos colados ou arquivos de código de até 1 MB localmente no
