@@ -1,296 +1,307 @@
-<div align="center">
+# VibeCheck
 
-# 🛡️ VibeCheck
+Ferramenta de auditoria de segurança para código gerado por IA e escrito com pressa. Você envia um arquivo ou cola um trecho, e o VibeCheck aponta padrões de risco com a linha exata, o impacto provável, as referências CWE e OWASP e uma recomendação de correção.
 
-### Encontre riscos. Entenda como agir.
+**Demo:** https://vibecheck-website-ten.vercel.app/
 
-Análise de segurança de código com foco em clareza: aponte padrões de risco, entenda o contexto e siga um plano de correção, tudo em uma interface simples.
+**Status:** MVP em desenvolvimento ativo. As funcionalidades e os formatos de resposta ainda podem mudar.
 
-[![Demo](https://img.shields.io/badge/demo-online-8b5cf6?style=for-the-badge)](https://vibecheck-website-ten.vercel.app/)
-![React](https://img.shields.io/badge/React-TypeScript-61dafb?style=for-the-badge&logo=react&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-8.4-4479a1?style=for-the-badge&logo=mysql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ed?style=for-the-badge&logo=docker&logoColor=white)
+> **Escopo.** A análise é feita por regras heurísticas, linha a linha, mapeadas para o OWASP Top 10:2025. O VibeCheck serve como apoio à revisão e à conscientização. Ele não substitui uma auditoria de segurança, um teste de intrusão nem uma verificação de conformidade.
 
-[Demo](https://vibecheck-website-ten.vercel.app/) · [Funcionalidades](#-funcionalidades) · [Como rodar](#-como-rodar) · [Segurança](#-segurança)
+## Sumário
 
-</div>
+- [Funcionalidades](#funcionalidades)
+- [Arquitetura](#arquitetura)
+- [Início rápido](#início-rápido)
+- [Execução manual](#execução-manual)
+- [Uso](#uso)
+- [Configuração](#configuração)
+- [Análise com IA (opcional)](#análise-com-ia-opcional)
+- [Revisão automática de Pull Requests](#revisão-automática-de-pull-requests)
+- [Testes](#testes)
+- [Estrutura do repositório](#estrutura-do-repositório)
+- [Segurança](#segurança)
+- [Limitações e roadmap](#limitações-e-roadmap)
+- [Referências](#referências)
+- [Contribuindo](#contribuindo)
 
----
+## Funcionalidades
 
-## 📸 Visão geral
+**Análise de código**
+- Entrada por upload de arquivo ou colagem de trecho.
+- 41 regras, com severidade, CWE e categoria OWASP Top 10:2025 (A01 a A10).
+- Cada achado informa linha, evidência, impacto, recomendação e forma de prevenção.
+- Relatório em PDF gerado no navegador.
 
-<!-- Substitua pelos seus prints. Sugestão: salve em docs/images/ -->
-<div align="center">
+**Contas e histórico**
+- Cadastro e login pela API.
+- Histórico de análises persistido no banco.
+- Modo local: sem `VITE_API_URL`, a análise roda no navegador e o código não é enviado a nenhum servidor.
 
-| Landing | Análise | Relatório |
-|:---:|:---:|:---:|
-| ![Landing](docs/images/landing.png) | ![Análise](docs/images/analise.png) | ![Relatório](docs/images/relatorio.png) |
+**Automação**
+- Revisão de Pull Requests no GitHub Actions, com comentários nas linhas novas.
+- Camada opcional de IA no backend para triar achados e sugerir revisões (desligada por padrão).
 
-</div>
+## Arquitetura
 
-## 🎯 Sobre o projeto
-
-O **VibeCheck** é uma aplicação web para auditoria de código, pensada para quem escreve (ou gera) código rápido e quer uma segunda opinião de segurança antes de publicar. Você envia um arquivo ou cola um trecho, e a plataforma:
-
-1. **Analisa** o código com regras heurísticas;
-2. **Explica** o achado com linha, impacto potencial e referências **CWE/OWASP**;
-3. **Orienta** a correção com recomendações práticas;
-4. **Exporta** um relatório em PDF para o próximo passo.
-
-> ⚠️ **Transparência:** as regras são heurísticas e mapeiam padrões comuns às categorias do **OWASP Top 10:2025**. O VibeCheck é uma ferramenta de apoio e conscientização, **não** substitui uma auditoria completa nem um checklist de conformidade.
-
-## ✨ Funcionalidades
-
-- 🔍 **Análise de código** por upload de arquivo ou colagem de trecho
-- 🧠 **Contexto do achado:** linha, severidade, evidência, impacto e recomendação
-- 📚 **Mapeamento OWASP Top 10:2025** e referências CWE
-- 🧰 **41 regras compartilhadas** entre Python e TypeScript, mapeadas pelas dez categorias OWASP Top 10:2025 (A01–A10); o mapeamento heurístico não implica cobertura exaustiva
-- 📄 **Relatório em PDF** com prioridades e localização dos problemas
-- 🕘 **Histórico de análises** persistido no banco (modo com API)
-- 🔐 **Cadastro e login** com autenticação no backend
-- 💻 **Modo local no navegador:** sem `VITE_API_URL`, a análise roda no próprio browser, sem enviar código a servidor
-- 🤖 **Revisão automática de Pull Requests** via GitHub Actions, com comentários inline nas linhas novas
-
-## 🧱 Stack e arquitetura
+```
+Frontend (React + Vite)  ──HTTP /api──►  Backend (FastAPI)  ───►  MySQL 8.4
+        :5173                                 :8000
+```
 
 | Camada | Tecnologia |
 |---|---|
 | Frontend | React, TypeScript, Vite |
 | Backend | FastAPI (Python), autenticação e motor de análise |
-| Banco de dados | MySQL 8.4 (SQLite opcional para testes rápidos) |
+| Banco de dados | MySQL 8.4 (SQLite opcional para testes locais) |
 | Infraestrutura | Docker Compose |
-| CI/CD | GitHub Actions (revisão de PRs) |
-| Testes | `pytest` (backend), `npm test` (frontend) |
+| CI | GitHub Actions |
+| Testes | pytest (backend) e Vitest (frontend) |
 
-```
-┌──────────────┐   HTTP /api    ┌───────────────┐      ┌──────────┐
-│   Frontend   │ ─────────────► │    Backend    │ ───► │  MySQL   │
-│ React + Vite │ ◄───────────── │    FastAPI    │ ◄─── │   8.4    │
-└──────────────┘                └───────────────┘      └──────────┘
-   :5173                           :8000 (/docs)          :3306
-```
+As regras ficam em um único arquivo, `backend/app/rules.json`, e são usadas pelo scanner em Python e pelo scanner em TypeScript. O frontend consome uma cópia gerada com `npm run sync:rules` (em `frontend/`), e um teste verifica que ela é idêntica ao original.
 
-### Estrutura de pastas
+## Início rápido
 
-```
-.
-├── frontend/             # React + TypeScript + Vite
-├── backend/              # API FastAPI, autenticação e scanner
-├── database/
-│   └── schema.sql        # criação do banco e usuário MySQL
-├── .github/workflows/    # revisão automática de Pull Requests
-├── .vscode/              # configurações do workspace
-├── docker-compose.yml    # MySQL + backend + frontend
-└── .env.example          # exemplo de configuração (sem credenciais reais)
-```
-
-## 🚀 Como rodar
-
-### Pré-requisitos
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) **ou** Python 3.10+, Node.js 18+ e MySQL 8.4
-- Git
-
-### Opção 1 — Tudo com Docker (recomendado)
+Pré-requisitos: Git e Docker Desktop.
 
 ```powershell
-# 1. Clone o repositório
 git clone https://github.com/joaovieira01/VibeCheck_Lobios.git
 cd VibeCheck_Lobios
 
-# 2. Configure as variáveis (altere TODAS as senhas)
 Copy-Item .env.example .env
+# Edite o .env e defina senhas próprias antes de continuar.
 
-# 3. Suba os serviços
 docker compose up --build
 ```
 
-| Serviço | URL |
+| Serviço | Endereço |
 |---|---|
 | Frontend | http://localhost:5173 |
 | API | http://localhost:8000 |
 | Documentação da API | http://localhost:8000/docs |
-| MySQL | `localhost:3306` |
+| MySQL | localhost:3306 |
 
-Para subir **apenas o banco** durante o desenvolvimento:
+Para subir somente o banco durante o desenvolvimento: `docker compose up -d mysql`.
 
-```powershell
-docker compose up -d mysql
-```
+## Execução manual
 
-### Opção 2 — Execução manual
+Pré-requisitos: Python 3.12 e Node.js 22 (as versões usadas nos contêineres; o Vite 7 não funciona em versões antigas do Node), além de MySQL 8.4 ou SQLite para testes.
 
-#### 1) Banco de dados
+**Banco de dados.** Execute `database/schema.sql` no MySQL, trocando `CHANGE_THIS_PASSWORD` por uma senha forte, ou use apenas o contêiner do MySQL.
 
-Execute `database/schema.sql` no MySQL (Workbench ou terminal) e **troque `CHANGE_THIS_PASSWORD`** por uma senha forte. Ou use apenas o MySQL do Docker (`docker compose up -d mysql`).
-
-#### 2) Backend
+**Backend**
 
 ```powershell
 cd backend
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements-dev.txt
-```
-
-Copie `.env.example` para `.env` na raiz e configure `VIBECHECK_DB_PASSWORD`. Em seguida, inicie a API:
-
-```powershell
 uvicorn app.main:create_app --factory --reload
 ```
 
-> Para testar rapidamente com SQLite, use `VIBECHECK_DB_ENGINE=sqlite` e `VIBECHECK_DB_PATH=data/vibecheck.db`.
+O backend lê o `.env` da raiz do repositório. Para testar com SQLite, defina `VIBECHECK_DB_ENGINE=sqlite` e `VIBECHECK_DB_PATH=data/vibecheck.db`.
 
-#### 3) Frontend
+**Frontend**
 
 ```powershell
 cd frontend
-npm install
+npm ci
 Copy-Item .env.local.example .env.local
 npm run dev
 ```
 
-Abra http://localhost:5173.
+Use `npm ci` para instalar exatamente as versões do `package-lock.json`.
 
-### ⚙️ Variáveis de ambiente
+## Uso
+
+**Aplicação web.** Abra o frontend, escolha um arquivo ou cole um trecho de código e inicie a análise. O resultado lista os achados por severidade, com a linha, a evidência e a recomendação. O relatório pode ser exportado em PDF. Com a API configurada, cada análise fica salva no histórico da conta.
+
+**Limites.** Cada análise aceita até 1 MB de código, as linhas são truncadas em 1.000 caracteres e há um tempo máximo de execução. Acima disso, a API responde com erro explicando o motivo.
+
+**Formato de um achado.** Exemplo de resultado para `yaml.load(texto)` em um arquivo Python:
+
+```json
+{
+  "id": "unsafe-yaml",
+  "title": "Desserialização YAML potencialmente insegura",
+  "severity": "Alta",
+  "cwe": "CWE-502",
+  "owaspId": "A08",
+  "owaspName": "Falhas de integridade de software ou dados",
+  "description": "yaml.load() pode instanciar objetos quando não usa um loader seguro.",
+  "recommendation": "Use yaml.safe_load() ou especifique explicitamente SafeLoader.",
+  "impact": "Configurações manipuladas podem causar execução de código ou efeitos inesperados durante o carregamento.",
+  "prevention": "Prefira loaders seguros por padrão e teste a rejeição de tags e objetos não permitidos.",
+  "locations": [4],
+  "evidence": ["return yaml.load(texto)"]
+}
+```
+
+**Linha de comando.** Para analisar um arquivo local sem subir a aplicação:
+
+```powershell
+cd backend
+python scripts/scan_file.py caminho\para\arquivo.py
+```
+
+A documentação interativa dos endpoints fica em `/docs` na API.
+
+## Configuração
 
 | Variável | Descrição | Exemplo |
 |---|---|---|
+| `MYSQL_ROOT_PASSWORD` | Senha do root do MySQL no Docker Compose | defina uma senha forte |
 | `VIBECHECK_DB_ENGINE` | Banco usado pelo backend | `mysql` ou `sqlite` |
-| `VIBECHECK_DB_HOST` / `PORT` | Endereço do MySQL | `127.0.0.1` / `3306` |
+| `VIBECHECK_DB_HOST`, `VIBECHECK_DB_PORT` | Endereço do MySQL | `127.0.0.1`, `3306` |
 | `VIBECHECK_DB_NAME` | Nome do banco | `vibecheck` |
 | `VIBECHECK_DB_USER` | Usuário exclusivo da aplicação | `vibecheck_user` |
-| `VIBECHECK_DB_PASSWORD` | Senha do banco | *defina uma senha forte* |
+| `VIBECHECK_DB_PASSWORD` | Senha do banco | defina uma senha forte |
+| `VIBECHECK_DB_PATH` | Arquivo do banco quando o motor é SQLite | `data/vibecheck.db` |
 | `VIBECHECK_CORS_ORIGINS` | Origens permitidas no CORS | `http://localhost:5173` |
 | `VIBECHECK_FRONTEND_URL` | URL do frontend | `http://localhost:5173` |
 | `VIBECHECK_RATE_LIMIT` | Limite de requisições | `true` |
 | `VIBECHECK_SEED_DEMO_USER` | Cria usuário de demonstração | `false` |
 | `VITE_API_URL` | URL da API usada pelo frontend | `http://localhost:8000` |
 
-> Sem `VITE_API_URL`, o frontend funciona em **modo local**: cadastro, análise e histórico ficam no navegador.
+Sem `VITE_API_URL`, o frontend funciona em modo local: cadastro, análise e histórico ficam no navegador.
 
-## 🤖 IA opcional (backend)
+As variáveis da camada de IA estão na seção seguinte.
 
-A análise por regras continua sendo o padrão. A camada de IA do backend é
-independente de fornecedor, usa a API OpenAI-compatible de chat completions e
-fica desligada por padrão. Quando ativada, pode triar os achados existentes;
-revisar funções de risco e acrescentar sugestões separadas exige também
-`AI_DISCOVERY=true`. A IA não remove achados das regras.
+## Análise com IA (opcional)
 
-Configure somente por variáveis de ambiente no backend (por exemplo, no `.env`
-local, nunca commitado):
+A análise por regras é o comportamento padrão. A camada de IA fica desligada, não depende de fornecedor e usa o formato de chat completions compatível com a API da OpenAI. Quando ativada, ela pode:
+
+- **Triar** os achados das regras, classificando cada um como confirmado, falso positivo ou incerto. A triagem é anexada ao achado e nunca o remove da lista. Achados de severidade crítica e credenciais fixas só recebem veredito de descarte com confiança alta.
+- **Revisar funções de risco** e propor achados adicionais, sempre separados dos achados das regras e identificados como sugestões da IA. Exige `AI_DISCOVERY=true`.
+
+Antes de enviar um trecho ao provedor, o backend mascara segredos e credenciais e trata o código como dado, não como instrução. Falhas do provedor (timeout, limite de uso, resposta inválida) não interrompem a análise: o resultado das regras é devolvido com o status de IA indisponível.
+
+Configure por variáveis de ambiente, no `.env` local, que nunca deve ser commitado:
 
 ```dotenv
 AI_ENABLED=true
-AI_BASE_URL=https://api.example.invalid/v1
-AI_API_KEY=replace-with-provider-key
-AI_MODEL=replace-with-model-id
+AI_BASE_URL=https://provedor.example/v1
+AI_API_KEY=chave-do-provedor
+AI_MODEL=id-do-modelo
 AI_TIMEOUT_SECONDS=20
 AI_MAX_CALLS_PER_SCAN=10
 AI_CONCURRENCY=2
 AI_DISCOVERY=false
 ```
 
-Exemplos de endpoint/modelo **a confirmar** com a documentação e disponibilidade
-atuais de cada provedor:
+Exemplos de provedores. Confirme endereço e modelo na documentação atual de cada um antes de usar:
 
-| Provedor | `AI_BASE_URL` de exemplo | `AI_MODEL` de exemplo |
+| Provedor | `AI_BASE_URL` | `AI_MODEL` |
 |---|---|---|
-| Gemini OpenAI-compatible | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.0-flash` |
-| OpenRouter | `https://openrouter.ai/api/v1` | `openai/gpt-4o-mini` |
-| Ollama local | `http://localhost:11434/v1` | `qwen2.5:3b` |
+| Google Gemini (endpoint compatível) | `https://generativelanguage.googleapis.com/v1beta/openai/` | `gemini-3.8-flash` |
+| OpenRouter | `https://openrouter.ai/api/v1` | conforme o catálogo do provedor |
+| Ollama (local) | `http://localhost:11434/v1` | qualquer modelo instalado |
 
-Use a chave fornecida pelo provedor em `AI_API_KEY`; não coloque credenciais na
-URL. Exige HTTPS, exceto HTTP para `localhost`/`127.0.0.1`. Endpoints gratuitos
-podem usar o código enviado para treinamento ou melhoria do serviço: confira os
-termos de privacidade antes de habilitar e não envie segredos, código
-confidencial ou dados pessoais sem autorização. O código é enviado ao endpoint
-configurado para análise; a chave, URL e trecho de prompt não são incluídos nos
-resultados da análise.
+O endereço precisa usar HTTPS, exceto `localhost` e `127.0.0.1`. A chave vai em `AI_API_KEY`, nunca na URL.
 
-Sem configuração válida, a API preserva o resultado das regras e informa a IA
-como indisponível. A integração não instala SDK de fornecedor e usa somente
-bibliotecas já disponíveis. Para experimentar as ferramentas locais:
+**Privacidade.** O código analisado é enviado ao endpoint configurado. Planos gratuitos de alguns provedores podem usar esse conteúdo para treinar ou melhorar seus serviços. Leia os termos do provedor e não envie código confidencial, segredos ou dados pessoais sem autorização. Para manter tudo na própria máquina, use um modelo local.
+
+Para experimentar pela linha de comando:
 
 ```powershell
 cd backend
-python scripts/scan_file.py caminho\para\arquivo.py --ai
-python scripts/metrics.py --ai
+python scripts/scan_file.py caminho\para\arquivo.py        # somente regras
+python scripts/scan_file.py caminho\para\arquivo.py --ai   # com IA, se configurada
 ```
 
-Sem `--ai`, `scan_file.py` executa somente as regras. A IA não é usada no modo
-local do frontend nem pelo bot de revisão de Pull Requests.
+O backend carrega o `.env` da raiz na inicialização. O `scan_file.py`, por outro lado, lê apenas as variáveis do ambiente do processo, então defina as variáveis `AI_*` na sessão do terminal antes de usar `--ai`. No Docker Compose, as variáveis `AI_*` precisam ser repassadas ao serviço `backend` no `docker-compose.yml`, porque o arquivo atual não as inclui.
 
-## 🔌 Integração frontend ↔ API
+A IA não é usada pelo modo local do frontend nem, por enquanto, pela revisão de Pull Requests.
 
-Com `VITE_API_URL` definido em `frontend/.env.local`:
+## Revisão automática de Pull Requests
 
-- Cadastro e login usam `/api/auth/register` e `/api/auth/login`
-- Análises e histórico são enviados para `/api/analyses` e persistidos no banco
+O workflow `.github/workflows/aura-scanner.yml` roda o scanner nos arquivos alterados de cada Pull Request e comenta nas linhas novas que tiverem achados.
 
-A recuperação de senha já possui endpoints no backend (exige SMTP configurado), mas a tela correspondente no frontend ainda será integrada.
+- Dispara quando o PR é aberto, reaberto, recebe novos commits ou sai do modo rascunho.
+- Lê os arquivos pela API do GitHub, com limites de tamanho e de tempo.
+- Faz checkout apenas da revisão base confiável e **nunca executa o código do PR**.
+- Usa o token padrão com permissões mínimas: `contents: read` e `pull-requests: write`.
+- Não exige segredos adicionais.
+- Os comentários explicam a correção, mas não alteram o código. O resultado é informativo e não bloqueia o merge.
 
-## 🧪 Testes
+## Testes
 
 ```powershell
 # Backend
 cd backend
-pytest
+python -m pytest
 
 # Frontend
 cd frontend
 npm test
 npm run build
+
+# Métricas do scanner nas amostras internas (recall e falsos positivos)
+cd backend
+python scripts/metrics.py
 ```
 
-## 🤖 Revisão automática de Pull Requests
+As amostras e o gabarito usados nas métricas estão em `backend/tests/samples/`. Os testes que envolvem IA usam um provedor falso e bloqueiam acesso à rede.
 
-O workflow `.github/workflows/aura-scanner.yml` executa o scanner nas alterações de Pull Requests e publica **comentários inline** nas linhas novas que tiverem achados.
+## Estrutura do repositório
 
-- Lê os arquivos pela API do GitHub, com limite de tamanho e tempo
-- **Não executa** o código do Pull Request
-- Token com permissões mínimas: `contents: read` e `pull-requests: write`
-- Não exige cadastro manual de segredos
-- Os comentários explicam como corrigir, mas **não alteram o código** automaticamente
+```
+.
+├── backend/               API FastAPI, autenticação e scanner
+│   ├── app/               código da aplicação (inclui app/ai/)
+│   ├── scripts/           revisão de PRs, métricas e scan_file.py
+│   └── tests/             testes, corpus golden e amostras
+├── frontend/              React + TypeScript + Vite
+├── database/schema.sql    criação do banco e do usuário MySQL
+├── docs/PROGRESS.md       histórico de evolução e métricas
+├── .github/workflows/     revisão automática de Pull Requests
+├── docker-compose.yml     MySQL, backend e frontend
+└── .env.example           exemplo de configuração, sem credenciais reais
+```
 
-## 🔒 Segurança
+## Segurança
 
-- Nunca publique arquivos `.env`
-- Troque **todas** as senhas de exemplo
-- Não habilite `VIBECHECK_SEED_DEMO_USER` em ambientes expostos
-- Use uma conta MySQL exclusiva da aplicação, sem privilégios de administrador
-- O `docker-compose.yml` expõe o MySQL em `3306` para facilitar o desenvolvimento; em outros ambientes, restrinja o acesso (ex.: `127.0.0.1:3306:3306`)
-- O compose atual usa `--reload` e instala dependências ao iniciar: **é uma configuração de desenvolvimento**, não de produção
+- Nunca commite arquivos `.env` nem chaves de API.
+- Troque todas as senhas de exemplo.
+- Não habilite `VIBECHECK_SEED_DEMO_USER` em ambientes expostos.
+- Use uma conta MySQL exclusiva da aplicação, sem privilégios de administrador.
+- O `docker-compose.yml` expõe o MySQL na porta 3306 e usa `--reload`: é uma configuração de desenvolvimento. Em outros ambientes, restrinja o acesso (por exemplo, `127.0.0.1:3306:3306`) e use um servidor de produção.
+- O limitador de requisições é em memória. Em mais de uma instância, use um limitador compartilhado.
 
-## 🗺️ Limitações e próximos passos
+## Limitações e roadmap
 
-- [x] Análise heurística com mapeamento OWASP Top 10:2025
-- [x] Relatório em PDF
-- [x] Autenticação e histórico persistido
-- [x] Revisão automática de PRs no GitHub
-- [ ] Tela de recuperação de senha no frontend
-- [ ] Integração com GitLab e Bitbucket
-- [ ] Mais regras de detecção e maior cobertura por categoria
-- [ ] Configuração de deploy de produção para backend e banco
+**Limitações conhecidas**
+- As regras analisam uma linha por vez, com algum contexto de função. Elas não acompanham o fluxo de dados entre arquivos, e wrappers próprios, sanitizadores customizados e construções multilinha complexas podem escapar.
+- Nas amostras internas o scanner detecta todos os itens esperados. Em amostras escritas de forma independente, a cobertura foi menor (cerca de 60% na última medição, com poucos casos), o que mostra o limite de uma abordagem baseada em regex.
+- A categoria A06 (design inseguro) depende de decisões de arquitetura e exige revisão manual.
+- A análise de dependências aponta versões não fixadas, mas não consulta bases de vulnerabilidades conhecidas.
+- As metas de taxa de falsos positivos e de tempo de análise por repositório ainda não foram medidas em repositórios reais.
 
-> Categorias que dependem de decisões de design (como **A06 — Design inseguro**) exigem revisão manual e não são totalmente cobertas por heurísticas.
+**Próximos passos**
+- [ ] Tela de recuperação de senha no frontend (os endpoints do backend já existem e exigem SMTP).
+- [ ] IA na revisão de Pull Requests e na interface.
+- [ ] Sugestão de correção em código.
+- [ ] Integração com GitLab e Bitbucket.
+- [ ] Análise com contexto de fluxo de dados (motor SAST de código aberto).
+- [ ] Medição de falsos positivos e de desempenho em repositórios reais.
+- [ ] Configuração de deploy de produção para backend e banco.
 
-## 🤝 Contribuindo
+## Referências
 
-1. Faça um fork ou crie uma branch: `git checkout -b feat/minha-melhoria`
-2. Faça commits claros: `git commit -m "feat: descreve a mudança"`
-3. Envie a branch: `git push origin feat/minha-melhoria`
-4. Abra um Pull Request descrevendo o que mudou e como testar
+- OWASP Top 10: https://owasp.org/Top10/
+- Common Weakness Enumeration (CWE): https://cwe.mitre.org/
 
-## 👤 Autor
+## Contribuindo
 
-Feito por **João Vieira**: [@joaovieira01](https://github.com/joaovieira01)
+A branch `development` recebe as mudanças em andamento, e a `main` guarda versões estáveis.
 
----
+1. Crie uma branch a partir da `development`, por exemplo `feat/nome-da-melhoria` ou `refactor/nome-da-area`.
+2. Faça commits pequenos, com mensagens que descrevam a mudança.
+3. Antes de abrir o Pull Request, rode `python -m pytest` no backend e `npm test` e `npm run build` no frontend. Para mudanças nas regras, rode também `python scripts/metrics.py` e confira que os números não pioraram.
+4. Abra o Pull Request para a `development`, descrevendo o que mudou e como testar.
 
-<div align="center">
+Ao alterar `rules.json`, regenere a cópia usada pelo frontend com `npm run sync:rules` (em `frontend/`) e inclua a mudança no commit.
 
-**VibeCheck** · Segurança de código com clareza em cada etapa.
+## Autoria
 
-</div>
+Desenvolvido por João Vieira ([@joaovieira01](https://github.com/joaovieira01)) e colaboradores.
