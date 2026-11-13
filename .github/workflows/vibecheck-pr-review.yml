@@ -1,4 +1,4 @@
-name: AuraScanner
+name: VibeCheck
 
 on:
   pull_request_target:

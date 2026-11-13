@@ -9,6 +9,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
 
@@ -17,6 +19,10 @@ from app.ai.provider import OpenAICompatibleClient
 from app.ai.triage import AIProvider
 from app.scanner import DEFAULT_MAX_LINE_CHARS
 from app.service import run_analysis
+
+
+def _load_root_env() -> None:
+    load_dotenv(dotenv_path=ROOT / ".env", override=False)
 
 
 class _TimedProvider:
@@ -71,6 +77,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Erro ao ler arquivo: {exc}", file=sys.stderr)
         return 2
 
+    if args.ai:
+        _load_root_env()
     settings, warning = _ai_configuration(args.ai)
     if warning:
         print(

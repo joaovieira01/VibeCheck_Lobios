@@ -215,7 +215,7 @@ A IA não é usada pelo modo local do frontend nem, por enquanto, pela revisão 
 
 ## Revisão automática de Pull Requests
 
-O workflow `.github/workflows/aura-scanner.yml` roda o scanner nos arquivos alterados de cada Pull Request e comenta nas linhas novas que tiverem achados.
+O workflow `.github/workflows/vibecheck-pr-review.yml` roda o scanner nos arquivos alterados de cada Pull Request e comenta nas linhas novas que tiverem achados.
 
 - Dispara quando o PR é aberto, reaberto, recebe novos commits ou sai do modo rascunho.
 - Lê os arquivos pela API do GitHub, com limites de tamanho e de tempo.

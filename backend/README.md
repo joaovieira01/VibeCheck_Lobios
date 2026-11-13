@@ -159,7 +159,7 @@ e copie as novas regras para `app/rules.json` (campos `pattern`/`safePattern`).
 
 ## Revisão de Pull Requests no GitHub
 
-O workflow raiz `.github/workflows/aura-scanner.yml` usa este scanner para revisar
+O workflow raiz `.github/workflows/vibecheck-pr-review.yml` usa este scanner para revisar
 linhas adicionadas em Pull Requests e publicar comentários inline. Para ativá-lo,
 mantenha o workflow no branch padrão do GitHub. Ele usa `pull_request_target` para
 receber permissão de comentar em PRs de forks, mas faz checkout **somente do commit

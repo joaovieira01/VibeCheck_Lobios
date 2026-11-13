@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from app.ai.config import AISettings
+from scripts import metrics as metrics_script, scan_file as scan_file_script
 from scripts.metrics import collect_metrics
 from scripts.scan_file import main as scan_file_main
 
@@ -110,6 +111,75 @@ class AIScriptTests(unittest.TestCase):
         self.assertEqual(output["ai"]["status"], "indisponivel")
         self.assertEqual(output["ai"]["calls"], 0)
         self.assertIn("dynamic-eval", {item["id"] for item in output["findings"]})
+
+    def test_metrics_ai_loads_root_env_without_overriding_process_environment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".env").write_text(
+                "AI_ENABLED=true\n"
+                "AI_BASE_URL=https://provider.invalid/v1\n"
+                "AI_API_KEY=placeholder\n"
+                "AI_MODEL=dotenv-model\n",
+                encoding="utf-8",
+            )
+            with patch.object(metrics_script, "ROOT", root), patch.dict(
+                os.environ, {"AI_MODEL": "environment-model"}, clear=True
+            ):
+                metrics = collect_metrics(ai=True, ai_provider=FakeProvider())
+
+        self.assertEqual(metrics["aiMetrics"]["status"], "ativa")
+        self.assertEqual(metrics["aiMetrics"]["model"], "environment-model")
+
+    def test_scan_file_ai_loads_root_env_without_overriding_process_environment(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / ".env").write_text(
+                "AI_ENABLED=true\n"
+                "AI_BASE_URL=https://provider.invalid/v1\n"
+                "AI_API_KEY=placeholder\n"
+                "AI_MODEL=dotenv-model\n",
+                encoding="utf-8",
+            )
+            source_path = root / "sample.py"
+            source_path.write_text(
+                "def evaluate(value):\n    return eval(value)\n",
+                encoding="utf-8",
+            )
+            stdout = io.StringIO()
+            with patch.object(scan_file_script, "ROOT", root), patch.object(
+                scan_file_script,
+                "OpenAICompatibleClient",
+                lambda *_args, **_kwargs: FakeProvider(),
+            ), patch.dict(
+                os.environ, {"AI_MODEL": "environment-model"}, clear=True
+            ), contextlib.redirect_stdout(stdout):
+                status = scan_file_main([str(source_path), "--ai"])
+
+        self.assertEqual(status, 0)
+        self.assertEqual(
+            json.loads(stdout.getvalue())["ai"]["model"], "environment-model"
+        )
+
+    def test_ai_scripts_work_when_root_env_is_absent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source_path = root / "sample.py"
+            source_path.write_text("print('rules only')\n", encoding="utf-8")
+            stdout = io.StringIO()
+            with patch.object(scan_file_script, "ROOT", root), patch.dict(
+                os.environ, {}, clear=True
+            ), contextlib.redirect_stdout(stdout):
+                status = scan_file_main([str(source_path), "--ai"])
+            self.assertEqual(status, 0)
+            self.assertEqual(
+                json.loads(stdout.getvalue())["ai"]["status"], "indisponivel"
+            )
+
+            with patch.object(metrics_script, "ROOT", root), patch.dict(
+                os.environ, {}, clear=True
+            ):
+                metrics = collect_metrics(ai=True)
+        self.assertEqual(metrics["aiMetrics"]["status"], "desativada")
 
 
 if __name__ == "__main__":
