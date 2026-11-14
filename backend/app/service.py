@@ -11,7 +11,11 @@ from typing import Any
 
 from .ai.config import AIConfigurationError, AISettings
 from .ai.discovery import discover_risky_functions
-from .ai.provider import OpenAICompatibleClient
+from .ai.provider import (
+    AIProviderError,
+    OpenAICompatibleClient,
+    normalize_ai_error_code,
+)
 from .ai.triage import AIAnalyzer, AIProvider, triage_findings
 from .errors import ApiError
 from .scanner import ScanTimeout, scan_source
@@ -113,7 +117,11 @@ def run_analysis(
     try:
         ai_settings = ai_settings or AISettings.from_env()
     except AIConfigurationError:
-        analysis["aiSummary"] = {"status": "indisponivel", "calls": 0}
+        analysis["aiSummary"] = {
+            "status": "indisponivel",
+            "calls": 0,
+            "errorCode": "configuracao_invalida",
+        }
         return analysis
     if not ai_settings.enabled:
         return analysis
@@ -157,16 +165,33 @@ def run_analysis(
         model = _safe_ai_text(ai_settings.model, ai_settings.api_key, 100)
         if "://" in model:
             model = ""
+        unavailable = analyzer.status == "indisponivel"
         analysis["aiSummary"] = {
-            "status": "indisponivel" if analyzer.status == "indisponivel" else "ativa",
+            "status": "indisponivel" if unavailable else "ativa",
             "calls": analyzer.calls,
             **({"model": model} if model else {}),
+            **(
+                {
+                    "errorCode": normalize_ai_error_code(
+                        analyzer.error_code or "network_error"
+                    )
+                }
+                if unavailable
+                else {}
+            ),
+        }
+    except AIProviderError as exc:
+        analysis["aiSummary"] = {
+            "status": "indisponivel",
+            "calls": analyzer.calls if analyzer is not None else 0,
+            "errorCode": normalize_ai_error_code(str(exc)),
         }
     except Exception:
         _LOGGER.warning("A camada de IA falhou; mantendo o resultado das regras.")
         analysis["aiSummary"] = {
             "status": "indisponivel",
             "calls": analyzer.calls if analyzer is not None else 0,
+            "errorCode": "network_error",
             **(
                 {"model": _safe_ai_text(ai_settings.model, ai_settings.api_key, 100)}
                 if ai_settings.model and "://" not in ai_settings.model

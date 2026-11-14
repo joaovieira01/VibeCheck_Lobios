@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
@@ -43,7 +44,7 @@ def _positive_float(name: str, default: float) -> float:
         value = float(raw)
     except ValueError as exc:
         raise AIConfigurationError(f"{name} deve ser numérico.") from exc
-    if value <= 0:
+    if not math.isfinite(value) or value <= 0:
         raise AIConfigurationError(f"{name} deve ser maior que zero.")
     return value
 

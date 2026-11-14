@@ -323,14 +323,14 @@ def discover_risky_functions(
         ValueError,
         json.JSONDecodeError,
     ):
-        analyzer.status = "indisponivel"
+        analyzer.mark_unavailable("invalid_response")
         return []
     if not isinstance(response, dict) or set(response) != {"findings"}:
-        analyzer.status = "indisponivel"
+        analyzer.mark_unavailable("invalid_response")
         return []
     suggestions = response["findings"]
     if not isinstance(suggestions, list):
-        analyzer.status = "indisponivel"
+        analyzer.mark_unavailable("invalid_response")
         return []
 
     functions = {f"f{index}": item for index, item in enumerate(candidates)}
