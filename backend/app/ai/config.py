@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
@@ -43,7 +44,7 @@ def _positive_float(name: str, default: float) -> float:
         value = float(raw)
     except ValueError as exc:
         raise AIConfigurationError(f"{name} deve ser numérico.") from exc
-    if value <= 0:
+    if not math.isfinite(value) or value <= 0:
         raise AIConfigurationError(f"{name} deve ser maior que zero.")
     return value
 
@@ -61,6 +62,21 @@ def _positive_int(name: str, default: int) -> int:
     return value
 
 
+def _optional_bounded_positive_int(name: str, maximum: int) -> int | None:
+    raw = os.environ.get(name)
+    if raw is None or not raw.strip():
+        return None
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise AIConfigurationError(f"{name} deve ser inteiro.") from exc
+    if value <= 0:
+        raise AIConfigurationError(f"{name} deve ser maior que zero.")
+    if value > maximum:
+        raise AIConfigurationError(f"{name} não pode ser maior que {maximum}.")
+    return value
+
+
 def _boolean(name: str, default: bool) -> bool:
     raw = os.environ.get(name)
     if raw is None or not raw.strip():
@@ -73,6 +89,18 @@ def _boolean(name: str, default: bool) -> bool:
     raise AIConfigurationError(f"{name} deve ser booleano.")
 
 
+def _optional_reasoning_effort() -> str | None:
+    raw = os.environ.get("AI_REASONING_EFFORT")
+    if raw is None or not raw.strip():
+        return None
+    value = raw.strip().lower()
+    if value not in {"none", "minimal", "low", "medium", "high"}:
+        raise AIConfigurationError(
+            "AI_REASONING_EFFORT deve ser none, minimal, low, medium ou high."
+        )
+    return value
+
+
 @dataclass(frozen=True)
 class AISettings:
     enabled: bool = False
@@ -83,6 +111,9 @@ class AISettings:
     max_calls_per_scan: int = 10
     concurrency: int = 2
     discovery: bool = False
+    max_completion_tokens: int | None = None
+    reasoning_effort: str | None = None
+    total_timeout_seconds: float = 60
 
     @classmethod
     def from_env(cls) -> AISettings:
@@ -98,6 +129,11 @@ class AISettings:
             max_calls_per_scan=_positive_int("AI_MAX_CALLS_PER_SCAN", 10),
             concurrency=_positive_int("AI_CONCURRENCY", 2),
             discovery=_boolean("AI_DISCOVERY", False),
+            max_completion_tokens=_optional_bounded_positive_int(
+                "AI_MAX_COMPLETION_TOKENS", 8192
+            ),
+            reasoning_effort=_optional_reasoning_effort(),
+            total_timeout_seconds=_positive_float("AI_TOTAL_TIMEOUT_SECONDS", 60),
         )
         if not settings.base_url or not settings.api_key or not settings.model:
             raise AIConfigurationError(

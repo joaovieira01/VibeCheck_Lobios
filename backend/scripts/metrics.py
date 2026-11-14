@@ -10,6 +10,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
 
@@ -24,6 +26,10 @@ SAMPLES = ROOT / "backend" / "tests" / "samples"
 VULNERABLE_PATH = SAMPLES / "amostra_vulneravel.py"
 SAFE_PATH = SAMPLES / "amostra_segura.py"
 ANSWER_KEY_PATH = SAMPLES / "gabarito_amostra.json"
+
+
+def _load_root_env() -> None:
+    load_dotenv(dotenv_path=ROOT / ".env", override=False)
 
 
 def _measure(path: Path) -> tuple[dict[str, Any], float]:
@@ -211,6 +217,8 @@ def collect_metrics(
     ai_settings: AISettings | None = None,
     ai_provider: AIProvider | None = None,
 ) -> dict[str, Any]:
+    if ai and ai_settings is None:
+        _load_root_env()
     answer_key = json.loads(ANSWER_KEY_PATH.read_text(encoding="utf-8"))
     vulnerable, vulnerable_seconds = _measure(VULNERABLE_PATH)
     safe, safe_seconds = _measure(SAFE_PATH)

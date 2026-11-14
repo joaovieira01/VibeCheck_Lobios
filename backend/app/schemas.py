@@ -58,6 +58,19 @@ class AISummaryOut(CamelModel):
     status: Literal["ativa", "desativada", "indisponivel"]
     calls: int = Field(ge=0)
     model: str | None = Field(default=None, max_length=100)
+    error_code: Literal[
+        "invalid_base_url",
+        "network_error",
+        "http_401",
+        "http_403",
+        "http_429",
+        "http_5xx",
+        "invalid_response",
+        "response_too_large",
+        "timeout_total",
+        "calls_exhausted",
+        "configuracao_invalida",
+    ] | None = None
 
 
 class AnalysisOut(CamelModel):

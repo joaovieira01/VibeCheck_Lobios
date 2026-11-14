@@ -122,3 +122,8 @@ O caso previamente observado em `backend/app/main.py:296` deixou de aparecer: a 
 - Métrica rules-only final: **28/28 (100%)**, **0** itens por regra errada, **0** não detectados, achado adicional **1/1**, **0** achados sem correspondência e **0** na amostra segura.
 - `git diff --check` passou. Busca por formatos comuns de chaves/tokens reais e URLs com credenciais não encontrou correspondências no repositório.
 - Não houve chamada a provedor real. Configuração, endpoint, modelo, qualidade dos rótulos e comportamento de rate limit/termos de retenção de qualquer serviço externo seguem sem validação real; os testes de IA usam apenas provedor falso sem sockets.
+
+## Atualização — nome do workflow de PR
+
+- O workflow foi renomeado para `.github/workflows/vibecheck-pr-review.yml` e seu nome exibido passou a `VibeCheck`; referências nos READMEs foram atualizadas.
+- As mensagens, o resumo e o `User-Agent` de `github_pr_review.py` usam a marca `VibeCheck`. O script não procura nem atualiza comentários anteriores, então a mudança não altera detecção; comentários já publicados permanecem como estão.

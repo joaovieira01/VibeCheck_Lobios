@@ -18,13 +18,24 @@ class FakeProvider:
         self.failure = failure
         self.calls = []
 
-    def complete(self, *, model, messages, max_tokens, temperature=0):
+    def complete(
+        self,
+        *,
+        model,
+        messages,
+        max_tokens,
+        temperature=0,
+        timeout_seconds=None,
+        reasoning_effort=None,
+    ):
         self.calls.append(
             {
                 "model": model,
                 "messages": messages,
                 "max_tokens": max_tokens,
                 "temperature": temperature,
+                "timeout_seconds": timeout_seconds,
+                "reasoning_effort": reasoning_effort,
             }
         )
         if self.failure is not None:
@@ -38,6 +49,8 @@ def analyzer(
     enabled: bool = True,
     discovery: bool = True,
     max_calls: int = 10,
+    max_completion_tokens: int | None = None,
+    reasoning_effort: str | None = None,
 ) -> AIAnalyzer:
     settings = AISettings(
         enabled=enabled,
@@ -46,6 +59,8 @@ def analyzer(
         model="test-small",
         max_calls_per_scan=max_calls,
         discovery=discovery,
+        max_completion_tokens=max_completion_tokens,
+        reasoning_effort=reasoning_effort,
     )
     return AIAnalyzer(settings, provider)
 
@@ -85,6 +100,7 @@ class DiscoveryTests(unittest.TestCase):
             discover_risky_functions(source, "routes.py", [], current), []
         )
         self.assertEqual(len(provider.calls), 1)
+        self.assertEqual(provider.calls[0]["max_tokens"], 600)
         request = json.loads(provider.calls[0]["messages"][1]["content"])
         self.assertEqual(len(request["functions"]), 5)
         self.assertEqual(current.calls, 1)
@@ -160,16 +176,34 @@ class DiscoveryTests(unittest.TestCase):
         self.assertIn("<CODE_", sent)
         self.assertIn("</CODE_", sent)
 
+    def test_completion_tokens_and_reasoning_effort_override_discovery_defaults(self):
+        provider = FakeProvider()
+        current = analyzer(
+            provider,
+            max_completion_tokens=1400,
+            reasoning_effort="high",
+        )
+        source = "def handler(request):\n    return db.query(request.args)"
+
+        discover_risky_functions(source, "app.py", [], current)
+
+        self.assertEqual(provider.calls[0]["max_tokens"], 1400)
+        self.assertEqual(provider.calls[0]["reasoning_effort"], "high")
+
     def test_invalid_json_and_provider_failure_return_no_suggestions(self):
         source = "def handler(request):\n    return db.query(request.args)"
-        for provider in (
-            FakeProvider(["not json"]),
-            FakeProvider(failure=TimeoutError("private runtime error")),
+        for provider, error_code in (
+            (FakeProvider(["not json"]), "invalid_response"),
+            (
+                FakeProvider(failure=TimeoutError("private runtime error")),
+                "network_error",
+            ),
         ):
             current = analyzer(provider)
             result = discover_risky_functions(source, "app.py", [], current)
             self.assertEqual(result, [])
             self.assertEqual(current.status, "indisponivel")
+            self.assertEqual(current.error_code, error_code)
 
     def test_discovery_uses_the_triage_call_budget(self):
         provider = FakeProvider()
@@ -183,6 +217,7 @@ class DiscoveryTests(unittest.TestCase):
         self.assertEqual(len(provider.calls), 1)
         self.assertEqual(current.calls, 1)
         self.assertEqual(current.status, "indisponivel")
+        self.assertEqual(current.error_code, "calls_exhausted")
 
 
 if __name__ == "__main__":

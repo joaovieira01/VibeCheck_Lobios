@@ -9,6 +9,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
 
@@ -17,6 +19,10 @@ from app.ai.provider import OpenAICompatibleClient
 from app.ai.triage import AIProvider
 from app.scanner import DEFAULT_MAX_LINE_CHARS
 from app.service import run_analysis
+
+
+def _load_root_env() -> None:
+    load_dotenv(dotenv_path=ROOT / ".env", override=False)
 
 
 class _TimedProvider:
@@ -31,6 +37,8 @@ class _TimedProvider:
         messages: list[dict[str, str]],
         max_tokens: int,
         temperature: float = 0,
+        timeout_seconds: float | None = None,
+        reasoning_effort: str | None = None,
     ) -> str:
         started = time.perf_counter()
         try:
@@ -39,6 +47,8 @@ class _TimedProvider:
                 messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
+                timeout_seconds=timeout_seconds,
+                reasoning_effort=reasoning_effort,
             )
         finally:
             self.elapsed_seconds += time.perf_counter() - started
@@ -49,10 +59,10 @@ def _ai_configuration(requested: bool) -> tuple[AISettings, str | None]:
         return AISettings(), None
     try:
         settings = AISettings.from_env()
-    except AIConfigurationError as exc:
-        return AISettings(), f"Configuração de IA inválida ({exc})."
+    except AIConfigurationError:
+        return AISettings(), "configuracao_invalida"
     if not settings.enabled:
-        return AISettings(), "AI_ENABLED não está true."
+        return AISettings(), "configuracao_invalida"
     return settings, None
 
 
@@ -71,10 +81,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Erro ao ler arquivo: {exc}", file=sys.stderr)
         return 2
 
+    if args.ai:
+        _load_root_env()
     settings, warning = _ai_configuration(args.ai)
     if warning:
         print(
-            f"Aviso: {warning} Continuando somente com as regras.",
+            f"Aviso: IA indisponível ({warning}); continuando somente com as regras.",
             file=sys.stderr,
         )
 
@@ -101,6 +113,8 @@ def main(argv: list[str] | None = None) -> int:
             "status": "indisponivel" if warning else "desativada",
             "calls": 0,
         }
+        if warning:
+            ai_summary["errorCode"] = warning
     output: dict[str, Any] = {
         "file": args.file.name,
         "findings": analysis["findings"],
@@ -114,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     if ai_summary["status"] == "indisponivel" and settings.enabled:
         print(
-            "Aviso: provedor de IA indisponível; exibindo os achados das regras.",
+            f"Aviso: IA indisponível ({ai_summary['errorCode']}); exibindo os achados das regras.",
             file=sys.stderr,
         )
     print(json.dumps(output, ensure_ascii=False, indent=2))

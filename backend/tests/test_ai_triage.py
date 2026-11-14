@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import secrets
 import socket
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -29,13 +30,24 @@ class FakeProvider:
         self.failure = failure
         self.calls = []
 
-    def complete(self, *, model, messages, max_tokens, temperature=0):
+    def complete(
+        self,
+        *,
+        model,
+        messages,
+        max_tokens,
+        temperature=0,
+        timeout_seconds=None,
+        reasoning_effort=None,
+    ):
         self.calls.append(
             {
                 "model": model,
                 "messages": messages,
                 "max_tokens": max_tokens,
                 "temperature": temperature,
+                "timeout_seconds": timeout_seconds,
+                "reasoning_effort": reasoning_effort,
             }
         )
         if self.failure:
@@ -75,7 +87,15 @@ def finding(
     }
 
 
-def analyzer(provider, *, max_calls=10, model="test-small"):
+def analyzer(
+    provider,
+    *,
+    max_calls=10,
+    model="test-small",
+    max_completion_tokens=None,
+    reasoning_effort=None,
+    total_timeout_seconds=60,
+):
     settings = AISettings(
         enabled=True,
         base_url="https://provider.invalid/v1",
@@ -83,6 +103,9 @@ def analyzer(provider, *, max_calls=10, model="test-small"):
         model=model,
         max_calls_per_scan=max_calls,
         concurrency=2,
+        max_completion_tokens=max_completion_tokens,
+        reasoning_effort=reasoning_effort,
+        total_timeout_seconds=total_timeout_seconds,
     )
     return AIAnalyzer(settings, provider)
 
@@ -139,6 +162,7 @@ class TriageTests(unittest.TestCase):
         )
         self.assertEqual(result, {})
         self.assertEqual(current.status, "indisponivel")
+        self.assertEqual(current.error_code, "invalid_response")
         self.assertEqual(current.calls, 1)
 
     def test_unknown_id_and_invalid_schema_items_are_ignored(self):
@@ -310,8 +334,55 @@ class TriageTests(unittest.TestCase):
         result = triage_findings(items, source, "batch.py", current)
         self.assertEqual(len(provider.calls), 1)
         self.assertEqual(current.calls, 1)
-        self.assertLessEqual(len(result), 8)
+        self.assertEqual(len(result), 8)
         self.assertEqual(current.status, "indisponivel")
+        self.assertEqual(current.error_code, "calls_exhausted")
+
+    def test_completion_tokens_and_reasoning_effort_are_optional(self):
+        source = "def query():\n    db.execute(query)"
+        provider = FakeProvider()
+        triage_findings([finding()], source, "query.py", analyzer(provider))
+        self.assertEqual(provider.calls[0]["max_tokens"], 700)
+        self.assertIsNone(provider.calls[0]["reasoning_effort"])
+
+        configured_provider = FakeProvider()
+        configured_analyzer = analyzer(
+            configured_provider,
+            max_completion_tokens=1200,
+            reasoning_effort="low",
+        )
+        triage_findings(
+            [finding("configured-rule")],
+            source,
+            "query.py",
+            configured_analyzer,
+        )
+        self.assertEqual(configured_provider.calls[0]["max_tokens"], 1200)
+        self.assertEqual(configured_provider.calls[0]["reasoning_effort"], "low")
+
+    def test_timeout_keeps_verdicts_from_completed_batches(self):
+        class SlowSecondProvider(FakeProvider):
+            def complete(self, **kwargs):
+                if self.calls:
+                    time.sleep(kwargs["timeout_seconds"])
+                    raise TimeoutError("simulated total deadline")
+                return super().complete(**kwargs)
+
+        provider = SlowSecondProvider()
+        current = analyzer(provider, total_timeout_seconds=0.01)
+        items = [finding(f"rule-{index}") for index in range(17)]
+        result = triage_findings(
+            items,
+            "def query():\n    db.execute(query)",
+            "query.py",
+            current,
+        )
+
+        self.assertEqual(len(provider.calls), 1)
+        self.assertEqual(len(result), 8)
+        self.assertEqual(current.status, "indisponivel")
+        self.assertEqual(current.error_code, "timeout_total")
+        self.assertEqual(set(result), {item["id"] for item in items[:8]})
 
     def test_timeout_is_nonfatal_and_does_not_expose_provider_error(self):
         private_value = "timeout-error-with-private-placeholder"
@@ -471,7 +542,16 @@ class TriageTests(unittest.TestCase):
             def __init__(self):
                 self.calls = []
 
-            def complete(self, *, model, messages, max_tokens, temperature=0):
+            def complete(
+                self,
+                *,
+                model,
+                messages,
+                max_tokens,
+                temperature=0,
+                timeout_seconds=None,
+                reasoning_effort=None,
+            ):
                 self.calls.append(messages)
                 user = json.loads(messages[-1]["content"])
                 return json.dumps(

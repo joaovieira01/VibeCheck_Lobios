@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from app.ai.config import AISettings
+from app.ai.provider import normalize_ai_error_code
 from app.ai.triage import _CACHE, _CACHE_LOCK
 from app.schemas import AnalysisOut
 from app.scanner import scan_source
@@ -25,7 +26,16 @@ class FakeProvider:
         self.respond = respond
         self.calls = []
 
-    def complete(self, *, model, messages, max_tokens, temperature=0):
+    def complete(
+        self,
+        *,
+        model,
+        messages,
+        max_tokens,
+        temperature=0,
+        timeout_seconds=None,
+        reasoning_effort=None,
+    ):
         self.calls.append(
             {
                 "model": model,
@@ -37,13 +47,19 @@ class FakeProvider:
         return self.respond(messages)
 
 
-def enabled_settings(*, discovery=False, api_key="runtime-api-key-placeholder"):
+def enabled_settings(
+    *,
+    discovery=False,
+    api_key="runtime-api-key-placeholder",
+    max_calls_per_scan=10,
+):
     return AISettings(
         enabled=True,
         base_url="https://provider.invalid/v1",
         api_key=api_key,
         model="small-test-model",
         discovery=discovery,
+        max_calls_per_scan=max_calls_per_scan,
     )
 
 
@@ -196,6 +212,42 @@ class AIAnalysisIntegrationTests(unittest.TestCase):
             max(len(item["reason"]) for item in analysis["aiFindings"]), 200
         )
 
+    def test_call_exhaustion_preserves_completed_verdicts_and_rule_findings(self):
+        provider = FakeProvider(
+            lambda messages: json.dumps(
+                {
+                    "results": [
+                        {
+                            "id": item["id"],
+                            "verdict": "confirmado",
+                            "confidence": 0.9,
+                            "reason": "Veredito válido antes do limite.",
+                        }
+                        for item in json.loads(messages[-1]["content"])["findings"]
+                    ]
+                }
+            )
+        )
+        analysis = run_analysis(
+            "handler.py",
+            '@app.post("/x")\ndef evaluate(value):\n    return eval(value)\n',
+            ai_settings=enabled_settings(
+                discovery=True,
+                max_calls_per_scan=1,
+            ),
+            ai_provider=provider,
+            **ANALYSIS_LIMITS,
+        )
+
+        finding = next(
+            item for item in analysis["findings"] if item["id"] == "dynamic-eval"
+        )
+        self.assertEqual(finding["aiVerdict"], "confirmado")
+        self.assertEqual(analysis["aiSummary"]["status"], "indisponivel")
+        self.assertEqual(analysis["aiSummary"]["errorCode"], "calls_exhausted")
+        self.assertEqual(analysis["aiSummary"]["calls"], 1)
+        self.assertEqual(len(provider.calls), 1)
+
     def test_provider_failure_returns_rules_and_unavailable_status(self):
         key = "runtime-failure-key-placeholder"
 
@@ -212,7 +264,66 @@ class AIAnalysisIntegrationTests(unittest.TestCase):
         )
         self.assertIn("dynamic-eval", {item["id"] for item in analysis["findings"]})
         self.assertEqual(analysis["aiSummary"]["status"], "indisponivel")
+        self.assertEqual(analysis["aiSummary"]["errorCode"], "network_error")
         self.assertNotIn(key, json.dumps(analysis))
+        AnalysisOut.model_validate(analysis)
+
+    def test_invalid_configuration_and_base_url_return_fixed_error_codes(self):
+        source = "def evaluate(value):\n    return eval(value)\n"
+        with patch.dict(
+            "os.environ",
+            {
+                "AI_ENABLED": "true",
+                "AI_BASE_URL": "https://provider.invalid/v1",
+                "AI_API_KEY": "placeholder",
+                "AI_MODEL": "small-model",
+                "AI_REASONING_EFFORT": "unexpected-value",
+            },
+            clear=True,
+        ):
+            invalid_configuration = run_analysis(
+                "handler.py", source, ai_settings=None, **ANALYSIS_LIMITS
+            )
+        self.assertEqual(
+            invalid_configuration["aiSummary"]["errorCode"],
+            "configuracao_invalida",
+        )
+
+        invalid_url = run_analysis(
+            "handler.py",
+            source,
+            ai_settings=AISettings(
+                enabled=True,
+                base_url="http://provider.invalid/v1",
+                api_key="placeholder",
+                model="small-model",
+            ),
+            **ANALYSIS_LIMITS,
+        )
+        self.assertEqual(invalid_url["aiSummary"]["errorCode"], "invalid_base_url")
+        self.assertIn("dynamic-eval", {item["id"] for item in invalid_url["findings"]})
+
+    def test_error_code_schema_rejects_values_outside_the_fixed_list(self):
+        with self.assertRaises(ValueError):
+            AnalysisOut.model_validate(
+                {
+                    "id": "test",
+                    "filename": "test.py",
+                    "language": "Python",
+                    "linesAnalyzed": 1,
+                    "createdAt": "2026-01-01T00:00:00.000Z",
+                    "durationMs": 1,
+                    "findings": [],
+                    "rulesRun": 0,
+                    "aiSummary": {
+                        "status": "indisponivel",
+                        "calls": 0,
+                        "errorCode": "arbitrary-free-text",
+                    },
+                }
+            )
+        self.assertEqual(normalize_ai_error_code("http_503"), "http_5xx")
+        self.assertEqual(normalize_ai_error_code("arbitrary-free-text"), "network_error")
 
     def test_legacy_history_payload_validates_without_ai_fields(self):
         legacy = {

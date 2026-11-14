@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from .config import AISettings
+from .provider import AIProviderError, normalize_ai_error_code
 
 _MAX_CACHE_ENTRIES = 512
 _MAX_FINDINGS_PER_REQUEST = 8
@@ -62,6 +63,8 @@ class AIProvider(Protocol):
         messages: list[dict[str, str]],
         max_tokens: int,
         temperature: float = 0,
+        timeout_seconds: float | None = None,
+        reasoning_effort: str | None = None,
     ) -> str: ...
 
 
@@ -73,12 +76,19 @@ class AIAnalyzer:
     provider: AIProvider
     calls: int = 0
     status: str = "ok"
+    error_code: str | None = None
     elapsed_seconds: float = 0
     _semaphore: threading.BoundedSemaphore = field(init=False, repr=False)
     _call_lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+    _deadline: float = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._semaphore = threading.BoundedSemaphore(self.settings.concurrency)
+        self._deadline = time.monotonic() + self.settings.total_timeout_seconds
+
+    def mark_unavailable(self, error_code: str) -> None:
+        self.status = "indisponivel"
+        self.error_code = normalize_ai_error_code(error_code)
 
     def cached(self, key: str) -> dict[str, Any] | None:
         with _CACHE_LOCK:
@@ -98,22 +108,56 @@ class AIAnalyzer:
     def request(
         self, messages: list[dict[str, str]], max_tokens: int
     ) -> str | None:
-        with self._call_lock:
-            if self.calls >= self.settings.max_calls_per_scan:
-                self.status = "indisponivel"
-                return None
-            self.calls += 1
         started = time.perf_counter()
         try:
             with self._semaphore:
-                return self.provider.complete(
-                    model=self.settings.model,
-                    messages=messages,
-                    max_tokens=max_tokens,
-                    temperature=0,
+                with self._call_lock:
+                    if self.status == "indisponivel":
+                        return None
+                    remaining = self._deadline - time.monotonic()
+                    if remaining <= 0:
+                        self.mark_unavailable("timeout_total")
+                        return None
+                    if self.calls >= self.settings.max_calls_per_scan:
+                        self.mark_unavailable("calls_exhausted")
+                        return None
+                    self.calls += 1
+                request_tokens = (
+                    self.settings.max_completion_tokens
+                    if self.settings.max_completion_tokens is not None
+                    else max_tokens
                 )
+                kwargs: dict[str, Any] = {
+                    "model": self.settings.model,
+                    "messages": messages,
+                    "max_tokens": request_tokens,
+                    "temperature": 0,
+                    "timeout_seconds": remaining,
+                }
+                if self.settings.reasoning_effort is not None:
+                    kwargs["reasoning_effort"] = self.settings.reasoning_effort
+                try:
+                    content = self.provider.complete(**kwargs)
+                except AIProviderError as exc:
+                    code = str(exc)
+                    if time.monotonic() >= self._deadline:
+                        code = "timeout_total"
+                    self.mark_unavailable(code)
+                    return None
+                except Exception:
+                    code = (
+                        "timeout_total"
+                        if time.monotonic() >= self._deadline
+                        else "network_error"
+                    )
+                    self.mark_unavailable(code)
+                    return None
+                if time.monotonic() >= self._deadline:
+                    self.mark_unavailable("timeout_total")
+                    return None
+                return content
         except Exception:
-            self.status = "indisponivel"
+            self.mark_unavailable("network_error")
             return None
         finally:
             self.elapsed_seconds += time.perf_counter() - started
@@ -360,7 +404,7 @@ def triage_findings(
             content, {item["id"] for item in batch}
         )
         if not valid_json:
-            analyzer.status = "indisponivel"
+            analyzer.mark_unavailable("invalid_response")
             break
         for item in batch:
             annotation = validated.get(item["id"])

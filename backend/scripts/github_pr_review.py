@@ -1,4 +1,4 @@
-"""Run AuraScanner against changed GitHub PR files and add inline review comments."""
+"""Run VibeCheck against changed GitHub PR files and add inline review comments."""
 
 from __future__ import annotations
 
@@ -84,7 +84,7 @@ def comments_for_findings(
                 f"{finding['description']}\n\n"
                 f"**Recomendação:** {finding['recommendation']}\n\n"
                 f"{code_fence}text\n{evidence[:500]}\n{code_fence}\n\n"
-                "_Achado heurístico do AuraScanner; confirme no contexto do projeto._"
+                "_Achado heurístico do VibeCheck; confirme no contexto do projeto._"
             )
             by_line.setdefault(line_number, []).append(body)
 
@@ -108,7 +108,7 @@ def render_step_summary(
 ) -> str:
     total_occurrences = sum(occurrences_by_severity.values())
     lines = [
-        "## AuraScanner · revisão de segurança",
+        "## VibeCheck · revisão de segurança",
         "",
         f"- **Arquivos analisados:** {files_scanned}",
         f"- **Ocorrências sinalizadas:** {total_occurrences}",
@@ -155,7 +155,7 @@ def _api_request(token: str, endpoint: str) -> Any:
             "Accept": "application/vnd.github+json",
             "Authorization": f"Bearer {token}",
             "X-GitHub-Api-Version": "2022-11-28",
-            "User-Agent": "AuraScanner",
+            "User-Agent": "VibeCheck",
         },
     )
     try:
@@ -177,7 +177,7 @@ def _api_post(token: str, endpoint: str, payload: dict[str, Any]) -> Any:
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
             "X-GitHub-Api-Version": "2022-11-28",
-            "User-Agent": "AuraScanner",
+            "User-Agent": "VibeCheck",
         },
         method="POST",
     )
@@ -291,7 +291,7 @@ def run_review(
             )
         )
 
-    print(f"AuraScanner: {len(review_comments)} comentário(s) em linhas adicionadas.")
+    print(f"VibeCheck: {len(review_comments)} comentário(s) em linhas adicionadas.")
     if review_comments:
         for start in range(0, len(review_comments), 50):
             comment_batch = review_comments[start : start + 50]
@@ -302,7 +302,7 @@ def run_review(
                     "commit_id": head_sha,
                     "event": "COMMENT",
                     "body": (
-                        f"AuraScanner encontrou {sum(occurrences_by_severity.values())} "
+                        f"VibeCheck encontrou {sum(occurrences_by_severity.values())} "
                         "ocorrência(s) nas linhas adicionadas. Revise os comentários "
                         "antes do merge. Esta verificação é informativa e não bloqueia o pipeline."
                     ),
