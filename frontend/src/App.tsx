@@ -56,10 +56,16 @@ import {
 } from "react";
 import { owaspCategories } from "./data/owasp";
 import { FindingFix } from "./components/FindingFix";
-import { analysisService, authenticateWithApi, logoutFromApi } from "./services/analysisService";
+import { RepositoryTab } from "./components/RepositoryTab";
+import {
+  analysisService,
+  authenticateWithApi,
+  logoutFromApi,
+  repositoryAnalysisService,
+} from "./services/analysisService";
 import type { Analysis, AnalysisInput, Finding } from "./types";
 
-type View = "dashboard" | "scanner" | "coverage" | "history";
+type View = "dashboard" | "scanner" | "repository" | "coverage" | "history";
 type InputMode = "paste" | "file";
 type Theme = "dark" | "light";
 
@@ -1264,6 +1270,16 @@ function App() {
           </button>
           <button
             type="button"
+            className={`side-link ${view === "repository" ? "active" : ""}`}
+            aria-label="Repositório"
+            title="Repositório"
+            onClick={() => setViewAndClose("repository")}
+          >
+            <FileSearch size={17} />
+            <span>Repositório</span>
+          </button>
+          <button
+            type="button"
             className={`side-link ${view === "coverage" ? "active" : ""}`}
             aria-label="Cobertura OWASP"
             title="Cobertura OWASP"
@@ -1340,7 +1356,7 @@ function App() {
             <span className="breadcrumb-root">Workspace</span>
             <ChevronRight size={14} />
             <span className="breadcrumb-current">
-              {view === "dashboard" ? "Dashboard" : view === "scanner" ? "Análise de código" : view === "coverage" ? "OWASP Top 10" : "Histórico"}
+              {view === "dashboard" ? "Dashboard" : view === "scanner" ? "Análise de código" : view === "repository" ? "Repositório" : view === "coverage" ? "OWASP Top 10" : "Histórico"}
             </span>
           </div>
           <div className="topbar-end">
@@ -1946,6 +1962,13 @@ function App() {
                   120,
                 );
               }}
+            />
+          )}
+
+          {view === "repository" && (
+            <RepositoryTab
+              apiEnabled={apiMode}
+              service={repositoryAnalysisService}
             />
           )}
 

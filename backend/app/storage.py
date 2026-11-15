@@ -21,7 +21,7 @@ class AnalysisStore:
                     analysis["id"],
                     user_id,
                     analysis["createdAt"],
-                    json.dumps(analysis, ensure_ascii=False),
+                    json.dumps(analysis, ensure_ascii=False, separators=(",", ":")),
                 ),
             )
             # Mantém só as N mais recentes do usuário (igual ao limite do frontend).
@@ -39,7 +39,24 @@ class AnalysisStore:
                 "ORDER BY created_at DESC, id DESC LIMIT ?",
                 (user_id, self._max_history),
             ).fetchall()
-        return [json.loads(row[0]) for row in rows]
+        return [
+            analysis
+            for row in rows
+            if (analysis := json.loads(row[0])).get("analysisType") != "repository"
+        ]
+
+    def list_by_type(self, user_id: str, analysis_type: str) -> list[dict[str, Any]]:
+        with self._db.connect() as conn:
+            rows = conn.execute(
+                "SELECT payload FROM analyses WHERE user_id = ? "
+                "ORDER BY created_at DESC, id DESC",
+                (user_id,),
+            ).fetchall()
+        return [
+            analysis
+            for row in rows
+            if (analysis := json.loads(row[0])).get("analysisType") == analysis_type
+        ][: self._max_history]
 
     def get(self, user_id: str, analysis_id: str) -> dict[str, Any] | None:
         with self._db.connect() as conn:
@@ -48,6 +65,14 @@ class AnalysisStore:
                 (user_id, analysis_id),
             ).fetchone()
         return json.loads(row[0]) if row else None
+
+    def get_by_type(
+        self, user_id: str, analysis_id: str, analysis_type: str
+    ) -> dict[str, Any] | None:
+        analysis = self.get(user_id, analysis_id)
+        if analysis is None or analysis.get("analysisType") != analysis_type:
+            return None
+        return analysis
 
     def clear(self, user_id: str) -> int:
         with self._db.connect() as conn:

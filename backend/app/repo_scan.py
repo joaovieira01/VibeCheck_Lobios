@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import os
 import stat
+import struct
 import tempfile
 import time
 import zlib
@@ -17,6 +18,8 @@ from app.scanner import SEVERITY_ORDER, ScanTimeout, scan_source
 MAX_FILE_BYTES = 1_000_000
 MAX_ZIP_BYTES = 50 * 1_000_000
 MAX_ZIP_FILES = 2_000
+MAX_ZIP_ENTRIES = MAX_ZIP_FILES * 2
+MAX_ZIP_ARCHIVE_BYTES = MAX_ZIP_BYTES + MAX_ZIP_FILES * 1_024
 IGNORED_DIRECTORIES = {
     "node_modules",
     ".git",
@@ -200,16 +203,48 @@ def _zip_entry_path(name: str) -> PurePosixPath:
     return posix
 
 
+def _declared_zip_entry_count(archive_path: Path) -> int | None:
+    with archive_path.open("rb") as source:
+        source.seek(max(0, archive_path.stat().st_size - 65_557))
+        tail = source.read()
+    marker = tail.rfind(b"PK\x05\x06")
+    if marker < 0 or len(tail) < marker + 22:
+        return None
+    comment_length = struct.unpack_from("<H", tail, marker + 20)[0]
+    if marker + 22 + comment_length != len(tail):
+        return None
+    return struct.unpack_from("<H", tail, marker + 10)[0]
+
+
 def _extract_zip(archive_path: Path, target: Path) -> None:
     try:
+        archive_size = archive_path.stat().st_size
+        if archive_size > MAX_ZIP_ARCHIVE_BYTES:
+            raise RepositoryScanError(
+                "O arquivo compactado excede os limites permitidos."
+            )
+        declared_count = _declared_zip_entry_count(archive_path)
+        if declared_count is not None and (
+            declared_count == 0xFFFF
+            or declared_count > MAX_ZIP_FILES
+            or declared_count > MAX_ZIP_ENTRIES
+        ):
+            raise RepositoryScanError(
+                "O arquivo compactado excede os limites permitidos."
+            )
         archive = zipfile.ZipFile(archive_path)
-    except (OSError, zipfile.BadZipFile):
+    except RepositoryScanError:
+        raise
+    except (OSError, zipfile.BadZipFile, zipfile.LargeZipFile):
         raise RepositoryScanError("Não foi possível abrir o arquivo compactado.") from None
 
     with archive:
         entries = archive.infolist()
         file_entries = [entry for entry in entries if not entry.is_dir()]
-        if len(file_entries) > MAX_ZIP_FILES:
+        if (
+            len(file_entries) > MAX_ZIP_FILES
+            or len(entries) > MAX_ZIP_ENTRIES
+        ):
             raise RepositoryScanError("O arquivo compactado excede os limites permitidos.")
         if sum(entry.file_size for entry in file_entries) > MAX_ZIP_BYTES:
             raise RepositoryScanError("O arquivo compactado excede os limites permitidos.")
@@ -237,11 +272,16 @@ def _extract_zip(archive_path: Path, target: Path) -> None:
                 destination.resolve().relative_to(target.resolve())
             except ValueError:
                 raise RepositoryScanError("O arquivo compactado contém um caminho inseguro.") from None
-            if entry.is_dir():
-                destination.mkdir(parents=True, exist_ok=True)
-                continue
+            try:
+                if entry.is_dir():
+                    destination.mkdir(parents=True, exist_ok=True)
+                    continue
+                destination.parent.mkdir(parents=True, exist_ok=True)
+            except OSError:
+                raise RepositoryScanError(
+                    "Não foi possível extrair o arquivo compactado."
+                ) from None
 
-            destination.parent.mkdir(parents=True, exist_ok=True)
             copied = 0
             try:
                 with archive.open(entry) as source, destination.open("xb") as output:

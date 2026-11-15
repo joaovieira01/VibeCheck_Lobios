@@ -17,6 +17,9 @@ Rotas (todas sob /api):
   GET    /api/analyses                        histórico do usuário (mais recentes primeiro)
   GET    /api/analyses/{id}                   uma análise do histórico
   DELETE /api/analyses                        limpa o histórico do usuário
+  POST   /api/repositories/analyses           analisa um ZIP e grava o resultado
+  GET    /api/repositories/analyses            histórico de repositórios
+  GET    /api/repositories/analyses/{id}       detalhes de uma análise de repositório
 
 Rotas protegidas exigem  Authorization: Bearer <token>  (token devolvido por
 register/login).
@@ -32,6 +35,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, Header, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
 
 from .auth import AuthManager
 from .config import Settings, get_settings
@@ -50,9 +54,12 @@ from .schemas import (
     ResetConfirm,
     ResetRequest,
     RuleOut,
+    RepositoryAnalysisOut,
+    RepositoryAnalysisListOut,
+    RepositoryAnalysisRequest,
     UserOut,
 )
-from .service import run_analysis
+from .service import run_analysis, run_repository_analysis
 from .storage import AnalysisStore
 
 logger = logging.getLogger("vibecheck")
@@ -92,12 +99,14 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
         reset_ttl_seconds=settings.reset_ttl_minutes * 60,
     )
     max_body = settings.max_source_bytes * _BODY_LIMIT_FACTOR + 4096
+    max_repo_body = ((settings.max_repo_zip_bytes + 2) // 3) * 4 + 4096
 
     on = settings.rate_limit_enabled
     login_limit = _limiter(on, 10, 15 * 60)  # por IP + e-mail
     register_limit = _limiter(on, 10, 60 * 60)  # por IP
     reset_limit = _limiter(on, 5, 60 * 60)  # por IP
     analysis_limit = _limiter(on, 30, 60)  # por usuário (a análise usa CPU)
+    repository_analysis_limit = _limiter(on, 5, 60 * 60)  # por usuário
 
     def too_many(window_seconds: int) -> ApiError:
         return ApiError(
@@ -123,14 +132,25 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
     @app.middleware("http")
     async def limit_body_size(request: Request, call_next):  # type: ignore[no-untyped-def]
         if request.method == "POST":
+            is_repository_upload = (
+                request.url.path.rstrip("/") == "/api/repositories/analyses"
+            )
+            body_limit = max_repo_body if is_repository_upload else max_body
             length = request.headers.get("content-length")
             if length is None:
                 return JSONResponse(
                     {"detail": "Cabeçalho Content-Length é obrigatório."}, status_code=411
                 )
-            if not length.isdigit() or int(length) > max_body:
+            if not length.isdigit() or int(length) > body_limit:
                 return JSONResponse(
-                    {"detail": "O código excede o limite de 1 MB."}, status_code=413
+                    {
+                        "detail": (
+                            "O arquivo ZIP excede o limite configurado."
+                            if is_repository_upload
+                            else "O código excede o limite de 1 MB."
+                        )
+                    },
+                    status_code=413,
                 )
         return await call_next(request)
 
@@ -302,8 +322,64 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
     )
     def get_analysis(analysis_id: str, user: User) -> dict[str, Any]:
         analysis = store.get(user["id"], analysis_id)
-        if analysis is None:
+        if analysis is None or analysis.get("analysisType") == "repository":
             raise ApiError(404, "Análise não encontrada.")
+        return analysis
+
+    @app.post(
+        "/api/repositories/analyses",
+        response_model=RepositoryAnalysisOut,
+        response_model_exclude_unset=True,
+        status_code=201,
+    )
+    async def create_repository_analysis(
+        body: RepositoryAnalysisRequest, user: User
+    ) -> dict[str, Any]:
+        if not repository_analysis_limit.hit(user["id"]):
+            raise too_many(60 * 60)
+
+        def analyze_and_store() -> dict[str, Any]:
+            analysis = run_repository_analysis(
+                body.filename,
+                body.archive_base64,
+                max_archive_bytes=settings.max_repo_zip_bytes,
+            )
+            store.save(user["id"], analysis)
+            return analysis
+
+        return await run_in_threadpool(analyze_and_store)
+
+    @app.get(
+        "/api/repositories/analyses",
+        response_model=list[RepositoryAnalysisListOut],
+    )
+    def list_repository_analyses(user: User) -> list[dict[str, Any]]:
+        return [
+            {
+                "id": analysis["id"],
+                "filename": analysis["filename"],
+                "createdAt": analysis["createdAt"],
+                "countsBySeverity": analysis["countsBySeverity"],
+                "countsByOwasp": analysis["countsByOwasp"],
+                "filesAnalyzedCount": len(analysis["filesAnalyzed"]),
+                "partial": analysis["partial"],
+                "durationSeconds": analysis["durationSeconds"],
+                "findingsTruncated": analysis["findingsTruncated"],
+                "truncatedFindingsCount": analysis["truncatedFindingsCount"],
+                "truncatedOccurrencesCount": analysis["truncatedOccurrencesCount"],
+            }
+            for analysis in store.list_by_type(user["id"], "repository")
+        ]
+
+    @app.get(
+        "/api/repositories/analyses/{analysis_id}",
+        response_model=RepositoryAnalysisOut,
+        response_model_exclude_unset=True,
+    )
+    def get_repository_analysis(analysis_id: str, user: User) -> dict[str, Any]:
+        analysis = store.get_by_type(user["id"], analysis_id, "repository")
+        if analysis is None:
+            raise ApiError(404, "Análise de repositório não encontrada.")
         return analysis
 
     @app.delete("/api/analyses", status_code=204)

@@ -1,9 +1,18 @@
-import type { Analysis, AnalysisService, Finding, SuggestedFix } from "../types";
+import type {
+  Analysis,
+  AnalysisService,
+  Finding,
+  RepositoryAnalysis,
+  RepositoryAnalysisHistoryItem,
+  RepositoryAnalysisService,
+  SuggestedFix,
+} from "../types";
 import { scanSource } from "./scanner";
 
 const HISTORY_KEY = "vibecheck.frontend.history.v1";
 const MAX_HISTORY = 20;
 const MAX_SOURCE_BYTES = 1_000_000;
+const MAX_REPOSITORY_ZIP_BYTES = 25_000_000;
 
 function isSuggestedFix(value: unknown): value is SuggestedFix {
   if (typeof value !== "object" || value === null) return false;
@@ -232,7 +241,7 @@ export function logoutFromApi(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-class ApiAnalysisService implements AnalysisService {
+class ApiAnalysisService implements AnalysisService, RepositoryAnalysisService {
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const token = getApiToken();
     if (!token) throw new Error("Sua sessão não está conectada à API. Entre novamente.");
@@ -270,7 +279,58 @@ class ApiAnalysisService implements AnalysisService {
   clearHistory(): Promise<void> {
     return this.request<void>("/api/analyses", { method: "DELETE" });
   }
+
+  async analyzeRepository(file: File): Promise<RepositoryAnalysis> {
+    if (!file.name.toLowerCase().endsWith(".zip")) {
+      throw new Error("Selecione um arquivo .zip.");
+    }
+    if (file.size > MAX_REPOSITORY_ZIP_BYTES) {
+      throw new Error("O arquivo ZIP deve ter no máximo 25 MB.");
+    }
+    const archiveBase64 = await encodeFileBase64(file);
+    return this.request<RepositoryAnalysis>("/api/repositories/analyses", {
+      method: "POST",
+      body: JSON.stringify({ filename: file.name, archiveBase64 }),
+    });
+  }
+
+  getRepositoryHistory(): Promise<RepositoryAnalysisHistoryItem[]> {
+    return this.request<RepositoryAnalysisHistoryItem[]>("/api/repositories/analyses");
+  }
+
+  getRepositoryAnalysis(id: string): Promise<RepositoryAnalysis> {
+    return this.request<RepositoryAnalysis>(
+      `/api/repositories/analyses/${encodeURIComponent(id)}`,
+    );
+  }
 }
 
 export const analysisService: AnalysisService =
   API_URL ? new ApiAnalysisService() : new LocalAnalysisService();
+
+async function encodeFileBase64(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const chunkSize = 32_768;
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return btoa(binary);
+}
+
+class LocalRepositoryAnalysisService implements RepositoryAnalysisService {
+  async analyzeRepository(_file: File): Promise<RepositoryAnalysis> {
+    throw new Error("A análise de repositório exige a API do VibeCheck configurada.");
+  }
+
+  async getRepositoryHistory(): Promise<RepositoryAnalysisHistoryItem[]> {
+    throw new Error("O histórico de repositórios exige a API do VibeCheck configurada.");
+  }
+
+  async getRepositoryAnalysis(_id: string): Promise<RepositoryAnalysis> {
+    throw new Error("O histórico de repositórios exige a API do VibeCheck configurada.");
+  }
+}
+
+export const repositoryAnalysisService: RepositoryAnalysisService =
+  API_URL ? new ApiAnalysisService() : new LocalRepositoryAnalysisService();

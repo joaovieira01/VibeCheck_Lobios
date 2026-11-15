@@ -24,6 +24,11 @@ class AnalysisRequest(CamelModel):
     source: str
 
 
+class RepositoryAnalysisRequest(CamelModel):
+    filename: str = Field(min_length=1, max_length=255)
+    archive_base64: str = Field(min_length=1)
+
+
 class SuggestedFixOut(CamelModel):
     before: str
     after: str
@@ -91,6 +96,44 @@ class AnalysisOut(CamelModel):
     rules_run: int
     ai_findings: list[AIFindingOut] = Field(default_factory=list, max_length=20)
     ai_summary: AISummaryOut | None = None
+
+
+class IgnoredFileOut(CamelModel):
+    path: str
+    reason: str
+
+
+class RepositoryAnalysisOut(CamelModel):
+    id: str
+    analysis_type: Literal["repository"]
+    filename: str
+    created_at: str
+    findings_by_file: dict[str, list[FindingOut]]
+    counts_by_severity: dict[Severity, int]
+    counts_by_owasp: dict[str, int]
+    files_analyzed: list[str]
+    ignored_files: list[IgnoredFileOut]
+    files_not_analyzed: list[str]
+    partial: bool
+    duration_seconds: float
+    findings_truncated: bool
+    truncated_findings_count: int
+    truncated_occurrences_count: int
+    paths_truncated: bool
+
+
+class RepositoryAnalysisListOut(CamelModel):
+    id: str
+    filename: str
+    created_at: str
+    counts_by_severity: dict[Severity, int]
+    counts_by_owasp: dict[str, int]
+    files_analyzed_count: int
+    partial: bool
+    duration_seconds: float
+    findings_truncated: bool
+    truncated_findings_count: int
+    truncated_occurrences_count: int
 
 
 class RuleOut(CamelModel):
