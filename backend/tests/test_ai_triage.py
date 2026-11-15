@@ -361,22 +361,25 @@ class TriageTests(unittest.TestCase):
         self.assertEqual(configured_provider.calls[0]["reasoning_effort"], "low")
 
     def test_timeout_keeps_verdicts_from_completed_batches(self):
-        class SlowSecondProvider(FakeProvider):
+        fake_now = [100.0]
+
+        class DeadlineProvider(FakeProvider):
             def complete(self, **kwargs):
                 if self.calls:
-                    time.sleep(kwargs["timeout_seconds"])
+                    fake_now[0] += kwargs["timeout_seconds"]
                     raise TimeoutError("simulated total deadline")
                 return super().complete(**kwargs)
 
-        provider = SlowSecondProvider()
-        current = analyzer(provider, total_timeout_seconds=0.01)
+        provider = DeadlineProvider()
         items = [finding(f"rule-{index}") for index in range(17)]
-        result = triage_findings(
-            items,
-            "def query():\n    db.execute(query)",
-            "query.py",
-            current,
-        )
+        with patch("app.ai.triage.time.monotonic", side_effect=lambda: fake_now[0]):
+            current = analyzer(provider, total_timeout_seconds=0.01)
+            result = triage_findings(
+                items,
+                "def query():\n    db.execute(query)",
+                "query.py",
+                current,
+            )
 
         self.assertEqual(len(provider.calls), 1)
         self.assertEqual(len(result), 8)
