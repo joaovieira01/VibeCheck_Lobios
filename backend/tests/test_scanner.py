@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from app.scanner import RULE_COUNT, ScanTimeout, scan_source
+from app.schemas import FindingOut
 
 GOLDEN = Path(__file__).parent / "golden"
 
@@ -448,6 +449,108 @@ class AddedRuleTests(unittest.TestCase):
                 for line in positive_lines:
                     self.assertIn(line, finding.locations)
                 self.assertNotIn(check["negativeLine"], finding.locations)
+
+    def test_suggested_fixes_round_trip_preservando_indentacao_e_aspas(self):
+        corpus = json.loads((GOLDEN / "corpus.json").read_text(encoding="utf-8"))
+        cases = [case for case in corpus if case["name"].startswith("suggested-fix-")]
+        self.assertEqual(len(cases), 16)
+        expected_after = {
+            "suggested-fix-hardcoded-secret-python": "os.environ['SECRET_KEY']",
+            "suggested-fix-hardcoded-secret-javascript": "process.env.API_KEY",
+            "suggested-fix-sql-injection-python": '(user_id,)',
+            "suggested-fix-sql-injection-javascript": "[userId]",
+            "suggested-fix-unsafe-yaml": "yaml.safe_load",
+            "suggested-fix-debug-mode": "debug=False",
+            "suggested-fix-tls-disabled": "verify=True",
+            "suggested-fix-weak-random-token-python": "secrets.token_urlsafe(32)",
+            "suggested-fix-weak-random-token-javascript": "crypto.randomBytes(32)",
+            "suggested-fix-wildcard-cors-python": "os.environ['CORS_ALLOWED_ORIGIN']",
+            "suggested-fix-wildcard-cors-javascript": "process.env.CORS_ALLOWED_ORIGIN",
+            "suggested-fix-server-all-interfaces": "'127.0.0.1'",
+            "suggested-fix-weak-password-hash-python": "hashlib.scrypt",
+            "suggested-fix-weak-password-hash-javascript": "crypto.scryptSync",
+            "suggested-fix-dynamic-eval-python": "ast.literal_eval",
+            "suggested-fix-dynamic-eval-javascript": "JSON.parse",
+        }
+        for case in cases:
+            rule_id = case["ruleCheck"]["ruleId"]
+            with self.subTest(case=case["name"]):
+                result = scan_source(case["source"], case["filename"])
+                finding = next(item for item in result.findings if item.id == rule_id)
+                fixes = finding.to_dict()["suggestedFix"]
+                self.assertEqual(len(fixes), len(finding.locations))
+                self.assertIn(
+                    expected_after[case["name"]],
+                    "\n".join(fix["after"] for fix in fixes),
+                )
+                lines = case["source"].splitlines()
+                for location, fix in zip(finding.locations, fixes, strict=True):
+                    self.assertEqual(fix["before"], lines[location - 1])
+                    indent = fix["before"][: len(fix["before"]) - len(fix["before"].lstrip())]
+                    self.assertTrue(all(line.startswith(indent) for line in fix["after"].splitlines()))
+                    lines[location - 1 : location] = fix["after"].splitlines()
+                rescanned = scan_source("\n".join(lines), case["filename"])
+                self.assertNotIn(rule_id, ids(rescanned))
+
+        python_secret = next(
+            case for case in cases if case["name"] == "suggested-fix-hardcoded-secret-python"
+        )
+        finding = next(
+            item for item in scan_source(python_secret["source"], python_secret["filename"]).findings
+            if item.id == "hardcoded-secret"
+        )
+        self.assertEqual(
+            finding.to_dict()["suggestedFix"][0]["after"],
+            "    SECRET_KEY = os.environ['SECRET_KEY']",
+        )
+
+    def test_suggested_fix_sql_omitted_quando_driver_nao_e_identificavel(self):
+        result = scan_source(
+            'cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")',
+            "consulta.py",
+        )
+        finding = next(item for item in result.findings if item.id == "sql-injection")
+        self.assertNotIn("suggestedFix", finding.to_dict())
+
+    def test_suggested_fix_omitido_para_linguagem_sem_transformacao_validada(self):
+        result = scan_source('password = "fake-secret"', "config.rb")
+        finding = next(item for item in result.findings if item.id == "hardcoded-secret")
+        self.assertNotIn("suggestedFix", finding.to_dict())
+
+    def test_schema_aceita_historico_antigo_sem_suggested_fix(self):
+        finding = {
+            "id": "debug-mode",
+            "title": "Modo debug habilitado",
+            "severity": "Alta",
+            "cwe": "CWE-489",
+            "owaspId": "A02",
+            "owaspName": "Configuração insegura",
+            "description": "Descrição",
+            "recommendation": "Recomendação",
+            "impact": "Impacto",
+            "prevention": "Prevenção",
+            "locations": [1],
+            "evidence": ["DEBUG = True"],
+        }
+
+        old_history = FindingOut.model_validate(finding)
+        self.assertNotIn(
+            "suggestedFix",
+            old_history.model_dump(by_alias=True, exclude_unset=True),
+        )
+
+        finding["suggestedFix"] = [
+            {
+                "before": "DEBUG = True",
+                "after": "DEBUG = False",
+                "explanation": "Desative debug.",
+            }
+        ]
+        new_history = FindingOut.model_validate(finding)
+        self.assertEqual(
+            new_history.model_dump(by_alias=True, exclude_unset=True)["suggestedFix"],
+            finding["suggestedFix"],
+        )
 
     def test_safe_extractall_forms_are_not_reported(self):
         source = (

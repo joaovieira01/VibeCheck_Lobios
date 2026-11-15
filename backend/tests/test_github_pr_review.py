@@ -59,6 +59,56 @@ def test_comments_are_limited_to_added_lines_and_grouped_by_line():
     assert "Possível SQL Injection" in comments[0]["body"]
     assert "another-secret" not in comments[0]["body"]
 
+def test_single_line_fix_uses_github_suggestion_block():
+    finding = {
+        "id": "debug-mode",
+        "title": "Modo debug habilitado",
+        "severity": "Alta",
+        "cwe": "CWE-489",
+        "owaspId": "A02",
+        "description": "Debug está ligado.",
+        "recommendation": "Desative debug.",
+        "locations": [4],
+        "evidence": ["    DEBUG = True"],
+        "suggestedFix": [
+            {
+                "before": "    DEBUG = True",
+                "after": "    DEBUG = False",
+                "explanation": "Mantenha debug desligado.",
+            }
+        ],
+    }
+
+    comment = comments_for_findings("app.py", [finding], {4})[0]["body"]
+
+    assert "```suggestion\n    DEBUG = False\n```" in comment
+    assert "Mantenha debug desligado." in comment
+
+def test_multiline_fix_is_not_published_as_single_line_suggestion():
+    finding = {
+        "id": "weak-password-hash",
+        "title": "Hash fraco",
+        "severity": "Alta",
+        "cwe": "CWE-328",
+        "owaspId": "A04",
+        "description": "Hash fraco.",
+        "recommendation": "Use scrypt.",
+        "locations": [4],
+        "evidence": ["password_hash = hashlib.md5(password.encode()).hexdigest()"],
+        "suggestedFix": [
+            {
+                "before": "password_hash = hashlib.md5(password.encode()).hexdigest()",
+                "after": "salt = os.urandom(16)\npassword_hash = hashlib.scrypt(...)",
+                "explanation": "Armazene o salt com o hash.",
+            }
+        ],
+    }
+
+    comment = comments_for_findings("app.py", [finding], {4})[0]["body"]
+
+    assert "```suggestion" not in comment
+    assert "Armazene o salt com o hash." in comment
+
 
 def test_missing_patch_has_no_changed_lines():
     assert added_lines_from_patch(None) == set()

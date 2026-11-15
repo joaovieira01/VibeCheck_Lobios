@@ -114,6 +114,23 @@ describe("scanSource", () => {
     expect(result.findings.find((item) => item.id === "sql-injection")?.locations).toEqual([1]);
   });
 
+  it("omite a sugestão de SQL quando o driver não pode ser identificado", () => {
+    const finding = scanSource(
+      'cursor.execute(f"SELECT * FROM users WHERE id = {userId}")',
+      "query.py",
+    ).findings.find((item) => item.id === "sql-injection");
+    expect(finding).toBeDefined();
+    expect(finding).not.toHaveProperty("suggestedFix");
+  });
+
+  it("omite a sugestão para linguagens sem transformação validada", () => {
+    const finding = scanSource('password = "fake-secret"', "config.rb").findings.find(
+      (item) => item.id === "hardcoded-secret",
+    );
+    expect(finding).toBeDefined();
+    expect(finding).not.toHaveProperty("suggestedFix");
+  });
+
   it("detecta SQL interpolado diretamente em chamadas de banco JavaScript", () => {
     const source = [
       "db.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",

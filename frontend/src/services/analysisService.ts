@@ -1,13 +1,29 @@
-import type { Analysis, AnalysisService, Finding } from "../types";
+import type { Analysis, AnalysisService, Finding, SuggestedFix } from "../types";
 import { scanSource } from "./scanner";
 
 const HISTORY_KEY = "vibecheck.frontend.history.v1";
 const MAX_HISTORY = 20;
 const MAX_SOURCE_BYTES = 1_000_000;
 
+function isSuggestedFix(value: unknown): value is SuggestedFix {
+  if (typeof value !== "object" || value === null) return false;
+  const fix = value as Record<string, unknown>;
+  return (
+    typeof fix.before === "string" &&
+    typeof fix.after === "string" &&
+    typeof fix.explanation === "string"
+  );
+}
+
 function isFinding(value: unknown): value is Finding {
   if (typeof value !== "object" || value === null) return false;
   const finding = value as Record<string, unknown>;
+  const suggestedFixIsValid =
+    finding.suggestedFix === undefined ||
+    (Array.isArray(finding.suggestedFix) &&
+      Array.isArray(finding.locations) &&
+      finding.suggestedFix.length === finding.locations.length &&
+      finding.suggestedFix.every(isSuggestedFix));
   return (
     typeof finding.id === "string" &&
     typeof finding.title === "string" &&
@@ -22,7 +38,8 @@ function isFinding(value: unknown): value is Finding {
     Array.isArray(finding.locations) &&
     finding.locations.every((location) => Number.isInteger(location) && location > 0) &&
     Array.isArray(finding.evidence) &&
-    finding.evidence.every((entry) => typeof entry === "string")
+    finding.evidence.every((entry) => typeof entry === "string") &&
+    suggestedFixIsValid
   );
 }
 

@@ -1,5 +1,6 @@
 import ruleDefinitions from "../data/rules.generated.json" with { type: "json" };
 import type { Finding } from "../types";
+import { suggestedFixesFor } from "./suggestedFix.ts";
 
 interface Rule {
   id: string;
@@ -439,20 +440,24 @@ export function scanSource(source: string, filename: string): {
   }
 
   const findings = Array.from(grouped.values())
-    .map(({ rule, locations, evidence }): Finding => ({
-      id: rule.id,
-      title: rule.title,
-      severity: rule.severity,
-      cwe: rule.cwe,
-      owaspId: rule.owaspId,
-      owaspName: rule.owaspName,
-      description: rule.description,
-      recommendation: rule.recommendation,
-      impact: rule.impact,
-      prevention: rule.prevention,
-      locations,
-      evidence,
-    }))
+    .map(({ rule, locations, evidence }): Finding => {
+      const suggestedFix = suggestedFixesFor(rule.id, filename, source, locations);
+      return {
+        id: rule.id,
+        title: rule.title,
+        severity: rule.severity,
+        cwe: rule.cwe,
+        owaspId: rule.owaspId,
+        owaspName: rule.owaspName,
+        description: rule.description,
+        recommendation: rule.recommendation,
+        impact: rule.impact,
+        prevention: rule.prevention,
+        locations,
+        evidence,
+        ...(suggestedFix ? { suggestedFix } : {}),
+      };
+    })
     .sort(
       (left, right) =>
         severityOrder[left.severity] - severityOrder[right.severity] ||

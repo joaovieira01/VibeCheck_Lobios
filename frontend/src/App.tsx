@@ -55,6 +55,7 @@ import {
   type DragEvent,
 } from "react";
 import { owaspCategories } from "./data/owasp";
+import { FindingFix } from "./components/FindingFix";
 import { analysisService, authenticateWithApi, logoutFromApi } from "./services/analysisService";
 import type { Analysis, AnalysisInput, Finding } from "./types";
 
@@ -286,6 +287,9 @@ function FindingRow({
               <p>{finding.prevention}</p>
             </div>
           </div>
+          {finding.suggestedFix && (
+            <FindingFix fixes={finding.suggestedFix} locations={finding.locations} />
+          )}
           <a
             className="owasp-learn-link"
             href={`https://cwe.mitre.org/data/definitions/${finding.cwe.replace("CWE-", "")}.html`}

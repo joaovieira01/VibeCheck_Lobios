@@ -11,6 +11,13 @@ export interface Finding {
   prevention: string;
   locations: number[];
   evidence: string[];
+  suggestedFix?: SuggestedFix[];
+}
+
+export interface SuggestedFix {
+  before: string;
+  after: string;
+  explanation: string;
 }
 
 export interface Analysis {

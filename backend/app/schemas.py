@@ -24,6 +24,12 @@ class AnalysisRequest(CamelModel):
     source: str
 
 
+class SuggestedFixOut(CamelModel):
+    before: str
+    after: str
+    explanation: str
+
+
 class FindingOut(CamelModel):
     id: str
     title: str
@@ -37,6 +43,7 @@ class FindingOut(CamelModel):
     prevention: str
     locations: list[int]
     evidence: list[str]
+    suggested_fix: list[SuggestedFixOut] | None = None
     ai_verdict: Literal["confirmado", "falso_positivo", "incerto"] | None = None
     ai_confidence: float | None = Field(default=None, ge=0, le=1)
     ai_reason: str | None = Field(default=None, max_length=200)

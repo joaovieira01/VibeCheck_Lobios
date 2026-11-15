@@ -2080,6 +2080,119 @@ textarea:focus-visible {
   color: #b8a7f7;
 }
 
+.finding-fix {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(215, 255, 54, 0.2);
+  border-radius: 8px;
+  background: rgba(215, 255, 54, 0.025);
+}
+
+.finding-fix-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.finding-fix-heading p,
+.finding-fix-item > p {
+  margin: 5px 0 0;
+  color: #a1a2af;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.finding-fix-item-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.finding-fix-line {
+  color: #858694;
+  font-family: "Roboto Mono", monospace;
+  font-size: 7px;
+  letter-spacing: 0.5px;
+}
+
+.finding-fix-copy {
+  display: inline-flex;
+  min-height: 30px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid #444a31;
+  border-radius: 6px;
+  background: #202319;
+  color: #d7ff36;
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.finding-fix-copy:hover {
+  background: #2a3020;
+}
+
+.finding-fix-item {
+  display: grid;
+  gap: 7px;
+}
+
+.finding-fix-diff {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.finding-fix-diff > div {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #292a34;
+  border-radius: 6px;
+  background: #101116;
+}
+
+.finding-fix-diff > div > span {
+  display: block;
+  padding: 6px 8px;
+  border-bottom: 1px solid #292a34;
+  color: #858694;
+  font-family: "Roboto Mono", monospace;
+  font-size: 7px;
+  letter-spacing: 0.5px;
+}
+
+.finding-fix-before > span {
+  color: #e4919d !important;
+}
+
+.finding-fix-after > span {
+  color: #b9cc70 !important;
+}
+
+.finding-fix-diff pre {
+  overflow: auto;
+  margin: 0;
+  padding: 8px;
+  color: #d4c9ff;
+  font-family: "Roboto Mono", monospace;
+  font-size: 8px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.finding-fix-error {
+  margin: 0;
+  color: #ff9aa8;
+  font-size: 9px;
+}
+
 .owasp-learn-link {
   display: inline-flex;
   width: fit-content;
@@ -2966,6 +3079,19 @@ textarea:focus-visible {
   }
 
   .finding-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .finding-fix-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .finding-fix-copy {
+    width: fit-content;
+  }
+
+  .finding-fix-diff {
     grid-template-columns: 1fr;
   }
 
@@ -7172,4 +7298,35 @@ html[data-theme="light"] .visual-chip {
 html[data-theme="light"] .code-editor,
 html[data-theme="light"] .evidence-code {
   color-scheme: dark;
+}
+
+html[data-theme="light"] .finding-fix {
+  border-color: var(--line);
+  background: var(--surface-raised);
+}
+
+html[data-theme="light"] .finding-fix-heading p,
+html[data-theme="light"] .finding-fix-item > p,
+html[data-theme="light"] .finding-fix-diff > div > span,
+html[data-theme="light"] .finding-fix-line {
+  color: var(--muted);
+}
+
+html[data-theme="light"] .finding-fix-diff > div {
+  border-color: var(--line);
+  background: #f4f3f8;
+}
+
+html[data-theme="light"] .finding-fix-diff > div > span {
+  border-color: var(--line);
+}
+
+html[data-theme="light"] .finding-fix-diff pre {
+  color: var(--text);
+}
+
+html[data-theme="light"] .finding-fix-copy {
+  border-color: #c1c89d;
+  background: #f0f3e5;
+  color: #53651b;
 }

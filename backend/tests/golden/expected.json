@@ -19,6 +19,18 @@
     "evidence": [
      "SECRET_KEY = \"replace-me-with-a-real-secret\"",
      "password = \"admin12345\""
+    ],
+    "suggestedFix": [
+     {
+      "before": "SECRET_KEY = \"replace-me-with-a-real-secret\"",
+      "after": "SECRET_KEY = os.environ[\"SECRET_KEY\"]",
+      "explanation": "Defina SECRET_KEY no ambiente e garanta que os segredos não sejam versionados. Importe os se necessário."
+     },
+     {
+      "before": "password = \"admin12345\"",
+      "after": "password = os.environ[\"PASSWORD\"]",
+      "explanation": "Defina PASSWORD no ambiente e garanta que os segredos não sejam versionados. Importe os se necessário."
+     }
     ]
    },
    {
@@ -55,6 +67,13 @@
     ],
     "evidence": [
      "return eval(expression)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    return eval(expression)",
+      "after": "    return ast.literal_eval(expression)",
+      "explanation": "Faça parsing apenas de dados. Importe ast em Python; literal_eval aceita literais Python; JSON.parse aceita somente JSON válido."
+     }
     ]
    },
    {
@@ -109,6 +128,13 @@
     ],
     "evidence": [
      "return yaml.load(raw)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    return yaml.load(raw)",
+      "after": "    return yaml.safe_load(raw)",
+      "explanation": "Use o carregador seguro do PyYAML para não instanciar objetos arbitrários."
+     }
     ]
    },
    {
@@ -127,6 +153,13 @@
     ],
     "evidence": [
      "DEBUG = True"
+    ],
+    "suggestedFix": [
+     {
+      "before": "DEBUG = True",
+      "after": "DEBUG = False",
+      "explanation": "Mantenha o modo de depuração desativado fora de testes locais controlados."
+     }
     ]
    },
    {
@@ -163,6 +196,13 @@
     ],
     "evidence": [
      "return requests.get(url, verify=False)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    return requests.get(url, verify=False)",
+      "after": "    return requests.get(url, verify=True)",
+      "explanation": "Mantenha a validação do certificado TLS habilitada."
+     }
     ]
    }
   ],
@@ -188,6 +228,18 @@
     "evidence": [
      "const password = \"demo-secret-password\";",
      "const secret = \"replace-this-jwt-secret\";"
+    ],
+    "suggestedFix": [
+     {
+      "before": "const password = \"demo-secret-password\";",
+      "after": "const password = process.env.PASSWORD;",
+      "explanation": "Defina PASSWORD no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const secret = \"replace-this-jwt-secret\";",
+      "after": "const secret = process.env.SECRET;",
+      "explanation": "Defina SECRET no ambiente e garanta que os segredos não sejam versionados."
+     }
     ]
    },
    {
@@ -278,6 +330,13 @@
     ],
     "evidence": [
      "const resetToken = Math.random().toString(36);"
+    ],
+    "suggestedFix": [
+     {
+      "before": "const resetToken = Math.random().toString(36);",
+      "after": "const resetToken = crypto.randomBytes(32).toString(\"hex\");",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     }
     ]
    },
    {
@@ -341,6 +400,13 @@
     ],
     "evidence": [
      "x = eval(y)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "x = eval(y)",
+      "after": "x = ast.literal_eval(y)",
+      "explanation": "Faça parsing apenas de dados. Importe ast em Python; literal_eval aceita literais Python; JSON.parse aceita somente JSON válido."
+     }
     ]
    },
    {
@@ -359,6 +425,13 @@
     ],
     "evidence": [
      "DEBUG = True"
+    ],
+    "suggestedFix": [
+     {
+      "before": "DEBUG = True",
+      "after": "DEBUG = False",
+      "explanation": "Mantenha o modo de depuração desativado fora de testes locais controlados."
+     }
     ]
    }
   ],
@@ -398,6 +471,53 @@
      "const password = \"demo-password\";",
      "const apiKey = \"demo-api-key\";",
      "token = \"abcd1234\""
+    ],
+    "suggestedFix": [
+     {
+      "before": "const password = \"demo-password\";",
+      "after": "const password = process.env.PASSWORD;",
+      "explanation": "Defina PASSWORD no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const apiKey = \"demo-api-key\";",
+      "after": "const apiKey = process.env.API_KEY;",
+      "explanation": "Defina API_KEY no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "token = \"abcd1234\"",
+      "after": "token = process.env.TOKEN",
+      "explanation": "Defina TOKEN no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const password = \"demo-password\";",
+      "after": "const password = process.env.PASSWORD;",
+      "explanation": "Defina PASSWORD no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const apiKey = \"demo-api-key\";",
+      "after": "const apiKey = process.env.API_KEY;",
+      "explanation": "Defina API_KEY no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "token = \"abcd1234\"",
+      "after": "token = process.env.TOKEN",
+      "explanation": "Defina TOKEN no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const password = \"demo-password\";",
+      "after": "const password = process.env.PASSWORD;",
+      "explanation": "Defina PASSWORD no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const apiKey = \"demo-api-key\";",
+      "after": "const apiKey = process.env.API_KEY;",
+      "explanation": "Defina API_KEY no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "token = \"abcd1234\"",
+      "after": "token = process.env.TOKEN",
+      "explanation": "Defina TOKEN no ambiente e garanta que os segredos não sejam versionados."
+     }
     ]
    }
   ],
@@ -558,6 +678,13 @@
     ],
     "evidence": [
      "senha = \"ação-çãõ-123\""
+    ],
+    "suggestedFix": [
+     {
+      "before": "senha = \"ação-çãõ-123\"",
+      "after": "senha = os.environ[\"SENHA\"]",
+      "explanation": "Defina SENHA no ambiente e garanta que os segredos não sejam versionados. Importe os se necessário."
+     }
     ]
    },
    {
@@ -576,6 +703,13 @@
     ],
     "evidence": [
      "DEBUG = True"
+    ],
+    "suggestedFix": [
+     {
+      "before": "DEBUG = True",
+      "after": "DEBUG = False",
+      "explanation": "Mantenha o modo de depuração desativado fora de testes locais controlados."
+     }
     ]
    }
   ],
@@ -599,6 +733,13 @@
     ],
     "evidence": [
      "DEBUG = True   #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    DEBUG = True   #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "after": "    DEBUG = False   #xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "explanation": "Mantenha o modo de depuração desativado fora de testes locais controlados."
+     }
     ]
    }
   ],
@@ -651,6 +792,13 @@
     ],
     "evidence": [
      "app.run(host='0.0.0.0', debug=True)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "app.run(host='0.0.0.0', debug=True)",
+      "after": "app.run(host='0.0.0.0', debug=False)",
+      "explanation": "Mantenha o modo de depuração desativado fora de testes locais controlados."
+     }
     ]
    },
    {
@@ -725,6 +873,13 @@
     ],
     "evidence": [
      "const reset_token = random.randint(1,9)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "const reset_token = random.randint(1,9)",
+      "after": "const reset_token = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     }
     ]
    },
    {
@@ -743,6 +898,13 @@
     ],
     "evidence": [
      "requests.get(u, verify = False)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "requests.get(u, verify = False)",
+      "after": "requests.get(u, verify = True)",
+      "explanation": "Mantenha a validação do certificado TLS habilitada."
+     }
     ]
    },
    {
@@ -783,6 +945,13 @@
     ],
     "evidence": [
      "app.use(cors({ origin: '*' }))"
+    ],
+    "suggestedFix": [
+     {
+      "before": "app.use(cors({ origin: '*' }))",
+      "after": "app.use(cors({ origin: os.environ['CORS_ALLOWED_ORIGIN'] }))",
+      "explanation": "Configure CORS_ALLOWED_ORIGIN com uma origem confiável e não use o curinga em produção. Importe os se necessário."
+     }
     ]
    },
    {
@@ -821,6 +990,13 @@
     ],
     "evidence": [
      "app.run(host='0.0.0.0', debug=True)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "app.run(host='0.0.0.0', debug=True)",
+      "after": "app.run(host='127.0.0.1', debug=True)",
+      "explanation": "Limite o servidor de desenvolvimento à interface local."
+     }
     ]
    }
   ],
@@ -1079,6 +1255,13 @@
     ],
     "evidence": [
      "hash_value = hashlib.md5(password.encode()).hexdigest()"
+    ],
+    "suggestedFix": [
+     {
+      "before": "hash_value = hashlib.md5(password.encode()).hexdigest()",
+      "after": "hash_value_salt = __import__(\"os\").urandom(16)\nhash_value = hash_value_salt.hex() + \":\" + hashlib.scrypt(password.encode(), salt=hash_value_salt, n=16384, r=8, p=1).hex()",
+      "explanation": "Use scrypt com salt aleatório e armazene o salt junto do hash; recupere-o para verificar a senha."
+     }
     ]
    },
    {
@@ -2059,6 +2242,58 @@
      "const githubToken = \"ghp_EXEMPLO1234567890123456\";",
      "const googleKey = \"AIzaSyEXEMPLO_NAO_REAL_1234567890\";",
      "const slackToken = \"xoxb-EXEMPLO-NAO-REAL-123456\";"
+    ],
+    "suggestedFix": [
+     {
+      "before": "const stripeKey = \"sk_live_EXEMPLO1234567890\";",
+      "after": "const stripeKey = process.env.STRIPE_KEY;",
+      "explanation": "Defina STRIPE_KEY no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const supabaseJwt = \"eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.assinatura\";",
+      "after": "const supabaseJwt = process.env.SUPABASE_JWT;",
+      "explanation": "Defina SUPABASE_JWT no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const supabaseSecret = \"sb_secret_EXEMPLO12345678\";",
+      "after": "const supabaseSecret = process.env.SUPABASE_SECRET;",
+      "explanation": "Defina SUPABASE_SECRET no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const databaseUrl = \"postgresql://usuario:senha@db.example.test/app\";",
+      "after": "const databaseUrl = process.env.DATABASE_URL;",
+      "explanation": "Defina DATABASE_URL no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "JWT_SECRET = \"secret123\";",
+      "after": "JWT_SECRET = process.env.JWT_SECRET;",
+      "explanation": "Defina JWT_SECRET no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "jwt.sign(x, \"literal\");",
+      "after": "jwt.sign(x, process.env.JWT_SECRET);",
+      "explanation": "Defina JWT_SECRET no ambiente e rotacione a chave que estava no código."
+     },
+     {
+      "before": "const awsKey = \"AKIAIOSFODNN7EXAMPLE\";",
+      "after": "const awsKey = process.env.AWS_KEY;",
+      "explanation": "Defina AWS_KEY no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const githubToken = \"ghp_EXEMPLO1234567890123456\";",
+      "after": "const githubToken = process.env.GITHUB_TOKEN;",
+      "explanation": "Defina GITHUB_TOKEN no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const googleKey = \"AIzaSyEXEMPLO_NAO_REAL_1234567890\";",
+      "after": "const googleKey = process.env.GOOGLE_KEY;",
+      "explanation": "Defina GOOGLE_KEY no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "const slackToken = \"xoxb-EXEMPLO-NAO-REAL-123456\";",
+      "after": "const slackToken = process.env.SLACK_TOKEN;",
+      "explanation": "Defina SLACK_TOKEN no ambiente e garanta que os segredos não sejam versionados."
+     }
     ]
    }
   ],
@@ -2105,6 +2340,13 @@
     ],
     "evidence": [
      "const authToken = Math.random().toString(36);"
+    ],
+    "suggestedFix": [
+     {
+      "before": "const authToken = Math.random().toString(36);",
+      "after": "const authToken = crypto.randomBytes(32).toString(\"hex\");",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     }
     ]
    }
   ],
@@ -2179,6 +2421,18 @@
     "evidence": [
      "const pwHash = crypto.createHash(\"md5\").update(pw).digest(\"hex\");",
      "const passwordHash = crypto.createHash(\"sha1\").update(password).digest(\"hex\");"
+    ],
+    "suggestedFix": [
+     {
+      "before": "const pwHash = crypto.createHash(\"md5\").update(pw).digest(\"hex\");",
+      "after": "const pwHashSalt = crypto.randomBytes(16);\nconst pwHash = `${pwHashSalt.toString(\"hex\")}:${crypto.scryptSync(pw, pwHashSalt, 64).toString(\"hex\")}`;",
+      "explanation": "Use scrypt com salt aleatório e armazene o salt junto do hash; recupere-o para verificar a senha."
+     },
+     {
+      "before": "const passwordHash = crypto.createHash(\"sha1\").update(password).digest(\"hex\");",
+      "after": "const passwordHashSalt = crypto.randomBytes(16);\nconst passwordHash = `${passwordHashSalt.toString(\"hex\")}:${crypto.scryptSync(password, passwordHashSalt, 64).toString(\"hex\")}`;",
+      "explanation": "Use scrypt com salt aleatório e armazene o salt junto do hash; recupere-o para verificar a senha."
+     }
     ]
    }
   ],
@@ -2264,6 +2518,13 @@
     ],
     "evidence": [
      "const sessionId = Math.random();"
+    ],
+    "suggestedFix": [
+     {
+      "before": "const sessionId = Math.random();",
+      "after": "const sessionId = crypto.randomBytes(32).toString(\"hex\");",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     }
     ]
    }
   ],
@@ -2309,6 +2570,68 @@
      "senha = str(random.random())",
      "csrf = str(random.random())",
      "nonce = str(random.random())"
+    ],
+    "suggestedFix": [
+     {
+      "before": "token = str(random.random())",
+      "after": "token = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "secret = str(random.random())",
+      "after": "secret = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "session = str(random.random())",
+      "after": "session = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "sid = str(random.random())",
+      "after": "sid = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "otp = random.randint(100000, 999999)",
+      "after": "otp = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "code = random.randint(100000, 999999)",
+      "after": "code = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "reset = str(random.random())",
+      "after": "reset = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "api_key = \"\".join(random.choice(chars) for _ in range(32))",
+      "after": "api_key = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "password = str(random.random())",
+      "after": "password = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "senha = str(random.random())",
+      "after": "senha = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "csrf = str(random.random())",
+      "after": "csrf = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     },
+     {
+      "before": "nonce = str(random.random())",
+      "after": "nonce = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     }
     ]
    }
   ],
@@ -2332,6 +2655,13 @@
     ],
     "evidence": [
      "const paymentsKey = \"sk_live_DEMO-KEY_1234567890\";"
+    ],
+    "suggestedFix": [
+     {
+      "before": "const paymentsKey = \"sk_live_DEMO-KEY_1234567890\";",
+      "after": "const paymentsKey = process.env.PAYMENTS_KEY;",
+      "explanation": "Defina PAYMENTS_KEY no ambiente e garanta que os segredos não sejam versionados."
+     }
     ]
    }
   ],
@@ -2472,6 +2802,500 @@
     ],
     "evidence": [
      "res.cookie(\"sid\", sid, {"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-hardcoded-secret-python": {
+  "findings": [
+   {
+    "id": "hardcoded-secret",
+    "title": "Credencial fixa no código",
+    "severity": "Crítica",
+    "cwe": "CWE-798",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "Uma senha, chave ou token parece estar definido como texto literal no código.",
+    "recommendation": "Revogue e substitua o segredo exposto. Leia o novo valor de um gerenciador de segredos ou variável de ambiente.",
+    "impact": "Quem obtiver acesso ao repositório pode usar a credencial para acessar sistemas, dados ou contas associados.",
+    "prevention": "Adicione secret scanning ao pre-commit e CI, não versione arquivos locais de configuração e rotacione segredos após qualquer exposição.",
+    "locations": [
+     2,
+     3
+    ],
+    "evidence": [
+     "SECRET_KEY = 'demo-secret'",
+     "jwt.sign(x, 'literal')"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    SECRET_KEY = 'demo-secret'",
+      "after": "    SECRET_KEY = os.environ['SECRET_KEY']",
+      "explanation": "Defina SECRET_KEY no ambiente e garanta que os segredos não sejam versionados. Importe os se necessário."
+     },
+     {
+      "before": "    jwt.sign(x, 'literal')",
+      "after": "    jwt.sign(x, os.environ['JWT_SECRET'])",
+      "explanation": "Defina JWT_SECRET no ambiente e rotacione a chave que estava no código. Importe os se necessário."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-hardcoded-secret-javascript": {
+  "findings": [
+   {
+    "id": "hardcoded-secret",
+    "title": "Credencial fixa no código",
+    "severity": "Crítica",
+    "cwe": "CWE-798",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "Uma senha, chave ou token parece estar definido como texto literal no código.",
+    "recommendation": "Revogue e substitua o segredo exposto. Leia o novo valor de um gerenciador de segredos ou variável de ambiente.",
+    "impact": "Quem obtiver acesso ao repositório pode usar a credencial para acessar sistemas, dados ou contas associados.",
+    "prevention": "Adicione secret scanning ao pre-commit e CI, não versione arquivos locais de configuração e rotacione segredos após qualquer exposição.",
+    "locations": [
+     2,
+     3
+    ],
+    "evidence": [
+     "const apiKey = 'demo-api-key';",
+     "jwt.sign(x, 'literal');"
+    ],
+    "suggestedFix": [
+     {
+      "before": "  const apiKey = 'demo-api-key';",
+      "after": "  const apiKey = process.env.API_KEY;",
+      "explanation": "Defina API_KEY no ambiente e garanta que os segredos não sejam versionados."
+     },
+     {
+      "before": "  jwt.sign(x, 'literal');",
+      "after": "  jwt.sign(x, process.env.JWT_SECRET);",
+      "explanation": "Defina JWT_SECRET no ambiente e rotacione a chave que estava no código."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-sql-injection-python": {
+  "findings": [
+   {
+    "id": "sql-injection",
+    "title": "Possível SQL Injection",
+    "severity": "Crítica",
+    "cwe": "CWE-89",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "A consulta SQL parece misturar instruções e valores dinâmicos por interpolação ou concatenação.",
+    "recommendation": "Use parâmetros vinculados (prepared statements) para todos os valores. Não concatene entradas externas no texto SQL.",
+    "impact": "Um atacante pode alterar consultas, ler ou modificar dados, contornar autenticação ou destruir informações.",
+    "prevention": "Prefira ORM/consultas parametrizadas e teste entradas manipuladas nos limites da aplicação.",
+    "locations": [
+     3
+    ],
+    "evidence": [
+     "cursor.execute(f\"SELECT * FROM users WHERE id = {user_id}\")"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    cursor.execute(f\"SELECT * FROM users WHERE id = {user_id}\")",
+      "after": "    cursor.execute(\"SELECT * FROM users WHERE id = ?\", (user_id,))",
+      "explanation": "Envie os valores como parâmetros separados do SQL. Confira se o placeholder corresponde ao driver usado."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-sql-injection-javascript": {
+  "findings": [
+   {
+    "id": "sql-injection",
+    "title": "Possível SQL Injection",
+    "severity": "Crítica",
+    "cwe": "CWE-89",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "A consulta SQL parece misturar instruções e valores dinâmicos por interpolação ou concatenação.",
+    "recommendation": "Use parâmetros vinculados (prepared statements) para todos os valores. Não concatene entradas externas no texto SQL.",
+    "impact": "Um atacante pode alterar consultas, ler ou modificar dados, contornar autenticação ou destruir informações.",
+    "prevention": "Prefira ORM/consultas parametrizadas e teste entradas manipuladas nos limites da aplicação.",
+    "locations": [
+     3
+    ],
+    "evidence": [
+     "db.query(`SELECT * FROM users WHERE id = ${userId}`);"
+    ],
+    "suggestedFix": [
+     {
+      "before": "  db.query(`SELECT * FROM users WHERE id = ${userId}`);",
+      "after": "  db.query(`SELECT * FROM users WHERE id = ?`, [userId]);",
+      "explanation": "Envie os valores como parâmetros separados do SQL. Confira se o placeholder corresponde ao driver usado."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-unsafe-yaml": {
+  "findings": [
+   {
+    "id": "unsafe-yaml",
+    "title": "Desserialização YAML potencialmente insegura",
+    "severity": "Alta",
+    "cwe": "CWE-502",
+    "owaspId": "A08",
+    "owaspName": "Falhas de integridade de software ou dados",
+    "description": "yaml.load() pode instanciar objetos quando não usa um loader seguro.",
+    "recommendation": "Use yaml.safe_load() ou especifique explicitamente SafeLoader.",
+    "impact": "Configurações manipuladas podem causar execução de código ou efeitos inesperados durante o carregamento.",
+    "prevention": "Prefira loaders seguros por padrão e teste a rejeição de tags e objetos não permitidos.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "config = yaml.load(raw)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    config = yaml.load(raw)",
+      "after": "    config = yaml.safe_load(raw)",
+      "explanation": "Use o carregador seguro do PyYAML para não instanciar objetos arbitrários."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-debug-mode": {
+  "findings": [
+   {
+    "id": "debug-mode",
+    "title": "Modo debug habilitado",
+    "severity": "Alta",
+    "cwe": "CWE-489",
+    "owaspId": "A02",
+    "owaspName": "Configuração insegura",
+    "description": "O modo de depuração está habilitado no código-fonte.",
+    "recommendation": "Desative debug em ambientes acessíveis e controle a configuração por ambiente seguro.",
+    "impact": "Mensagens detalhadas ou consoles de depuração podem revelar informações internas ou permitir ações não autorizadas.",
+    "prevention": "Mantenha debug desligado por padrão e valide a configuração antes de publicar.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "app.run(debug=True)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    app.run(debug=True)",
+      "after": "    app.run(debug=False)",
+      "explanation": "Mantenha o modo de depuração desativado fora de testes locais controlados."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-tls-disabled": {
+  "findings": [
+   {
+    "id": "tls-disabled",
+    "title": "Verificação de certificado TLS desativada",
+    "severity": "Alta",
+    "cwe": "CWE-295",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "A validação de certificado TLS está desabilitada para uma conexão.",
+    "recommendation": "Remova verify=False e configure uma cadeia de certificados confiável.",
+    "impact": "Uma conexão pode ser interceptada para expor credenciais ou adulterar respostas.",
+    "prevention": "Mantenha a validação habilitada em todos os ambientes e monitore erros de certificado.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "requests.get(url, verify=False)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    requests.get(url, verify=False)",
+      "after": "    requests.get(url, verify=True)",
+      "explanation": "Mantenha a validação do certificado TLS habilitada."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-weak-random-token-python": {
+  "findings": [
+   {
+    "id": "weak-random-token",
+    "title": "Token potencialmente previsível",
+    "severity": "Alta",
+    "cwe": "CWE-330",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Um token de segurança parece ser criado com um gerador não criptográfico.",
+    "recommendation": "Use crypto.randomBytes() ou secrets.token_urlsafe() e limite validade e uso do token.",
+    "impact": "Tokens previsíveis podem permitir redefinição de senha ou sequestro de sessão.",
+    "prevention": "Use APIs criptográficas para tokens de autenticação e teste sua entropia e expiração.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "reset_token = str(random.random())"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    reset_token = str(random.random())",
+      "after": "    reset_token = secrets.token_urlsafe(32)",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-weak-random-token-javascript": {
+  "findings": [
+   {
+    "id": "weak-random-token",
+    "title": "Token potencialmente previsível",
+    "severity": "Alta",
+    "cwe": "CWE-330",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Um token de segurança parece ser criado com um gerador não criptográfico.",
+    "recommendation": "Use crypto.randomBytes() ou secrets.token_urlsafe() e limite validade e uso do token.",
+    "impact": "Tokens previsíveis podem permitir redefinição de senha ou sequestro de sessão.",
+    "prevention": "Use APIs criptográficas para tokens de autenticação e teste sua entropia e expiração.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "const sessionId = Math.random();"
+    ],
+    "suggestedFix": [
+     {
+      "before": "  const sessionId = Math.random();",
+      "after": "  const sessionId = crypto.randomBytes(32).toString(\"hex\");",
+      "explanation": "Use um gerador criptograficamente seguro; importe secrets em Python ou crypto de node:crypto em Node.js."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-wildcard-cors-python": {
+  "findings": [
+   {
+    "id": "wildcard-cors",
+    "title": "Política CORS permissiva",
+    "severity": "Média",
+    "cwe": "CWE-942",
+    "owaspId": "A02",
+    "owaspName": "Configuração insegura",
+    "description": "A configuração CORS parece permitir requisições de qualquer origem.",
+    "recommendation": "Restrinja origens aos domínios confiáveis e não combine origem curinga com credenciais.",
+    "impact": "Sites externos podem conseguir acessar respostas da API em contextos com credenciais.",
+    "prevention": "Mantenha uma allowlist por ambiente e teste os cabeçalhos CORS publicados.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "CORS(app, origins='*')"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    CORS(app, origins='*')",
+      "after": "    CORS(app, origins=os.environ['CORS_ALLOWED_ORIGIN'])",
+      "explanation": "Configure CORS_ALLOWED_ORIGIN com uma origem confiável e não use o curinga em produção. Importe os se necessário."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-wildcard-cors-javascript": {
+  "findings": [
+   {
+    "id": "wildcard-cors",
+    "title": "Política CORS permissiva",
+    "severity": "Média",
+    "cwe": "CWE-942",
+    "owaspId": "A02",
+    "owaspName": "Configuração insegura",
+    "description": "A configuração CORS parece permitir requisições de qualquer origem.",
+    "recommendation": "Restrinja origens aos domínios confiáveis e não combine origem curinga com credenciais.",
+    "impact": "Sites externos podem conseguir acessar respostas da API em contextos com credenciais.",
+    "prevention": "Mantenha uma allowlist por ambiente e teste os cabeçalhos CORS publicados.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "cors({ origin: '*' });"
+    ],
+    "suggestedFix": [
+     {
+      "before": "  cors({ origin: '*' });",
+      "after": "  cors({ origin: process.env.CORS_ALLOWED_ORIGIN });",
+      "explanation": "Configure CORS_ALLOWED_ORIGIN com uma origem confiável e não use o curinga em produção."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-server-all-interfaces": {
+  "findings": [
+   {
+    "id": "server-all-interfaces",
+    "title": "Servidor de desenvolvimento exposto na rede",
+    "severity": "Média",
+    "cwe": "CWE-668",
+    "owaspId": "A02",
+    "owaspName": "Configuração insegura",
+    "description": "O servidor está configurado para escutar em todas as interfaces de rede.",
+    "recommendation": "Use servidor de produção adequado e restrinja exposição e firewall conforme o ambiente.",
+    "impact": "Um servidor de desenvolvimento pode ficar acessível a redes não confiáveis.",
+    "prevention": "Separe configurações locais e de produção e revise a exposição de rede antes do deploy.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "app.run(host='0.0.0.0')"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    app.run(host='0.0.0.0')",
+      "after": "    app.run(host='127.0.0.1')",
+      "explanation": "Limite o servidor de desenvolvimento à interface local."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-weak-password-hash-python": {
+  "findings": [
+   {
+    "id": "weak-password-hash",
+    "title": "Hash criptográfico fraco para senha",
+    "severity": "Alta",
+    "cwe": "CWE-328",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "MD5 e SHA-1 são algoritmos rápidos e inadequados para armazenamento de senhas.",
+    "recommendation": "Migre para Argon2id, scrypt ou bcrypt com salt individual e custo atual; re-hashe senhas durante o próximo login.",
+    "impact": "Após vazamento do banco, atacantes podem quebrar hashes offline e reutilizar senhas descobertas em outros serviços.",
+    "prevention": "Use uma biblioteca mantida de password hashing e adicione uma regra de lint que bloqueie algoritmos obsoletos para credenciais.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "password_hash = hashlib.md5(password.encode()).hexdigest()"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    password_hash = hashlib.md5(password.encode()).hexdigest()",
+      "after": "    password_hash_salt = __import__(\"os\").urandom(16)\n    password_hash = password_hash_salt.hex() + \":\" + hashlib.scrypt(password.encode(), salt=password_hash_salt, n=16384, r=8, p=1).hex()",
+      "explanation": "Use scrypt com salt aleatório e armazene o salt junto do hash; recupere-o para verificar a senha."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-weak-password-hash-javascript": {
+  "findings": [
+   {
+    "id": "weak-password-hash",
+    "title": "Hash criptográfico fraco para senha",
+    "severity": "Alta",
+    "cwe": "CWE-328",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "MD5 e SHA-1 são algoritmos rápidos e inadequados para armazenamento de senhas.",
+    "recommendation": "Migre para Argon2id, scrypt ou bcrypt com salt individual e custo atual; re-hashe senhas durante o próximo login.",
+    "impact": "Após vazamento do banco, atacantes podem quebrar hashes offline e reutilizar senhas descobertas em outros serviços.",
+    "prevention": "Use uma biblioteca mantida de password hashing e adicione uma regra de lint que bloqueie algoritmos obsoletos para credenciais.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "const passwordHash = crypto.createHash('md5').update(password).digest('hex');"
+    ],
+    "suggestedFix": [
+     {
+      "before": "  const passwordHash = crypto.createHash('md5').update(password).digest('hex');",
+      "after": "  const passwordHashSalt = crypto.randomBytes(16);\n  const passwordHash = `${passwordHashSalt.toString('hex')}:${crypto.scryptSync(password, passwordHashSalt, 64).toString('hex')}`;",
+      "explanation": "Use scrypt com salt aleatório e armazene o salt junto do hash; recupere-o para verificar a senha."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-dynamic-eval-python": {
+  "findings": [
+   {
+    "id": "dynamic-eval",
+    "title": "Execução dinâmica de código",
+    "severity": "Crítica",
+    "cwe": "CWE-95",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "eval() interpreta uma string como código executável.",
+    "recommendation": "Remova eval() e use um parser limitado ou operações explícitas permitidas.",
+    "impact": "Entradas controladas por terceiros podem executar código com as permissões do processo.",
+    "prevention": "Trate entrada como dado, evite avaliação dinâmica e bloqueie essa API via lint e revisão de código.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "result = eval(payload)"
+    ],
+    "suggestedFix": [
+     {
+      "before": "    result = eval(payload)",
+      "after": "    result = ast.literal_eval(payload)",
+      "explanation": "Faça parsing apenas de dados. Importe ast em Python; literal_eval aceita literais Python; JSON.parse aceita somente JSON válido."
+     }
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "suggested-fix-dynamic-eval-javascript": {
+  "findings": [
+   {
+    "id": "dynamic-eval",
+    "title": "Execução dinâmica de código",
+    "severity": "Crítica",
+    "cwe": "CWE-95",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "eval() interpreta uma string como código executável.",
+    "recommendation": "Remova eval() e use um parser limitado ou operações explícitas permitidas.",
+    "impact": "Entradas controladas por terceiros podem executar código com as permissões do processo.",
+    "prevention": "Trate entrada como dado, evite avaliação dinâmica e bloqueie essa API via lint e revisão de código.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "const result = eval(payload);"
+    ],
+    "suggestedFix": [
+     {
+      "before": "  const result = eval(payload);",
+      "after": "  const result = JSON.parse(payload);",
+      "explanation": "Faça parsing apenas de dados. literal_eval aceita literais Python; JSON.parse aceita somente JSON válido."
+     }
     ]
    }
   ],

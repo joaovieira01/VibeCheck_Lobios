@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.suggested_fixes import suggested_fixes_for
+
 # \w e \b em JavaScript são ASCII; re.ASCII mantém o mesmo comportamento.
 _FLAGS = re.IGNORECASE | re.ASCII
 
@@ -68,10 +70,11 @@ class Finding:
     prevention: str
     locations: list[int] = field(default_factory=list)
     evidence: list[str] = field(default_factory=list)
+    suggested_fix: list[dict[str, str]] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Formato camelCase esperado pelo frontend (interface ``Finding``)."""
-        return {
+        result: dict[str, Any] = {
             "id": self.id,
             "title": self.title,
             "severity": self.severity,
@@ -85,6 +88,9 @@ class Finding:
             "locations": self.locations,
             "evidence": self.evidence,
         }
+        if self.suggested_fix is not None:
+            result["suggestedFix"] = self.suggested_fix
+        return result
 
 
 @dataclass
@@ -549,4 +555,8 @@ def scan_source(
         add(rule, line, evidence)
 
     findings = sorted(grouped.values(), key=_sort_key)
+    for finding in findings:
+        finding.suggested_fix = suggested_fixes_for(
+            finding.id, filename, source, finding.locations
+        )
     return ScanResult(findings=findings, rules_run=RULE_COUNT)

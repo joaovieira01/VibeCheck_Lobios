@@ -44,4 +44,26 @@ describe("buildSecurityReport", () => {
 
     expect(report.output("arraybuffer").byteLength).toBeGreaterThan(1_000);
   });
+
+  it("includes suggested corrections in finding details", () => {
+    const report = buildSecurityReport({
+      ...sample,
+      findings: [
+        {
+          ...sample.findings[0],
+          suggestedFix: [
+            {
+              before: 'query = f"SELECT * FROM users WHERE id = {user_id}"',
+              after: 'query = "SELECT * FROM users WHERE id = ?"',
+              explanation: "Use parâmetros vinculados.",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(report.output("arraybuffer").byteLength).toBeGreaterThan(4_000);
+    expect(report.output()).toContain("CORREÇÃO SUGERIDA");
+    expect(report.output()).toContain("Use parâmetros vinculados.");
+  });
 });
