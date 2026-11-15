@@ -14,6 +14,11 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
 from app.scanner import SEVERITY_ORDER, ScanTimeout, scan_source
+from app.deps import (
+    DependencyCheckResult,
+    check_dependencies,
+    online_dependencies_enabled,
+)
 
 MAX_FILE_BYTES = 1_000_000
 MAX_ZIP_BYTES = 50 * 1_000_000
@@ -117,6 +122,7 @@ def _scan_directory(
     started: float,
     ignored: list[dict[str, str]] | None = None,
     only_files: set[str] | None = None,
+    online_deps: bool = False,
 ) -> dict[str, Any]:
     candidates, discovered_ignored = _discover(root)
     if only_files is not None:
@@ -132,6 +138,8 @@ def _scan_directory(
     not_analyzed: list[str] = []
     severity_counts: dict[str, int] = {}
     owasp_counts: dict[str, int] = {}
+    dependency_statuses: list[str] = []
+    dependency_packages_checked = 0
 
     for index, path in enumerate(candidates):
         relative = _relative(path, root)
@@ -171,6 +179,25 @@ def _scan_directory(
 
         analyzed.append(relative)
         serialized = [finding.to_dict() for finding in result.findings]
+        if online_deps and path.name.casefold() in {
+            "requirements.txt",
+            "package.json",
+        }:
+            dependency_check = check_dependencies(source, path.name)
+            dependency_statuses.append(dependency_check.status)
+            dependency_packages_checked += dependency_check.packages_checked
+            serialized.extend(
+                finding.to_dict() for finding in dependency_check.findings
+            )
+            for finding in dependency_check.findings:
+                occurrence_count = len(finding.locations)
+                severity_counts[finding.severity] = (
+                    severity_counts.get(finding.severity, 0) + occurrence_count
+                )
+                category = f"{finding.owasp_id} - {finding.owasp_name}"
+                owasp_counts[category] = (
+                    owasp_counts.get(category, 0) + occurrence_count
+                )
         if serialized:
             findings_by_file[relative] = serialized
         for finding in result.findings:
@@ -181,7 +208,7 @@ def _scan_directory(
             category = f"{finding.owasp_id} - {finding.owasp_name}"
             owasp_counts[category] = owasp_counts.get(category, 0) + occurrence_count
 
-    return {
+    report = {
         "findingsByFile": findings_by_file,
         "countsBySeverity": severity_counts,
         "countsByOwasp": owasp_counts,
@@ -191,6 +218,18 @@ def _scan_directory(
         "partial": bool(not_analyzed),
         "durationSeconds": round(time.perf_counter() - started, 6),
     }
+    if online_deps:
+        status = (
+            "indisponivel"
+            if "indisponivel" in dependency_statuses
+            else "limitada"
+            if "limitada" in dependency_statuses
+            else "concluida"
+        )
+        report["onlineDependencyCheck"] = DependencyCheckResult(
+            [], status, dependency_packages_checked
+        ).to_dict()
+    return report
 
 
 def _zip_entry_path(name: str) -> PurePosixPath:
@@ -324,6 +363,7 @@ def scan_repository(
     *,
     time_budget_seconds: float = 120,
     only_files: set[str] | None = None,
+    online_deps: bool | None = None,
 ) -> dict[str, Any]:
     """Analisa diretório ou ZIP e devolve achados e estado da varredura.
 
@@ -338,6 +378,9 @@ def scan_repository(
     ):
         raise ValueError("O limite de tempo deve ser um número finito não negativo.")
     started = time.perf_counter()
+    check_online_dependencies = (
+        online_dependencies_enabled() if online_deps is None else online_deps
+    )
     source_path = Path(caminho)
     if source_path.is_dir():
         return _scan_directory(
@@ -345,6 +388,7 @@ def scan_repository(
             time_budget_seconds=float(time_budget_seconds),
             started=started,
             only_files=only_files,
+            online_deps=check_online_dependencies,
         )
     if only_files is not None:
         raise RepositoryScanError(
@@ -364,6 +408,7 @@ def scan_repository(
             root,
             time_budget_seconds=float(time_budget_seconds),
             started=started,
+            online_deps=check_online_dependencies,
         )
     finally:
         temporary.cleanup()

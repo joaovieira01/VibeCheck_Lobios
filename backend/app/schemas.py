@@ -85,6 +85,12 @@ class AISummaryOut(CamelModel):
     ] | None = None
 
 
+class OnlineDependencyCheckOut(CamelModel):
+    status: Literal["concluida", "indisponivel", "limitada"]
+    packages_checked: int = Field(ge=0)
+    message: str | None = None
+
+
 class AnalysisOut(CamelModel):
     id: str
     filename: str
@@ -96,6 +102,7 @@ class AnalysisOut(CamelModel):
     rules_run: int
     ai_findings: list[AIFindingOut] = Field(default_factory=list, max_length=20)
     ai_summary: AISummaryOut | None = None
+    online_dependency_check: OnlineDependencyCheckOut | None = None
 
 
 class IgnoredFileOut(CamelModel):
@@ -120,6 +127,7 @@ class RepositoryAnalysisOut(CamelModel):
     truncated_findings_count: int
     truncated_occurrences_count: int
     paths_truncated: bool
+    online_dependency_check: OnlineDependencyCheckOut | None = None
 
 
 class RepositoryAnalysisListOut(CamelModel):

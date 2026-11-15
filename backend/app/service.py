@@ -23,6 +23,7 @@ from .ai.provider import (
     normalize_ai_error_code,
 )
 from .ai.triage import AIAnalyzer, AIProvider, triage_findings
+from .deps import check_dependencies, online_dependencies_enabled
 from .errors import ApiError
 from .repo_scan import RepositoryScanError, scan_repository
 from .scanner import ScanTimeout, scan_source
@@ -87,6 +88,7 @@ def run_analysis(
     scan_timeout_seconds: float | None = None,
     ai_settings: AISettings | None = None,
     ai_provider: AIProvider | None = None,
+    online_deps: bool | None = None,
 ) -> dict[str, Any]:
     """Retorna um dict no formato ``Analysis`` do frontend (camelCase)."""
     try:
@@ -125,6 +127,15 @@ def run_analysis(
         "findings": [finding.to_dict() for finding in result.findings],
         "rulesRun": result.rules_run,
     }
+    check_online_dependencies = (
+        online_dependencies_enabled() if online_deps is None else online_deps
+    )
+    if check_online_dependencies:
+        dependency_check = check_dependencies(source, filename)
+        analysis["findings"].extend(
+            finding.to_dict() for finding in dependency_check.findings
+        )
+        analysis["onlineDependencyCheck"] = dependency_check.to_dict()
 
     try:
         ai_settings = ai_settings or AISettings.from_env()

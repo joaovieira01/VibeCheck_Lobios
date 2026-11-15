@@ -174,9 +174,11 @@ A documentação interativa dos endpoints fica em `/docs` na API.
 | `VIBECHECK_FRONTEND_URL` | URL do frontend | `http://localhost:5173` |
 | `VIBECHECK_RATE_LIMIT` | Limite de requisições | `true` |
 | `VIBECHECK_SEED_DEMO_USER` | Cria usuário de demonstração | `false` |
+| `VIBECHECK_ONLINE_DEPS` | Consulta opcional de dependências em serviços públicos pelo backend | `false` |
 | `VITE_API_URL` | URL da API usada pelo frontend | `http://localhost:8000` |
 
 Sem `VITE_API_URL`, o frontend funciona em modo local: cadastro, análise e histórico ficam no navegador.
+O modo local do frontend não consulta serviços externos para análise de dependências.
 
 As variáveis da camada de IA estão na seção seguinte.
 
@@ -225,6 +227,18 @@ python scripts/scan_file.py caminho\para\arquivo.py --ai   # com IA, se configur
 O backend carrega o `.env` da raiz na inicialização. O `scan_file.py`, por outro lado, lê apenas as variáveis do ambiente do processo, então defina as variáveis `AI_*` na sessão do terminal antes de usar `--ai`. No Docker Compose, as variáveis `AI_*` precisam ser repassadas ao serviço `backend` no `docker-compose.yml`, porque o arquivo atual não as inclui.
 
 A IA não é usada pelo modo local do frontend nem, por enquanto, pela revisão de Pull Requests.
+
+## Verificação online de dependências (opcional)
+
+O backend pode consultar o OSV para vulnerabilidades em versões fixadas e os registries oficiais
+PyPI/npm para confirmar se o pacote existe. A opção fica desligada por padrão; ative
+`VIBECHECK_ONLINE_DEPS=true` ou passe `--online-deps` aos CLIs `scripts/scan_file.py` e
+`scripts/scan_repo.py`. Cada requisição tem timeout de 3 segundos, cada manifesto verifica até
+50 pacotes e falhas externas não interrompem a análise.
+
+**Privacidade.** Os nomes dos pacotes são enviados a PyPI ou npm para consulta de existência. Para
+versões fixadas, nome, ecossistema e versão são enviados ao OSV. O conteúdo do código-fonte não é
+enviado. O frontend em modo local não faz essas consultas.
 
 ## Revisão automática de Pull Requests
 
@@ -288,7 +302,7 @@ As amostras e o gabarito usados nas métricas estão em `backend/tests/samples/`
 - As regras analisam uma linha por vez, com algum contexto de função. Elas não acompanham o fluxo de dados entre arquivos, e wrappers próprios, sanitizadores customizados e construções multilinha complexas podem escapar.
 - Nas amostras internas o scanner detecta todos os itens esperados. Em amostras escritas de forma independente, a cobertura foi menor (cerca de 60% na última medição, com poucos casos), o que mostra o limite de uma abordagem baseada em regex.
 - A categoria A06 (design inseguro) depende de decisões de arquitetura e exige revisão manual.
-- A análise de dependências aponta versões não fixadas, mas não consulta bases de vulnerabilidades conhecidas.
+- A análise online de dependências é opcional, depende da disponibilidade dos serviços públicos e verifica até 50 pacotes por manifesto.
 - As metas de taxa de falsos positivos e de tempo de análise por repositório ainda não foram medidas em repositórios reais.
 
 **Próximos passos**

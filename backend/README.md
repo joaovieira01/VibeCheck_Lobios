@@ -85,6 +85,7 @@ Variáveis de ambiente (todas opcionais; veja `.env.example`):
 | `VIBECHECK_MAX_LINE_CHARS` | 1000 | Truncamento de linha antes das regex |
 | `VIBECHECK_SCAN_TIMEOUT_SECONDS` | 10 | Orçamento de tempo por análise |
 | `VIBECHECK_RATE_LIMIT` | true | Limites de taxa |
+| `VIBECHECK_ONLINE_DEPS` | false | Consulta opcional de dependências no OSV, PyPI e npm |
 | `AI_ENABLED` | false | Ativa a triagem opcional OpenAI-compatible |
 | `AI_BASE_URL` | — | Endpoint de chat completions (HTTPS; HTTP apenas localhost) |
 | `AI_API_KEY` | — | Chave do provedor, somente em variável de ambiente |
@@ -127,6 +128,8 @@ Ferramentas manuais, executadas a partir de `backend/`:
 ```powershell
 python scripts/scan_file.py caminho\para\arquivo.py
 python scripts/scan_file.py caminho\para\arquivo.py --ai
+python scripts/scan_file.py caminho\para\requirements.txt --online-deps
+python scripts/scan_repo.py caminho\para\repositorio --online-deps --format json
 python scripts/metrics.py
 python scripts/metrics.py --ai
 ```
@@ -135,6 +138,22 @@ Se `--ai` for usado sem configuração válida, o script avisa e continua com
 regras. As métricas rules-only permanecem disponíveis. Não foram validados
 provedores/modelos reais nesta implementação; consulte `../README.md` para
 detalhes de privacidade.
+
+## Verificação online de dependências
+
+A checagem SCA online fica desligada por padrão. Ative `VIBECHECK_ONLINE_DEPS=true`
+para análises do backend ou use `--online-deps` nos CLIs. Versões fixadas são
+consultadas no OSV; PyPI e npm são consultados para confirmar a existência dos
+pacotes. Cada requisição tem timeout de 3 segundos, há no máximo cinco requisições
+concorrentes por processo e cada arquivo de manifesto verifica até 50 pacotes.
+Falhas de rede não interrompem a análise: o resultado indica
+“Verificação online indisponível.”. Pacotes acima do limite também são indicados.
+
+**Privacidade:** os nomes dos pacotes são enviados ao registry correspondente
+(PyPI ou npm). Para consulta ao OSV, são enviados o ecossistema, nome e versão
+fixada. Nenhum trecho do código-fonte é enviado por essa checagem. A análise local
+do frontend não faz chamadas externas; os resultados online aparecem somente
+nas análises do backend.
 
 ## Estrutura
 

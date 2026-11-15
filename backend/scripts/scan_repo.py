@@ -222,6 +222,11 @@ def main(argv: list[str] | None = None) -> int:
         help="analisa apenas arquivos alterados desde uma referência Git",
     )
     parser.add_argument(
+        "--online-deps",
+        action="store_true",
+        help="confere dependências em registries públicos e no OSV",
+    )
+    parser.add_argument(
         "--check-report",
         type=Path,
         metavar="ARQUIVO.json",
@@ -237,6 +242,7 @@ def main(argv: list[str] | None = None) -> int:
         if (
             args.source is not None
             or args.changed_since is not None
+            or args.online_deps
             or args.format != "text"
         ):
             parser.error("--check-report não pode ser combinado com a entrada do scanner.")
@@ -273,7 +279,9 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.changed_since is None:
-            report = scan_repository(args.source)
+            report = scan_repository(
+                args.source, online_deps=True if args.online_deps else None
+            )
         else:
             if not args.source.is_dir():
                 raise RepositoryScanError(
@@ -298,7 +306,11 @@ def main(argv: list[str] | None = None) -> int:
                 for name in diff.stdout.split(b"\0")
                 if name
             }
-            report = scan_repository(args.source, only_files=changed_files)
+            report = scan_repository(
+                args.source,
+                only_files=changed_files,
+                online_deps=True if args.online_deps else None,
+            )
     except subprocess.CalledProcessError:
         print(
             "Erro: não foi possível comparar a referência Git. Em clones rasos, "
