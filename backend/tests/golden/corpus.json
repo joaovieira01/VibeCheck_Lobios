@@ -422,5 +422,47 @@
   "filename": "tokens.py",
   "source": "token = str(random.random())\nsecret = str(random.random())\nsession = str(random.random())\nsid = str(random.random())\notp = random.randint(100000, 999999)\ncode = random.randint(100000, 999999)\nreset = str(random.random())\napi_key = \"\".join(random.choice(chars) for _ in range(32))\npassword = str(random.random())\nsenha = str(random.random())\ncsrf = str(random.random())\nnonce = str(random.random())\ntoken = secrets.token_urlsafe(32)\notp = secrets.randbelow(1_000_000)\nretry_jitter = random.random()\ncolor = random.choice(colors)\nrandom.shuffle(colors)",
   "ruleCheck": {"ruleId": "weak-random-token", "positiveLines": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "negativeLine": 13}
+ },
+ {
+  "name": "segredo-com-separadores-variados",
+  "filename": "pagamentos.ts",
+  "source": "const paymentsKey = \"sk_live_DEMO-KEY_1234567890\";\nconst publishableKey = \"pk_test_PUBLIC_DEMO_123456\";\nconst apiKey = process.env.PAYMENT_KEY;",
+  "ruleCheck": {"ruleId": "hardcoded-secret", "positiveLine": 1, "negativeLine": 2}
+ },
+ {
+  "name": "ssrf-por-alias-python",
+  "filename": "proxy.py",
+  "source": "def proxy(request):\n    remote = request.args.get('destination')\n    return httpx.get(remote)\ndef safe_proxy(request):\n    remote = request.args.get('destination')\n    if urlparse(remote).hostname not in ALLOWED_HOSTS: raise ValueError()\n    return httpx.get(remote)",
+  "ruleCheck": {"ruleId": "ssrf", "positiveLine": 3, "negativeLine": 7}
+ },
+ {
+  "name": "ssrf-por-alias-javascript",
+  "filename": "proxy.ts",
+  "source": "async function proxy(req) {\n  const remote = new URL(req.url).searchParams.get('destination');\n  return fetch(remote);\n}\nasync function safeProxy(req) {\n  const remote = new URL(req.url).searchParams.get('destination');\n  if (!allowlist.has(new URL(remote).hostname)) throw new Error();\n  return fetch(remote);\n}",
+  "ruleCheck": {"ruleId": "ssrf", "positiveLine": 3, "negativeLine": 8}
+ },
+ {
+  "name": "xss-template-alias-javascript",
+  "filename": "render.ts",
+  "source": "function render(req, res) {\n  const title = req.body.title;\n  return res.send(`<article>${title}</article>`);\n}\nfunction renderSafe(req, res) {\n  return res.send(`<article>${escapeHtml(req.body.title)}</article>`);\n}",
+  "ruleCheck": {"ruleId": "xss-innerhtml", "positiveLine": 3, "negativeLine": 6}
+ },
+ {
+  "name": "path-traversal-query-python",
+  "filename": "download.py",
+  "source": "def download(request):\n    return FileResponse(Path(REPORT_ROOT) / request.query_params['file'])\n    return open(str(REPORT_ROOT) + request.query_params.get('file')).read()\ndef download_safe(request):\n    return FileResponse(safe_join(REPORT_ROOT, request.query_params['file']))",
+  "ruleCheck": {"ruleId": "path-traversal", "positiveLines": [2, 3], "negativeLine": 5}
+ },
+ {
+  "name": "path-traversal-query-javascript",
+  "filename": "download.js",
+  "source": "function download(req, res) {\n  return res.sendFile(path.join(PUBLIC_DIR, req.query.file));\n}\nfunction downloadSafe(req, res) {\n  return res.sendFile(safeJoin(PUBLIC_DIR, req.query.file));\n}",
+  "ruleCheck": {"ruleId": "path-traversal", "positiveLine": 2, "negativeLine": 5}
+ },
+ {
+  "name": "cookie-seguro-multilinha",
+  "filename": "cookies.js",
+  "source": "res.cookie(\"sid\", sid, {\n  httpOnly: true,\n  sameSite: \"lax\",\n});\nres.cookie(\"safe\", value, {\n  httpOnly: true,\n  secure: true,\n  sameSite: \"strict\",\n});",
+  "ruleCheck": {"ruleId": "insecure-cookie", "positiveLine": 1, "negativeLine": 5}
  }
 ]

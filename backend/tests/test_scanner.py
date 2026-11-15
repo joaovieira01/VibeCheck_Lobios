@@ -254,6 +254,134 @@ class ScannerPortTests(unittest.TestCase):
         )
         self.assertEqual(scan_source(source, "controles.js").findings, [])
 
+    def test_formato_de_segredo_com_separadores_e_variavel_generica(self):
+        source = "\n".join(
+            [
+                'const paymentsKey = "sk_live_DEMO-KEY_1234567890";',
+                'const publishableKey = "pk_test_PUBLIC_DEMO_123456";',
+                "const apiKey = process.env.PAYMENT_KEY;",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "pagamentos.ts").findings
+            if item.id == "hardcoded-secret"
+        )
+        self.assertEqual(finding.locations, [1])
+
+    def test_ssrf_em_alias_de_url_python_e_javascript_e_destino_validado(self):
+        python_source = "\n".join(
+            [
+                "def proxy(request):",
+                "    remote = request.args.get('destination')",
+                "    return httpx.get(remote)",
+                "def safe_proxy(request):",
+                "    remote = request.args.get('destination')",
+                "    if urlparse(remote).hostname not in ALLOWED_HOSTS: raise ValueError()",
+                "    return httpx.get(remote)",
+            ]
+        )
+        python_finding = next(
+            item
+            for item in scan_source(python_source, "proxy.py").findings
+            if item.id == "ssrf"
+        )
+        self.assertEqual(python_finding.locations, [3])
+
+        javascript_source = "\n".join(
+            [
+                "async function proxy(req) {",
+                "  const remote = new URL(req.url).searchParams.get('destination');",
+                "  return fetch(remote);",
+                "}",
+                "async function safeProxy(req) {",
+                "  const remote = new URL(req.url).searchParams.get('destination');",
+                "  if (!allowlist.has(new URL(remote).hostname)) throw new Error();",
+                "  return fetch(remote);",
+                "}",
+            ]
+        )
+        javascript_finding = next(
+            item
+            for item in scan_source(javascript_source, "proxy.ts").findings
+            if item.id == "ssrf"
+        )
+        self.assertEqual(javascript_finding.locations, [3])
+
+    def test_xss_com_variavel_intermediaria_e_resposta_escapada(self):
+        source = "\n".join(
+            [
+                "function render(req, res) {",
+                "  const title = req.body.title;",
+                "  return res.send(`<article>${title}</article>`);",
+                "}",
+                "function renderSafe(req, res) {",
+                "  return res.send(`<article>${escapeHtml(req.body.title)}</article>`);",
+                "}",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "render.ts").findings
+            if item.id == "xss-innerhtml"
+        )
+        self.assertEqual(finding.locations, [3])
+
+    def test_path_traversal_com_query_params_e_helpers_seguros(self):
+        python_source = "\n".join(
+            [
+                "def download(request):",
+                "    return FileResponse(Path(REPORT_ROOT) / request.query_params['file'])",
+                "    return open(str(REPORT_ROOT) + request.query_params.get('file')).read()",
+                "def download_safe(request):",
+                "    return FileResponse(safe_join(REPORT_ROOT, request.query_params['file']))",
+            ]
+        )
+        python_finding = next(
+            item
+            for item in scan_source(python_source, "download.py").findings
+            if item.id == "path-traversal"
+        )
+        self.assertEqual(python_finding.locations, [2, 3])
+
+        javascript_source = "\n".join(
+            [
+                "function download(req, res) {",
+                "  return res.sendFile(path.join(PUBLIC_DIR, req.query.file));",
+                "}",
+                "function downloadSafe(req, res) {",
+                "  return res.sendFile(safeJoin(PUBLIC_DIR, req.query.file));",
+                "}",
+            ]
+        )
+        javascript_finding = next(
+            item
+            for item in scan_source(javascript_source, "download.js").findings
+            if item.id == "path-traversal"
+        )
+        self.assertEqual(javascript_finding.locations, [2])
+
+    def test_cookie_seguro_multilinha_e_flags_de_outra_chamada(self):
+        source = "\n".join(
+            [
+                'res.cookie("sid", sid, {',
+                "  httpOnly: true,",
+                '  sameSite: "lax",',
+                "});",
+                'res.cookie("safe", value, {',
+                "  httpOnly: true,",
+                "  secure: true,",
+                '  sameSite: "strict",',
+                "});",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "cookies.js").findings
+            if item.id == "insecure-cookie"
+        )
+        self.assertEqual(finding.locations, [1])
+
     def test_unlocked_package_manifest(self):
         result = scan_source(
             json.dumps({"dependencies": {"express": "*", "react": "^19.0.0"}}), "package.json"

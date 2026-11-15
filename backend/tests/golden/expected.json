@@ -1404,6 +1404,24 @@
  "generalized-ssrf-python": {
   "findings": [
    {
+    "id": "path-traversal",
+    "title": "Possível travessia de diretório",
+    "severity": "Alta",
+    "cwe": "CWE-22",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um caminho de arquivo parece ser construído com dados de uma solicitação.",
+    "recommendation": "Normalize o caminho e confirme que ele permanece dentro do diretório permitido. Prefira identificadores a caminhos fornecidos pelo usuário.",
+    "impact": "Um atacante pode ler ou sobrescrever arquivos fora da pasta esperada, incluindo configurações e segredos.",
+    "prevention": "Valide caminhos após canonicalização e teste ../, barras invertidas e codificações alternativas.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "urllib.request.urlopen(request.GET['target'])"
+    ]
+   },
+   {
     "id": "ssrf",
     "title": "Requisição a destino controlado pelo usuário",
     "severity": "Alta",
@@ -2291,6 +2309,167 @@
      "senha = str(random.random())",
      "csrf = str(random.random())",
      "nonce = str(random.random())"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "segredo-com-separadores-variados": {
+  "findings": [
+   {
+    "id": "hardcoded-secret",
+    "title": "Credencial fixa no código",
+    "severity": "Crítica",
+    "cwe": "CWE-798",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "Uma senha, chave ou token parece estar definido como texto literal no código.",
+    "recommendation": "Revogue e substitua o segredo exposto. Leia o novo valor de um gerenciador de segredos ou variável de ambiente.",
+    "impact": "Quem obtiver acesso ao repositório pode usar a credencial para acessar sistemas, dados ou contas associados.",
+    "prevention": "Adicione secret scanning ao pre-commit e CI, não versione arquivos locais de configuração e rotacione segredos após qualquer exposição.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "const paymentsKey = \"sk_live_DEMO-KEY_1234567890\";"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "ssrf-por-alias-python": {
+  "findings": [
+   {
+    "id": "ssrf",
+    "title": "Requisição a destino controlado pelo usuário",
+    "severity": "Alta",
+    "cwe": "CWE-918",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma URL recebida da solicitação é usada diretamente para iniciar uma conexão.",
+    "recommendation": "Permita apenas destinos e esquemas explicitamente autorizados; valide host e IP após resolver DNS e bloqueie redes internas.",
+    "impact": "Um atacante pode induzir o servidor a consultar serviços internos ou metadados de infraestrutura.",
+    "prevention": "Use allowlist de destinos, bloqueio de endereços privados e proteção contra redirecionamentos e rebinding DNS.",
+    "locations": [
+     3
+    ],
+    "evidence": [
+     "return httpx.get(remote)"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "ssrf-por-alias-javascript": {
+  "findings": [
+   {
+    "id": "ssrf",
+    "title": "Requisição a destino controlado pelo usuário",
+    "severity": "Alta",
+    "cwe": "CWE-918",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Uma URL recebida da solicitação é usada diretamente para iniciar uma conexão.",
+    "recommendation": "Permita apenas destinos e esquemas explicitamente autorizados; valide host e IP após resolver DNS e bloqueie redes internas.",
+    "impact": "Um atacante pode induzir o servidor a consultar serviços internos ou metadados de infraestrutura.",
+    "prevention": "Use allowlist de destinos, bloqueio de endereços privados e proteção contra redirecionamentos e rebinding DNS.",
+    "locations": [
+     3
+    ],
+    "evidence": [
+     "return fetch(remote);"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "xss-template-alias-javascript": {
+  "findings": [
+   {
+    "id": "xss-innerhtml",
+    "title": "Possível Cross-Site Scripting (XSS)",
+    "severity": "Alta",
+    "cwe": "CWE-79",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "HTML bruto está sendo inserido no DOM ou enviado pela resposta, possivelmente sem escape ou sanitização.",
+    "recommendation": "Prefira textContent e renderização escapada. Se HTML for necessário, sanitize com uma biblioteca mantida.",
+    "impact": "Conteúdo controlado por usuários pode executar JavaScript no navegador de outras pessoas.",
+    "prevention": "Escape de acordo com o contexto, evite HTML bruto e use CSP como defesa complementar.",
+    "locations": [
+     3
+    ],
+    "evidence": [
+     "return res.send(`<article>${title}</article>`);"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "path-traversal-query-python": {
+  "findings": [
+   {
+    "id": "path-traversal",
+    "title": "Possível travessia de diretório",
+    "severity": "Alta",
+    "cwe": "CWE-22",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um caminho de arquivo parece ser construído com dados de uma solicitação.",
+    "recommendation": "Normalize o caminho e confirme que ele permanece dentro do diretório permitido. Prefira identificadores a caminhos fornecidos pelo usuário.",
+    "impact": "Um atacante pode ler ou sobrescrever arquivos fora da pasta esperada, incluindo configurações e segredos.",
+    "prevention": "Valide caminhos após canonicalização e teste ../, barras invertidas e codificações alternativas.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "return FileResponse(Path(REPORT_ROOT) / request.query_params['file'])"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "path-traversal-query-javascript": {
+  "findings": [
+   {
+    "id": "path-traversal",
+    "title": "Possível travessia de diretório",
+    "severity": "Alta",
+    "cwe": "CWE-22",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um caminho de arquivo parece ser construído com dados de uma solicitação.",
+    "recommendation": "Normalize o caminho e confirme que ele permanece dentro do diretório permitido. Prefira identificadores a caminhos fornecidos pelo usuário.",
+    "impact": "Um atacante pode ler ou sobrescrever arquivos fora da pasta esperada, incluindo configurações e segredos.",
+    "prevention": "Valide caminhos após canonicalização e teste ../, barras invertidas e codificações alternativas.",
+    "locations": [
+     2
+    ],
+    "evidence": [
+     "return res.sendFile(path.join(PUBLIC_DIR, req.query.file));"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "cookie-seguro-multilinha": {
+  "findings": [
+   {
+    "id": "insecure-cookie",
+    "title": "Cookie de sessão sem proteções completas",
+    "severity": "Média",
+    "cwe": "CWE-614",
+    "owaspId": "A02",
+    "owaspName": "Configuração insegura",
+    "description": "A configuração do cookie não mostra todas as flags de proteção na mesma linha.",
+    "recommendation": "Configure httpOnly, secure: true e sameSite: 'lax' (ou 'strict' conforme o fluxo), usando HTTPS.",
+    "impact": "O cookie pode ser exposto sem TLS ou enviado em contextos cross-site, aumentando risco de roubo de sessão e CSRF.",
+    "prevention": "Defina opções seguras por padrão num helper de sessão e teste os headers de cookie.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "res.cookie(\"sid\", sid, {"
     ]
    }
   ],

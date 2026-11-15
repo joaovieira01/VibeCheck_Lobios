@@ -252,6 +252,109 @@ describe("scanSource", () => {
     expect(result.findings).toEqual([]);
   });
 
+  it("detecta formatos alternativos de segredo e preserva chaves de ambiente", () => {
+    const result = scanSource(
+      [
+        'const paymentsKey = "sk_live_DEMO-KEY_1234567890";',
+        'const publishableKey = "pk_test_PUBLIC_DEMO_123456";',
+        "const apiKey = process.env.PAYMENT_KEY;",
+      ].join("\n"),
+      "pagamentos.ts",
+    );
+    expect(result.findings.find((item) => item.id === "hardcoded-secret")?.locations).toEqual([1]);
+  });
+
+  it("detecta SSRF por alias em Python e JavaScript, mas aceita destinos validados", () => {
+    const python = [
+      "def proxy(request):",
+      "    remote = request.args.get('destination')",
+      "    return httpx.get(remote)",
+      "def safe_proxy(request):",
+      "    remote = request.args.get('destination')",
+      "    if urlparse(remote).hostname not in ALLOWED_HOSTS: raise ValueError()",
+      "    return httpx.get(remote)",
+    ].join("\n");
+    expect(
+      scanSource(python, "proxy.py").findings.find((item) => item.id === "ssrf")?.locations,
+    ).toEqual([3]);
+
+    const javascript = [
+      "async function proxy(req) {",
+      "  const remote = new URL(req.url).searchParams.get('destination');",
+      "  return fetch(remote);",
+      "}",
+      "async function safeProxy(req) {",
+      "  const remote = new URL(req.url).searchParams.get('destination');",
+      "  if (!allowlist.has(new URL(remote).hostname)) throw new Error();",
+      "  return fetch(remote);",
+      "}",
+    ].join("\n");
+    expect(
+      scanSource(javascript, "proxy.ts").findings.find((item) => item.id === "ssrf")?.locations,
+    ).toEqual([3]);
+  });
+
+  it("detecta XSS em template com dado intermediario e aceita escape inline", () => {
+    const source = [
+      "function render(req, res) {",
+      "  const title = req.body.title;",
+      "  return res.send(`<article>${title}</article>`);",
+      "}",
+      "function renderSafe(req, res) {",
+      "  return res.send(`<article>${escapeHtml(req.body.title)}</article>`);",
+      "}",
+    ].join("\n");
+    expect(
+      scanSource(source, "render.ts").findings.find((item) => item.id === "xss-innerhtml")
+        ?.locations,
+    ).toEqual([3]);
+  });
+
+  it("detecta path traversal com query_params e preserva helpers de caminho seguro", () => {
+    const python = [
+      "def download(request):",
+      "    return FileResponse(Path(REPORT_ROOT) / request.query_params['file'])",
+      "    return open(str(REPORT_ROOT) + request.query_params.get('file')).read()",
+      "def download_safe(request):",
+      "    return FileResponse(safe_join(REPORT_ROOT, request.query_params['file']))",
+    ].join("\n");
+    expect(
+      scanSource(python, "download.py").findings.find((item) => item.id === "path-traversal")
+        ?.locations,
+    ).toEqual([2, 3]);
+
+    const javascript = [
+      "function download(req, res) {",
+      "  return res.sendFile(path.join(PUBLIC_DIR, req.query.file));",
+      "}",
+      "function downloadSafe(req, res) {",
+      "  return res.sendFile(safeJoin(PUBLIC_DIR, req.query.file));",
+      "}",
+    ].join("\n");
+    expect(
+      scanSource(javascript, "download.js").findings.find((item) => item.id === "path-traversal")
+        ?.locations,
+    ).toEqual([2]);
+  });
+
+  it("reconhece flags de cookie em varias linhas da mesma chamada", () => {
+    const source = [
+      'res.cookie("sid", sid, {',
+      "  httpOnly: true,",
+      '  sameSite: "lax",',
+      "});",
+      'res.cookie("safe", value, {',
+      "  httpOnly: true,",
+      "  secure: true,",
+      '  sameSite: "strict",',
+      "});",
+    ].join("\n");
+    expect(
+      scanSource(source, "cookies.js").findings.find((item) => item.id === "insecure-cookie")
+        ?.locations,
+    ).toEqual([1]);
+  });
+
   it("checks unlocked package manifests and maps all OWASP Top 10 categories", () => {
     const result = scanSource(
       JSON.stringify({

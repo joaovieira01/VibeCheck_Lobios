@@ -17,6 +17,8 @@ interface Rule {
   safeOnLine?: RegExp;
   safeOnContext?: RegExp;
   contextLines?: number;
+  safeOnCallContext?: RegExp;
+  safeCallContextLines?: number;
   requiredContext?: RegExp;
   requiredContextLines?: number;
   manifestOnly?: boolean;
@@ -63,6 +65,12 @@ const rules: Rule[] = ruleDefinitions.map((definition) => ({
     ? {
         requiredContext: new RegExp(definition.requiredContextPattern, "i"),
         requiredContextLines: definition.requiredContextLines ?? 0,
+      }
+    : {}),
+  ...(definition.safeCallContextPattern
+    ? {
+        safeOnCallContext: new RegExp(definition.safeCallContextPattern, "i"),
+        safeCallContextLines: definition.safeCallContextLines ?? 0,
       }
     : {}),
 }));
@@ -372,6 +380,12 @@ export function scanSource(source: string, filename: string): {
     for (const rule of scannableRules) {
       if (rule.id === "missing-authentication" || !rule.expression.test(candidate)) continue;
       if (rule.safeOnLine?.test(candidate)) continue;
+      if (rule.safeOnCallContext) {
+        const callContext = scannableLines
+          .slice(index, index + (rule.safeCallContextLines ?? 0) + 1)
+          .join("\n");
+        if (rule.safeOnCallContext.test(callContext)) continue;
+      }
       if (rule.safeOnContext || rule.requiredContext) {
         const contextLines = Math.max(
           rule.contextLines ?? 0,
