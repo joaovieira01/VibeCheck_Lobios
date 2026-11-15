@@ -151,7 +151,7 @@ class RuleOut(CamelModel):
 
 
 class HealthOut(CamelModel):
-    status: Literal["ok"]
+    status: Literal["ok", "degraded"]
     rules: int
 
 

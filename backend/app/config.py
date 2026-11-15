@@ -106,6 +106,11 @@ class Settings:
     smtp_starttls: bool = field(
         default_factory=lambda: _bool_env("VIBECHECK_SMTP_STARTTLS", True)
     )
+    environment: str = field(
+        default_factory=lambda: (
+            _str_env("VIBECHECK_ENV", "development").lower() or "development"
+        )
+    )
 
 
 def get_settings() -> Settings:

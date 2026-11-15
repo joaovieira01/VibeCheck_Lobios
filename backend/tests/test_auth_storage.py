@@ -1,10 +1,13 @@
 import os
+import re
 import tempfile
 import unittest
+from pathlib import Path
 
 from app.auth import AuthManager
-from app.db import Database
+from app.db import MYSQL_SCHEMA, Database
 from app.errors import ApiError
+from app.security import SCRYPT_N, hash_password, verify_password
 from app.service import detect_language, run_analysis
 from app.storage import AnalysisStore
 
@@ -30,6 +33,46 @@ class AuthTests(Base):
         self.auth.logout(token2)
         self.assertIsNone(self.auth.user_for_token(token2))
         self.assertIsNotNone(self.auth.user_for_token(token))  # outra sessão segue válida
+
+    def test_successful_login_rehashes_legacy_password(self):
+        email = "legacy@example.com"
+        password = "senha-legada-forte"
+        old_hash = hash_password(password, n=2**15)
+        with self.db.connect() as conn:
+            conn.execute(
+                "INSERT INTO users (id, email, password_hash, created_at) "
+                "VALUES (?, ?, ?, ?)",
+                ("legacy-user", email, old_hash, "2026-01-01T00:00:00Z"),
+            )
+
+        self.auth.login(email, password)
+
+        with self.db.connect() as conn:
+            stored = conn.execute(
+                "SELECT password_hash FROM users WHERE email = ?", (email,)
+            ).fetchone()[0]
+        self.assertNotEqual(stored, old_hash)
+        self.assertEqual(int(stored.split("$")[1]), SCRYPT_N)
+        self.assertTrue(verify_password(password, stored))
+
+    def test_failed_login_does_not_rehash_legacy_password(self):
+        email = "legacy@example.com"
+        old_hash = hash_password("correct-legacy-password", n=2**15)
+        with self.db.connect() as conn:
+            conn.execute(
+                "INSERT INTO users (id, email, password_hash, created_at) "
+                "VALUES (?, ?, ?, ?)",
+                ("legacy-user", email, old_hash, "2026-01-01T00:00:00Z"),
+            )
+
+        with self.assertRaises(ApiError):
+            self.auth.login(email, "wrong-password")
+
+        with self.db.connect() as conn:
+            stored = conn.execute(
+                "SELECT password_hash FROM users WHERE email = ?", (email,)
+            ).fetchone()[0]
+        self.assertEqual(stored, old_hash)
 
     def test_duplicate_email_conflict(self):
         self.auth.register("a@b.co", "senha-forte-1")
@@ -166,6 +209,49 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(detect_language("a.TSX"), "TypeScript / React")
         self.assertEqual(detect_language("x.yml"), "YML")
         self.assertEqual(detect_language(""), "Texto")
+
+
+class MySQLSchemaTests(unittest.TestCase):
+    def test_manual_schema_matches_runtime_tables_indexes_and_foreign_keys(self):
+        manual_schema = (
+            Path(__file__).resolve().parents[2] / "database" / "schema.sql"
+        ).read_text(encoding="utf-8")
+        runtime_schema = "\n".join(MYSQL_SCHEMA)
+
+        def table_metadata(source):
+            tables = {}
+            for name, body in re.findall(
+                r"CREATE TABLE IF NOT EXISTS (\w+)\s*\((.*?)\)\s*ENGINE=",
+                source,
+                flags=re.DOTALL,
+            ):
+                parts = [part.strip() for part in body.split(",")]
+                tables[name] = {
+                    "columns": {
+                        part.split()[0]
+                        for part in parts
+                        if not part.startswith(("INDEX ", "CONSTRAINT "))
+                    },
+                    "indexes": {
+                        match
+                        for match in re.findall(r"\bINDEX\s+(\w+)", body)
+                    },
+                    "foreign_keys": {
+                        match
+                        for match in re.findall(
+                            r"\bCONSTRAINT\s+(\w+)\s+FOREIGN KEY\s*"
+                            r"\((\w+)\)\s+REFERENCES\s+(\w+)\((\w+)\)"
+                            r"\s+ON DELETE CASCADE",
+                            body,
+                        )
+                    },
+                }
+            return tables
+
+        self.assertEqual(
+            table_metadata(manual_schema),
+            table_metadata(runtime_schema),
+        )
 
 
 if __name__ == "__main__":

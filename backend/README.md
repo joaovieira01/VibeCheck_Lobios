@@ -36,6 +36,16 @@ serverless, pois o armazenamento local não é persistente entre execuções.
 Em desenvolvimento, para entrar com a conta que a tela de login já exibe:
 `VIBECHECK_SEED_DEMO_USER=true` cria `demo@vibecheck.dev` / `vibecheck2026`.
 **É uma credencial pública; nunca ligue isso em ambiente exposto.**
+Defina `VIBECHECK_ENV=production` no deploy. A inicialização então rejeita a
+credencial de demonstração, CORS com `*` e senha de banco vazia ou igual ao
+valor de exemplo.
+
+O custo atual de senha é scrypt `N=2**17, r=8`, aproximadamente 128 MiB por
+operação (`maxmem` de 192 MiB). Um semáforo serializa operações scrypt por
+processo; os limites de login são 5 tentativas por IP/e-mail e 20 por IP a cada
+15 minutos. Cada worker tem seu próprio semáforo e limitadores, então dimensione
+a memória para o número de workers. Hashes antigos continuam válidos e são
+atualizados após login bem-sucedido.
 
 Docker: `docker build -t vibecheck-api . && docker run -p 8000:8000 -v vibecheck-data:/srv/data vibecheck-api`
 
@@ -43,7 +53,7 @@ Docker: `docker build -t vibecheck-api . && docker run -p 8000:8000 -v vibecheck
 
 | Método | Rota | Auth | Descrição |
 |---|---|---|---|
-| GET | `/api/health` | — | Saúde e nº de regras |
+| GET | `/api/health` | — | Conexão com o banco e nº de regras (`503 degraded` se o banco falhar) |
 | GET | `/api/rules` | — | Metadados das regras |
 | POST | `/api/auth/register` | — | `{email, password}` → `{token, user}` (201) |
 | POST | `/api/auth/login` | — | `{email, password}` → `{token, user}` |
@@ -64,6 +74,7 @@ Variáveis de ambiente (todas opcionais; veja `.env.example`):
 
 | Variável | Padrão | Para quê |
 |---|---|---|
+| `VIBECHECK_ENV` | `development` | Ativa validações rígidas quando `production` |
 | `VIBECHECK_DB_PATH` | `data/vibecheck.db` | Arquivo SQLite |
 | `VIBECHECK_CORS_ORIGINS` | `localhost:5173,127.0.0.1:5173` | Origens do frontend (CORS) |
 | `VIBECHECK_FRONTEND_URL` | `http://localhost:5173` | Base do link de recuperação |

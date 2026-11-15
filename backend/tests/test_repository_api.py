@@ -4,6 +4,7 @@ import json
 import zipfile
 
 from fastapi.testclient import TestClient
+import pytest
 
 from app.config import Settings
 from app.main import create_app
@@ -25,6 +26,25 @@ def _client(tmp_path, *, rate_limit=False, max_repo_zip_bytes=25_000_000):
         cors_origins=["http://localhost:5173"],
     )
     return TestClient(create_app(settings, FakeMailer()))
+
+
+@pytest.fixture
+def client_factory():
+    clients = []
+
+    def create(tmp_path, *, rate_limit=False, max_repo_zip_bytes=25_000_000):
+        client = _client(
+            tmp_path,
+            rate_limit=rate_limit,
+            max_repo_zip_bytes=max_repo_zip_bytes,
+        )
+        client.__enter__()
+        clients.append(client)
+        return client
+
+    yield create
+    for client in reversed(clients):
+        client.__exit__(None, None, None)
 
 
 def _register(client, email="dev@example.com"):
@@ -49,16 +69,18 @@ def _zip_body(entries=None, filename="repository.zip"):
     }
 
 
-def test_repository_upload_requires_login(tmp_path):
-    client = _client(tmp_path)
+def test_repository_upload_requires_login(tmp_path, client_factory):
+    client = client_factory(tmp_path)
 
     response = client.post("/api/repositories/analyses", json=_zip_body())
 
     assert response.status_code == 401
 
 
-def test_repository_upload_persists_result_and_filters_history_by_user(tmp_path):
-    client = _client(tmp_path)
+def test_repository_upload_persists_result_and_filters_history_by_user(
+    tmp_path, client_factory
+):
+    client = client_factory(tmp_path)
     owner_headers = _register(client, "owner@example.com")
     other_headers = _register(client, "other@example.com")
 
@@ -108,8 +130,8 @@ def test_repository_upload_persists_result_and_filters_history_by_user(tmp_path)
     ).status_code == 404
 
 
-def test_repository_rejects_malicious_zip_with_bad_request(tmp_path):
-    client = _client(tmp_path)
+def test_repository_rejects_malicious_zip_with_bad_request(tmp_path, client_factory):
+    client = client_factory(tmp_path)
     headers = _register(client)
 
     response = client.post(
@@ -122,8 +144,8 @@ def test_repository_rejects_malicious_zip_with_bad_request(tmp_path):
     assert "ZIP" in response.json()["detail"]
 
 
-def test_repository_rejects_zip_above_configured_limit(tmp_path):
-    client = _client(tmp_path, max_repo_zip_bytes=10)
+def test_repository_rejects_zip_above_configured_limit(tmp_path, client_factory):
+    client = client_factory(tmp_path, max_repo_zip_bytes=10)
     headers = _register(client)
 
     response = client.post(
@@ -135,8 +157,10 @@ def test_repository_rejects_zip_above_configured_limit(tmp_path):
     assert response.status_code == 413
 
 
-def test_repository_request_body_limit_uses_configured_zip_size(tmp_path):
-    client = _client(tmp_path, max_repo_zip_bytes=10)
+def test_repository_request_body_limit_uses_configured_zip_size(
+    tmp_path, client_factory
+):
+    client = client_factory(tmp_path, max_repo_zip_bytes=10)
 
     response = client.post(
         "/api/repositories/analyses",
@@ -148,8 +172,10 @@ def test_repository_request_body_limit_uses_configured_zip_size(tmp_path):
     assert "ZIP" in response.json()["detail"]
 
 
-def test_repository_upload_rate_limit_is_five_per_user_per_hour(tmp_path):
-    client = _client(tmp_path, rate_limit=True)
+def test_repository_upload_rate_limit_is_five_per_user_per_hour(
+    tmp_path, client_factory
+):
+    client = client_factory(tmp_path, rate_limit=True)
     headers = _register(client)
     body = _zip_body()
 
@@ -165,8 +191,10 @@ def test_repository_upload_rate_limit_is_five_per_user_per_hour(tmp_path):
     assert statuses == [201, 201, 201, 201, 201, 429]
 
 
-def test_repository_history_reports_truncated_findings(tmp_path, monkeypatch):
-    client = _client(tmp_path)
+def test_repository_history_reports_truncated_findings(
+    tmp_path, monkeypatch, client_factory
+):
+    client = client_factory(tmp_path)
     headers = _register(client)
     findings = []
     for index in range(21):

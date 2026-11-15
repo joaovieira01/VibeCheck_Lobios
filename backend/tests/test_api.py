@@ -1,15 +1,19 @@
 """Testes da camada HTTP. Exigem fastapi + httpx (pip install -r requirements-dev.txt)."""
 
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 try:
     from fastapi.testclient import TestClient
 
-    from app.config import Settings
+    from app.config import Settings, get_settings
     from app.main import create_app
+    from app.main import app as exported_app
 
     HAVE_FASTAPI = True
 except ImportError:  # pragma: no cover
@@ -41,6 +45,8 @@ class ApiTestBase(unittest.TestCase):
             frontend_url="http://localhost:5173",
         )
         self.client = TestClient(create_app(settings, mailer=self.mailer))
+        self.client.__enter__()
+        self.addCleanup(self.client.__exit__, None, None, None)
 
     def register(self, email="ana@example.com", password=PASSWORD):
         response = self.client.post("/api/auth/register", json={"email": email, "password": password})
@@ -65,6 +71,51 @@ class ApiTests(ApiTestBase):
                 "description", "recommendation", "impact", "prevention", "confidence",
             },
         )
+
+    def test_health_returns_degraded_without_database_details(self):
+        with patch.object(
+            self.client.app.state.database,
+            "connect",
+            side_effect=RuntimeError("database password must not be exposed"),
+        ):
+            response = self.client.get("/api/health")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json(),
+            {"status": "degraded", "rules": 41},
+        )
+        self.assertNotIn("database password", response.text)
+
+    def test_import_with_unavailable_mysql_does_not_connect(self):
+        env = os.environ.copy()
+        env.update(
+            {
+                "VIBECHECK_ENV": "development",
+                "VIBECHECK_DB_ENGINE": "mysql",
+                "VIBECHECK_DB_HOST": "vibecheck-host-that-does-not-exist.invalid",
+                "VIBECHECK_DB_PORT": "1",
+                "VIBECHECK_DB_NAME": "vibecheck",
+                "VIBECHECK_DB_USER": "vibecheck_test",
+                "VIBECHECK_DB_PASSWORD": "test-only-password",
+                "VIBECHECK_SEED_DEMO_USER": "false",
+            }
+        )
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import app.main; assert app.main.app is not None",
+            ],
+            cwd=Path(__file__).resolve().parents[1],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIsNotNone(exported_app)
 
     def test_full_flow(self):
         auth = self.register()
@@ -224,10 +275,98 @@ class RateLimitApiTests(ApiTestBase):
         self.register()
         statuses = [
             self.client.post("/api/auth/login", json={"email": "ana@example.com", "password": "errada-errada"}).status_code
-            for _ in range(12)
+            for _ in range(7)
         ]
-        self.assertEqual(statuses[:10], [401] * 10)
-        self.assertEqual(statuses[10:], [429, 429])
+        self.assertEqual(statuses[:5], [401] * 5)
+        self.assertEqual(statuses[5:], [429, 429])
+
+    def test_login_limit_also_caps_distinct_emails_per_ip(self):
+        from unittest.mock import patch
+
+        with patch("app.auth.burn_password_check"):
+            statuses = [
+                self.client.post(
+                    "/api/auth/login",
+                    json={
+                        "email": f"user-{index}@example.com",
+                        "password": "senha-incorreta",
+                    },
+                ).status_code
+                for index in range(21)
+            ]
+
+        self.assertEqual(statuses[:20], [401] * 20)
+        self.assertEqual(statuses[20], 429)
+
+
+@unittest.skipUnless(HAVE_FASTAPI, "fastapi/httpx não instalados")
+class ProductionStartupTests(unittest.TestCase):
+    def test_environment_defaults_to_development_and_normalizes(self):
+        with patch.dict(os.environ, {"VIBECHECK_ENV": ""}):
+            self.assertEqual(get_settings().environment, "development")
+        with patch.dict(os.environ, {"VIBECHECK_ENV": "PRODUCTION"}):
+            self.assertEqual(get_settings().environment, "production")
+
+    def test_production_rejects_insecure_settings_before_startup(self):
+        invalid_settings = (
+            ({"seed_demo_user": True}, "VIBECHECK_SEED_DEMO_USER"),
+            ({"cors_origins": ["https://*.example.com"]}, "VIBECHECK_CORS_ORIGINS"),
+            ({"db_password": "CHANGE_THIS_PASSWORD"}, "senha de exemplo"),
+            ({"db_password": ""}, "senha de exemplo"),
+        )
+
+        for overrides, expected_message in invalid_settings:
+            with self.subTest(setting=expected_message):
+                with tempfile.TemporaryDirectory() as directory:
+                    values = {
+                        "environment": "production",
+                        "db_path": os.path.join(directory, "production.db"),
+                        "db_engine": "sqlite",
+                        "db_password": "safe-test-password",
+                        "cors_origins": ["https://app.example.com"],
+                        "seed_demo_user": False,
+                    }
+                    values.update(overrides)
+                    settings = Settings(**values)
+                    with patch(
+                        "app.main.Database",
+                        side_effect=AssertionError(
+                            "o banco não deve ser aberto antes da validação"
+                        ),
+                    ):
+                        with self.assertRaisesRegex(RuntimeError, expected_message):
+                            with TestClient(create_app(settings, mailer=FakeMailer())):
+                                pass
+
+    def test_production_starts_with_explicitly_safe_configuration(self):
+        with tempfile.TemporaryDirectory() as directory:
+            settings = Settings(
+                environment="production",
+                db_path=os.path.join(directory, "production.db"),
+                db_engine="sqlite",
+                db_password="safe-test-password",
+                cors_origins=["https://app.example.com"],
+                seed_demo_user=False,
+            )
+            with TestClient(create_app(settings, mailer=FakeMailer())) as client:
+                self.assertEqual(client.get("/api/health").status_code, 200)
+
+    def test_demo_user_is_seeded_when_application_starts_in_development(self):
+        with tempfile.TemporaryDirectory() as directory:
+            settings = Settings(
+                db_path=os.path.join(directory, "development.db"),
+                seed_demo_user=True,
+                rate_limit_enabled=False,
+            )
+            with TestClient(create_app(settings, mailer=FakeMailer())) as client:
+                response = client.post(
+                    "/api/auth/login",
+                    json={
+                        "email": "demo@vibecheck.dev",
+                        "password": "vibecheck2026",
+                    },
+                )
+            self.assertEqual(response.status_code, 200)
 
 
 if __name__ == "__main__":

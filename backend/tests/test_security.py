@@ -1,14 +1,54 @@
+import threading
+import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import patch
 
 from app.ratelimit import RateLimiter
-from app.security import hash_password, hash_token, new_token, verify_password
+from app.security import (
+    SCRYPT_N,
+    SCRYPT_MAXMEM,
+    hash_password,
+    hash_token,
+    new_token,
+    password_hash_needs_rehash,
+    verify_password,
+)
 
 
 class PasswordTests(unittest.TestCase):
+    def test_password_hash_uses_production_cost_and_allows_legacy_hashes(self):
+        self.assertEqual(SCRYPT_N, 2**17)
+        legacy = hash_password("legacy-password", n=2**15)
+        self.assertTrue(verify_password("legacy-password", legacy))
+        self.assertTrue(password_hash_needs_rehash(legacy))
+
+    def test_scrypt_memory_budget_is_bounded_to_one_concurrent_operation(self):
+        state = {"active": 0, "peak": 0, "maxmem": set()}
+        lock = threading.Lock()
+
+        def fake_scrypt(*args, **kwargs):
+            with lock:
+                state["active"] += 1
+                state["peak"] = max(state["peak"], state["active"])
+                state["maxmem"].add(kwargs["maxmem"])
+            time.sleep(0.01)
+            with lock:
+                state["active"] -= 1
+            return b"x" * kwargs["dklen"]
+
+        with patch("app.security.hashlib.scrypt", side_effect=fake_scrypt):
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                list(executor.map(hash_password, ["password"] * 4))
+
+        self.assertEqual(state["peak"], 1)
+        self.assertEqual(state["maxmem"], {SCRYPT_MAXMEM})
+
     def test_roundtrip_and_wrong_password(self):
         stored = hash_password("correct horse")
         self.assertTrue(stored.startswith("scrypt$"))
         self.assertTrue(verify_password("correct horse", stored))
+        self.assertFalse(password_hash_needs_rehash(stored))
         self.assertFalse(verify_password("wrong", stored))
 
     def test_salt_makes_hashes_differ(self):

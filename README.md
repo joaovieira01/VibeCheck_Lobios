@@ -162,6 +162,7 @@ A documentação interativa dos endpoints fica em `/docs` na API.
 
 | Variável | Descrição | Exemplo |
 |---|---|---|
+| `VIBECHECK_ENV` | Ambiente; `production` ativa validações de segurança | `development` |
 | `MYSQL_ROOT_PASSWORD` | Senha do root do MySQL no Docker Compose | defina uma senha forte |
 | `VIBECHECK_DB_ENGINE` | Banco usado pelo backend | `mysql` ou `sqlite` |
 | `VIBECHECK_DB_HOST`, `VIBECHECK_DB_PORT` | Endereço do MySQL | `127.0.0.1`, `3306` |
@@ -275,7 +276,8 @@ As amostras e o gabarito usados nas métricas estão em `backend/tests/samples/`
 
 - Nunca commite arquivos `.env` nem chaves de API.
 - Troque todas as senhas de exemplo.
-- Não habilite `VIBECHECK_SEED_DEMO_USER` em ambientes expostos.
+- Defina `VIBECHECK_ENV=production` no deploy; a inicialização rejeita seed demo, CORS com `*` e senha do banco vazia ou de exemplo.
+- O scrypt usa `N=2**17, r=8` (cerca de 128 MiB por operação). As operações são serializadas por processo e o login tem limites por IP e por IP/e-mail; dimensione a memória considerando um slot por worker.
 - Use uma conta MySQL exclusiva da aplicação, sem privilégios de administrador.
 - O `docker-compose.yml` expõe o MySQL na porta 3306 e usa `--reload`: é uma configuração de desenvolvimento. Em outros ambientes, restrinja o acesso (por exemplo, `127.0.0.1:3306:3306`) e use um servidor de produção.
 - O limitador de requisições é em memória. Em mais de uma instância, use um limitador compartilhado.
@@ -293,7 +295,7 @@ As amostras e o gabarito usados nas métricas estão em `backend/tests/samples/`
 - [ ] Tela de recuperação de senha no frontend (os endpoints do backend já existem e exigem SMTP).
 - [ ] IA na revisão de Pull Requests e na interface.
 - [ ] Sugestão de correção em código.
-- [x] Integração via CI/CLI com GitLab e Bitbucket (artefato SARIF; sem comentário inline).
+- [x] Integração via CI/CLI com GitLab e Bitbucket (relatório como artefato; sem comentário inline).
 - [ ] Webhook ou app nativo com comentário inline no GitLab e Bitbucket.
 - [ ] Análise com contexto de fluxo de dados (motor SAST de código aberto).
 - [ ] Medição de falsos positivos e de desempenho em repositórios reais.

@@ -8,6 +8,7 @@ import tempfile
 _TEST_DIRECTORY = tempfile.mkdtemp(prefix="vibecheck-tests-")
 os.environ["VIBECHECK_DB_ENGINE"] = "sqlite"
 os.environ["VIBECHECK_DB_PATH"] = os.path.join(_TEST_DIRECTORY, "testes.db")
+os.environ["VIBECHECK_ENV"] = "development"
 os.environ["AI_ENABLED"] = "false"
 
 
