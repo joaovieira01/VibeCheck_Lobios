@@ -1568,10 +1568,10 @@ function App() {
                     </div>
                     <div className="dashboard-integrations">
                       <div><span className="integration-status integration-status-live" /><span>GitHub Actions</span><strong>Disponível</strong></div>
-                      <div><span className="integration-status" /><span>GitLab CI</span><strong>Planejado</strong></div>
-                      <div><span className="integration-status" /><span>Bitbucket Pipelines</span><strong>Planejado</strong></div>
+                      <div><span className="integration-status integration-status-live" /><span>GitLab CI</span><strong>Via CI (disponível)</strong></div>
+                      <div><span className="integration-status integration-status-live" /><span>Bitbucket Pipelines</span><strong>Via CI (disponível)</strong></div>
                     </div>
-                    <p className="dashboard-integration-note">Comentários automáticos em Pull Requests do GitHub estão disponíveis no workflow do projeto.</p>
+                    <p className="dashboard-integration-note">O GitHub publica comentários no Pull Request; GitLab e Bitbucket geram relatório SARIF como artefato do pipeline.</p>
                   </div>
                 </div>
               </section>

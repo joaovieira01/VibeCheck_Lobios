@@ -116,8 +116,15 @@ def _scan_directory(
     time_budget_seconds: float,
     started: float,
     ignored: list[dict[str, str]] | None = None,
+    only_files: set[str] | None = None,
 ) -> dict[str, Any]:
     candidates, discovered_ignored = _discover(root)
+    if only_files is not None:
+        candidates = [
+            path
+            for path in candidates
+            if _relative(path, root) in only_files
+        ]
     ignored_files = [*(ignored or []), *discovered_ignored]
     deadline = started + time_budget_seconds
     findings_by_file: dict[str, list[dict[str, Any]]] = {}
@@ -316,11 +323,13 @@ def scan_repository(
     caminho: str | os.PathLike[str],
     *,
     time_budget_seconds: float = 120,
+    only_files: set[str] | None = None,
 ) -> dict[str, Any]:
     """Analisa diretório ou ZIP e devolve achados e estado da varredura.
 
     Caminhos retornados são relativos à raiz analisada. Contagens representam
-    ocorrências (linhas), e não regras agrupadas.
+    ocorrências (linhas), e não regras agrupadas. ``only_files`` restringe a
+    análise a caminhos relativos selecionados, por exemplo os alterados no Git.
     """
     if (
         not isinstance(time_budget_seconds, (int, float))
@@ -335,6 +344,11 @@ def scan_repository(
             source_path.resolve(),
             time_budget_seconds=float(time_budget_seconds),
             started=started,
+            only_files=only_files,
+        )
+    if only_files is not None:
+        raise RepositoryScanError(
+            "A seleção de arquivos alterados só pode ser usada com um diretório."
         )
     if not source_path.is_file():
         raise RepositoryScanError("A entrada não é um diretório ou arquivo ZIP válido.")

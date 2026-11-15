@@ -15,6 +15,7 @@ Ferramenta de auditoria de segurança para código gerado por IA e escrito com p
 - [Início rápido](#início-rápido)
 - [Execução manual](#execução-manual)
 - [Uso](#uso)
+- [Integrações CI/CD](#integrações-cicd)
 - [Configuração](#configuração)
 - [Análise com IA (opcional)](#análise-com-ia-opcional)
 - [Revisão automática de Pull Requests](#revisão-automática-de-pull-requests)
@@ -40,6 +41,7 @@ Ferramenta de auditoria de segurança para código gerado por IA e escrito com p
 
 **Automação**
 - Revisão de Pull Requests no GitHub Actions, com comentários nas linhas novas.
+- Execução via CLI em GitLab CI e Bitbucket Pipelines, com relatório SARIF como artefato.
 - Camada opcional de IA no backend para triar achados e sugerir revisões (desligada por padrão).
 
 ## Arquitetura
@@ -117,6 +119,16 @@ Use `npm ci` para instalar exatamente as versões do `package-lock.json`.
 **Aplicação web.** Abra o frontend, escolha um arquivo ou cole um trecho de código e inicie a análise. O resultado lista os achados por severidade, com a linha, a evidência e a recomendação. O relatório pode ser exportado em PDF. Com a API configurada, cada análise fica salva no histórico da conta.
 
 **Limites.** Cada análise aceita até 1 MB de código, as linhas são truncadas em 1.000 caracteres e há um tempo máximo de execução. Acima disso, a API responde com erro explicando o motivo.
+
+## Integrações CI/CD
+
+O CLI pode analisar um repositório inteiro ou apenas arquivos alterados desde uma referência Git:
+
+```sh
+python backend/scripts/scan_repo.py . --changed-since origin/main --format sarif --fail-on Alta > vibecheck.sarif
+```
+
+O comando retorna código `1` ao encontrar achados na severidade escolhida ou mais grave. Há exemplos prontos para [GitLab CI](integrations/gitlab/.gitlab-ci.yml) e [Bitbucket Pipelines](integrations/bitbucket/bitbucket-pipelines.yml); ambos publicam SARIF como artefato. A integração de GitHub Actions do projeto publica comentários em Pull Requests. Veja o [guia de integrações](docs/INTEGRACOES.md) para configuração, variáveis e limitações.
 
 **Formato de um achado.** Exemplo de resultado para `yaml.load(texto)` em um arquivo Python:
 
@@ -281,7 +293,8 @@ As amostras e o gabarito usados nas métricas estão em `backend/tests/samples/`
 - [ ] Tela de recuperação de senha no frontend (os endpoints do backend já existem e exigem SMTP).
 - [ ] IA na revisão de Pull Requests e na interface.
 - [ ] Sugestão de correção em código.
-- [ ] Integração com GitLab e Bitbucket.
+- [x] Integração via CI/CLI com GitLab e Bitbucket (artefato SARIF; sem comentário inline).
+- [ ] Webhook ou app nativo com comentário inline no GitLab e Bitbucket.
 - [ ] Análise com contexto de fluxo de dados (motor SAST de código aberto).
 - [ ] Medição de falsos positivos e de desempenho em repositórios reais.
 - [ ] Configuração de deploy de produção para backend e banco.

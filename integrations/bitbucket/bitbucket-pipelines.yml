@@ -1,0 +1,20 @@
+image: python:3.12-slim
+
+pipelines:
+  pull-requests:
+    "**":
+      - step:
+          name: VibeCheck - análise de segurança
+          script:
+            - apt-get update -qq && apt-get install -y --no-install-recommends git
+            - |
+              set -eu
+              VIBECHECK_DIR="/tmp/vibecheck-${BITBUCKET_BUILD_NUMBER}"
+              git clone --depth 1 "${VIBECHECK_REPO_URL:-https://github.com/joaovieira01/VibeCheck_Lobios.git}" "$VIBECHECK_DIR"
+              python "$VIBECHECK_DIR/backend/scripts/scan_repo.py" "$BITBUCKET_CLONE_DIR" --format sarif --fail-on "${VIBECHECK_FAIL_ON:-Alta}" > vibecheck.sarif
+          artifacts:
+            - name: vibecheck-sarif
+              type: shared
+              paths:
+                - vibecheck.sarif
+              capture-on: always

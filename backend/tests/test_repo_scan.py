@@ -1,5 +1,7 @@
 import json
+import shutil
 import stat
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -181,3 +183,68 @@ def test_cli_errors_do_not_expose_input_paths(tmp_path, capsys):
     error = capsys.readouterr().err
     assert "Erro:" in error
     assert str(tmp_path) not in error
+
+
+@pytest.mark.skipif(
+    shutil.which("git") is None,
+    reason="Git não está instalado; --changed-since exige um repositório Git local.",
+)
+def test_cli_changed_since_scans_only_changed_files_in_two_git_repositories(
+    tmp_path, capsys
+):
+    examples = (
+        ("exemplo-python", "src/changed.py", "src/unchanged.py"),
+        ("exemplo-js", "app/changed.js", "app/unchanged.js"),
+    )
+
+    for repository_name, changed_path, unchanged_path in examples:
+        repository = tmp_path / repository_name
+        repository.mkdir()
+        (repository / changed_path).parent.mkdir(parents=True)
+        (repository / unchanged_path).parent.mkdir(parents=True, exist_ok=True)
+        (repository / changed_path).write_text("value = 1\n", encoding="utf-8")
+        _write_secret(repository / unchanged_path)
+
+        subprocess.run(["git", "init", "-q", str(repository)], check=True)
+        subprocess.run(
+            ["git", "-C", str(repository), "config", "user.name", "VibeCheck Test"],
+            check=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "config",
+                "user.email",
+                "vibecheck-test@example.invalid",
+            ],
+            check=True,
+        )
+        subprocess.run(["git", "-C", str(repository), "add", "."], check=True)
+        subprocess.run(
+            ["git", "-C", str(repository), "commit", "-qm", "base"],
+            check=True,
+        )
+
+        (repository / changed_path).write_text(
+            'SECRET_KEY = "local-example-secret"\n',
+            encoding="utf-8",
+        )
+        exit_code = main(
+            [
+                str(repository),
+                "--changed-since",
+                "HEAD",
+                "--format",
+                "json",
+                "--fail-on",
+                "Crítica",
+            ]
+        )
+
+        report = json.loads(capsys.readouterr().out)
+        assert exit_code == 1
+        assert report["filesAnalyzed"] == [changed_path]
+        assert list(report["findingsByFile"]) == [changed_path]
+        assert unchanged_path not in report["filesAnalyzed"]

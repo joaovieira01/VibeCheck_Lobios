@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -170,16 +171,48 @@ def main(argv: list[str] | None = None) -> int:
         default="text",
         help="formato de saída (padrão: text)",
     )
+    parser.add_argument(
+        "--changed-since",
+        metavar="REF",
+        help="analisa apenas arquivos alterados desde uma referência Git",
+    )
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     if hasattr(sys.stderr, "reconfigure"):
         sys.stderr.reconfigure(encoding="utf-8")
     args = parser.parse_args(argv)
     try:
-        report = scan_repository(args.source)
-    except (RepositoryScanError, OSError, ValueError):
+        if args.changed_since is None:
+            report = scan_repository(args.source)
+        else:
+            if not args.source.is_dir():
+                raise RepositoryScanError(
+                    "A seleção de arquivos alterados só pode ser usada com um diretório."
+                )
+            diff = subprocess.run(
+                [
+                    "git",
+                    "diff",
+                    "--name-only",
+                    "-z",
+                    args.changed_since,
+                    "--",
+                ],
+                cwd=args.source,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                check=True,
+            )
+            changed_files = {
+                name.decode("utf-8", errors="replace").replace("\\", "/")
+                for name in diff.stdout.split(b"\0")
+                if name
+            }
+            report = scan_repository(args.source, only_files=changed_files)
+    except (RepositoryScanError, OSError, ValueError, subprocess.SubprocessError):
         print(
-            "Erro: não foi possível analisar a entrada. Verifique o diretório ou arquivo ZIP.",
+            "Erro: não foi possível analisar a entrada. Verifique o diretório, "
+            "arquivo ZIP ou referência Git.",
             file=sys.stderr,
         )
         return 2
