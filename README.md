@@ -30,18 +30,20 @@ Ferramenta de auditoria de segurança para código gerado por IA e escrito com p
 
 **Análise de código**
 - Entrada por upload de arquivo ou colagem de trecho.
-- 41 regras, com severidade, CWE e categoria OWASP Top 10:2025 (A01 a A10).
+- 41 regras estáticas: 40 para código e uma para manifestos de dependências, com severidade, CWE e categoria OWASP Top 10:2025 (A01 a A10).
 - Cada achado informa linha, evidência, impacto, recomendação e forma de prevenção.
 - Relatório em PDF gerado no navegador.
+- A checagem online opcional de vulnerabilidades de dependências roda apenas no backend.
 
 **Contas e histórico**
 - Cadastro e login pela API.
 - Histórico de análises persistido no banco.
+- Aba Repositório para upload ZIP e histórico, pelas rotas `/api/repositories/analyses`; requer login e permite 5 análises por usuário/hora.
 - Modo local: sem `VITE_API_URL`, a análise roda no navegador e o código não é enviado a nenhum servidor.
 
 **Automação**
-- Revisão de Pull Requests no GitHub Actions, com comentários nas linhas novas.
-- Execução via CLI em GitLab CI e Bitbucket Pipelines, com relatório como artefato.
+- Revisão de Pull Requests no GitHub Actions, com comentários nas linhas novas; o bot não bloqueia merge por si só.
+- Templates CLI para GitLab CI e Bitbucket Pipelines, com relatório como artefato; não foram executados em serviços reais.
 - Camada opcional de IA no backend para triar achados e sugerir revisões (desligada por padrão).
 
 ## Arquitetura
@@ -175,10 +177,17 @@ A documentação interativa dos endpoints fica em `/docs` na API.
 | `VIBECHECK_RATE_LIMIT` | Limite de requisições | `true` |
 | `VIBECHECK_SEED_DEMO_USER` | Cria usuário de demonstração | `false` |
 | `VIBECHECK_ONLINE_DEPS` | Consulta opcional de dependências em serviços públicos pelo backend | `false` |
+| `VIBECHECK_MAX_SOURCE_BYTES` | Tamanho máximo da análise de arquivo | `1000000` |
+| `VIBECHECK_MAX_REPO_ZIP_BYTES` | Tamanho máximo do ZIP enviado a `/api/repositories/analyses` | `25000000` |
+| `VIBECHECK_MAX_LINE_CHARS` | Limite de caracteres analisados por linha | `1000` |
+| `VIBECHECK_SCAN_TIMEOUT_SECONDS` | Orçamento de análise por arquivo | `10` |
 | `VITE_API_URL` | URL da API usada pelo frontend | `http://localhost:8000` |
 
 Sem `VITE_API_URL`, o frontend funciona em modo local: cadastro, análise e histórico ficam no navegador.
 O modo local do frontend não consulta serviços externos para análise de dependências.
+O `docker-compose.yml` encaminha `VIBECHECK_MAX_REPO_ZIP_BYTES` e
+`VIBECHECK_ONLINE_DEPS` do `.env` para o backend; o Compose continua sendo uma
+configuração de desenvolvimento, não de produção.
 
 As variáveis da camada de IA estão na seção seguinte.
 
@@ -308,7 +317,7 @@ As amostras e o gabarito usados nas métricas estão em `backend/tests/samples/`
 **Próximos passos**
 - [ ] Tela de recuperação de senha no frontend (os endpoints do backend já existem e exigem SMTP).
 - [ ] IA na revisão de Pull Requests e na interface.
-- [ ] Sugestão de correção em código.
+- [x] Sugestões determinísticas de correção nos achados suportados.
 - [x] Integração via CI/CLI com GitLab e Bitbucket (relatório como artefato; sem comentário inline).
 - [ ] Webhook ou app nativo com comentário inline no GitLab e Bitbucket.
 - [ ] Análise com contexto de fluxo de dados (motor SAST de código aberto).

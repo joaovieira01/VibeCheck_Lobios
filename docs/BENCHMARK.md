@@ -81,6 +81,33 @@ arquivo, então a detecção adicional de SSRF é contabilizada como FP pelo
 formato de avaliação, embora não seja um falso positivo semântico comprovado.
 O achado rotulado `tls-disabled` nessa mesma linha foi contado como correto.
 
+### Execução reproduzida em 15/11/2026
+
+Com `Python 3.12.10` e o código atual, `python scripts/benchmark.py` registrou:
+
+| Métrica | Resultado observado |
+|---|---:|
+| Arquivos no corpus | 40 (28 vulneráveis e 12 seguros) |
+| Recall | 27/28 (96,4%) |
+| Precisão | 28/30 (93,3%) |
+| Achados sem rótulo / taxa segundo a comparação exata | 2/30 (6,7%) |
+| Tempo total | 0,063674 s |
+
+Recall por categoria: A01 **5/6**, A02 **2/2**, A03 **1/1**, A04 **6/6**,
+A05 **8/8**, A07 **2/2**, A08 **2/2** e A09 **1/1**. O falso negativo e os
+dois achados sem correspondência são os descritos acima: desencontro de linha
+em `bench_py_12.py` e achado SSRF adicional em `bench_py_14.py`.
+
+O nome “benchmark independente” descreve a origem do corpus (criado sem
+consultar as regras), não uma avaliação externa cega. As regras já haviam sido
+ajustadas antes desta execução; portanto, o resultado atual **não é
+independente das correções** e não deve ser apresentado como recall em produção.
+
+`python scripts/bench_repo.py` analisou **500/500 arquivos sintéticos**, com
+**0 achados**, em **0,252 s**. O script cria 250 arquivos Python e 250
+TypeScript pequenos e seguros. Esse resultado mede apenas esse repositório
+artificial; não demonstra desempenho ou cobertura em repositórios reais.
+
 ### Erros após correções
 
 | Tipo segundo comparação exata com rótulos | Arquivo | Linha | Detalhe |

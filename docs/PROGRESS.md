@@ -127,3 +127,28 @@ O caso previamente observado em `backend/app/main.py:296` deixou de aparecer: a 
 
 - O workflow foi renomeado para `.github/workflows/vibecheck-pr-review.yml` e seu nome exibido passou a `VibeCheck`; referências nos READMEs foram atualizadas.
 - As mensagens, o resumo e o `User-Agent` de `github_pr_review.py` usam a marca `VibeCheck`. O script não procura nem atualiza comentários anteriores, então a mudança não altera detecção; comentários já publicados permanecem como estão.
+
+## Situação consolidada para apresentação — 15/11/2026
+
+Os registros anteriores são históricos e mantêm os números medidos em cada etapa.
+Esta seção reúne o estado atual, sem transformar medições pequenas em garantias.
+
+| Etapa | Estado e números verificados | Limite importante |
+|---|---|---|
+| Correção das regras | `rules.json` e `rules.generated.json`: **41 regras** (40 para código e uma para manifestos). `metrics.py`: **28/28** pela regra esperada, **0** por regra errada, **0** não detectados, achado adicional esperado **1/1**, amostra segura **0**. Tempo desta execução: **0,069514 s**. | É uma amostra interna, não recall de produção. |
+| Benchmark independente | 40 arquivos; execução atual **27/28 (96,4%)** recall, **28/30 (93,3%)** precisão, **2/30 (6,7%)** achados sem rótulo, **0,063674 s**. | Corpus escrito sem consultar as regras, mas medido após ajustes; não é avaliação externa cega. Um falso negativo é o rótulo de path traversal uma linha abaixo; há um SSRF adicional em arquivo com um só rótulo. |
+| Correção sugerida | Correções determinísticas documentadas para **10 grupos** de regras; diff e botão de cópia no frontend; sugestões de uma linha podem virar comentário `suggestion` no GitHub. | Não são aplicadas automaticamente; precisam de revisão e algumas dependem do driver/import/configuração. |
+| Análise de repositório | CLI JSON/SARIF, filtros por Git e política `--fail-on`; API `POST/GET /api/repositories/analyses` e detalhe por ID. Upload padrão até **25 MB**, rate limit **5 análises por usuário/hora**. `bench_repo.py`: **500/500** arquivos sintéticos, **0 achados**, **0,252 s**. | ZIP e tempo têm limites; o benchmark sintético não demonstra desempenho em repositórios reais grandes. |
+| CI | Exemplos de GitLab CI e Bitbucket Pipelines fazem análise por CLI e salvam artefato; o GitHub Actions existente comenta achados em linhas novas. | GitLab/Bitbucket não foram executados em serviços reais; não há app/webhook/comentários inline nativos nessas duas plataformas. O bot GitHub não bloqueia merge por si só. |
+| Endurecimento | `VIBECHECK_ENV=production` valida configurações críticas; scrypt `N=2**17`, aproximadamente **128 MiB por hash**; `/api/health` testa o banco. | A configuração Docker Compose é de desenvolvimento; não existem `docker-compose.prod.yml`, frontend de produção nem Nginx. Rate limit é por processo. |
+| Dependências | Checagem online opcional via OSV, PyPI e npm; máximo **50 pacotes por manifesto**, timeout de **3 s por requisição**, até **5 requisições concorrentes por processo**. Testes usam cliente falso e não acessam a rede. | Funciona somente no backend. Cobertura depende das bases públicas; 5xx/timeout não significam pacote inexistente. O frontend local não faz essa consulta. |
+
+### Validação completa desta revisão
+
+- Backend: `python -m pytest` — **201 passaram**, 1 aviso de depreciação Starlette/httpx, **nenhum skip**.
+- Frontend: `npm test` — **43 passaram em 7 arquivos**.
+- Frontend: `npm run build` — `tsc -b` e Vite concluídos.
+- `scripts/benchmark.py`: **27/28**, tempo **0,063674 s**.
+- `scripts/bench_repo.py`: **500/500**, **0 achados**, **0,252 s**.
+- `scripts/metrics.py`: **28/28**, nenhum achado na amostra segura, tempo **0,069514 s**.
+- GitLab/Bitbucket reais, provedores de IA, OSV/registries online e repositórios reais grandes **não foram validados nesta revisão**.

@@ -12,7 +12,7 @@
     "falsePositiveFindings": 2,
     "precision": 0.9333333333333333,
     "falsePositiveRate": 0.06666666666666667,
-    "totalScanSeconds": 0.09771080000791699,
+    "totalScanSeconds": 0.06367399997543544,
     "underTwoMinutes": true,
     "recallByCategory": {
       "A01": {
@@ -60,7 +60,7 @@
   "files": [
     {
       "file": "bench_js_01.ts",
-      "elapsedSeconds": 0.0010593999759294093,
+      "elapsedSeconds": 0.0008223999757319689,
       "findingCount": 1,
       "findings": [
         {
@@ -76,7 +76,7 @@
     },
     {
       "file": "bench_js_02.js",
-      "elapsedSeconds": 0.0020043000113219023,
+      "elapsedSeconds": 0.0010987999849021435,
       "findingCount": 1,
       "findings": [
         {
@@ -92,7 +92,7 @@
     },
     {
       "file": "bench_js_03.js",
-      "elapsedSeconds": 0.00228610000340268,
+      "elapsedSeconds": 0.0012513999827206135,
       "findingCount": 1,
       "findings": [
         {
@@ -108,7 +108,7 @@
     },
     {
       "file": "bench_js_04.ts",
-      "elapsedSeconds": 0.0011295999865978956,
+      "elapsedSeconds": 0.0006325999856926501,
       "findingCount": 1,
       "findings": [
         {
@@ -124,7 +124,7 @@
     },
     {
       "file": "bench_js_05.js",
-      "elapsedSeconds": 0.001193000003695488,
+      "elapsedSeconds": 0.0010163999977521598,
       "findingCount": 1,
       "findings": [
         {
@@ -140,7 +140,7 @@
     },
     {
       "file": "bench_js_06.js",
-      "elapsedSeconds": 0.0006698000361211598,
+      "elapsedSeconds": 0.0006530999671667814,
       "findingCount": 1,
       "findings": [
         {
@@ -156,7 +156,7 @@
     },
     {
       "file": "bench_js_07.ts",
-      "elapsedSeconds": 0.0017098999815061688,
+      "elapsedSeconds": 0.0008071999764069915,
       "findingCount": 1,
       "findings": [
         {
@@ -172,7 +172,7 @@
     },
     {
       "file": "bench_js_08.js",
-      "elapsedSeconds": 0.0015938999713398516,
+      "elapsedSeconds": 0.0012027999619022012,
       "findingCount": 1,
       "findings": [
         {
@@ -188,7 +188,7 @@
     },
     {
       "file": "bench_js_09.js",
-      "elapsedSeconds": 0.0004711000365205109,
+      "elapsedSeconds": 0.00037049996899440885,
       "findingCount": 1,
       "findings": [
         {
@@ -204,7 +204,7 @@
     },
     {
       "file": "bench_js_10.js",
-      "elapsedSeconds": 0.0014341000351123512,
+      "elapsedSeconds": 0.0014702000189572573,
       "findingCount": 1,
       "findings": [
         {
@@ -220,7 +220,7 @@
     },
     {
       "file": "bench_js_11.js",
-      "elapsedSeconds": 0.0010932000004686415,
+      "elapsedSeconds": 0.0007048000115901232,
       "findingCount": 1,
       "findings": [
         {
@@ -236,7 +236,7 @@
     },
     {
       "file": "bench_js_12.ts",
-      "elapsedSeconds": 0.0011477000080049038,
+      "elapsedSeconds": 0.0006587999523617327,
       "findingCount": 1,
       "findings": [
         {
@@ -252,7 +252,7 @@
     },
     {
       "file": "bench_js_14.js",
-      "elapsedSeconds": 0.001076499989721924,
+      "elapsedSeconds": 0.0006448999629355967,
       "findingCount": 1,
       "findings": [
         {
@@ -268,43 +268,43 @@
     },
     {
       "file": "bench_js_15.ts",
-      "elapsedSeconds": 0.0007599000236950815,
+      "elapsedSeconds": 0.000561899971216917,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_js_16.js",
-      "elapsedSeconds": 0.0010485000093467534,
+      "elapsedSeconds": 0.0006270000012591481,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_js_17.ts",
-      "elapsedSeconds": 0.0007907000253908336,
+      "elapsedSeconds": 0.0004162999684922397,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_js_18.js",
-      "elapsedSeconds": 0.001373099978081882,
+      "elapsedSeconds": 0.0010028000106103718,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_js_19.ts",
-      "elapsedSeconds": 0.0018565999926067889,
+      "elapsedSeconds": 0.002257700019981712,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_js_20.js",
-      "elapsedSeconds": 0.0009852999937720597,
+      "elapsedSeconds": 0.0005383000243455172,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_01.py",
-      "elapsedSeconds": 0.001961000030860305,
+      "elapsedSeconds": 0.0012424999731592834,
       "findingCount": 1,
       "findings": [
         {
@@ -320,7 +320,7 @@
     },
     {
       "file": "bench_py_02.py",
-      "elapsedSeconds": 0.002151500026229769,
+      "elapsedSeconds": 0.0011548000038601458,
       "findingCount": 1,
       "findings": [
         {
@@ -336,7 +336,7 @@
     },
     {
       "file": "bench_py_03.py",
-      "elapsedSeconds": 0.001968100026715547,
+      "elapsedSeconds": 0.0011359000345692039,
       "findingCount": 1,
       "findings": [
         {
@@ -352,7 +352,7 @@
     },
     {
       "file": "bench_py_04.py",
-      "elapsedSeconds": 0.0010654000216163695,
+      "elapsedSeconds": 0.0010294999810867012,
       "findingCount": 1,
       "findings": [
         {
@@ -368,7 +368,7 @@
     },
     {
       "file": "bench_py_05.py",
-      "elapsedSeconds": 0.0014918000088073313,
+      "elapsedSeconds": 0.0008768999832682312,
       "findingCount": 1,
       "findings": [
         {
@@ -384,7 +384,7 @@
     },
     {
       "file": "bench_py_06.py",
-      "elapsedSeconds": 0.0016269999905489385,
+      "elapsedSeconds": 0.0009254000033251941,
       "findingCount": 1,
       "findings": [
         {
@@ -400,7 +400,7 @@
     },
     {
       "file": "bench_py_07.py",
-      "elapsedSeconds": 0.0006415999960154295,
+      "elapsedSeconds": 0.0005502999993041158,
       "findingCount": 2,
       "findings": [
         {
@@ -425,7 +425,7 @@
     },
     {
       "file": "bench_py_08.py",
-      "elapsedSeconds": 0.0007040000054985285,
+      "elapsedSeconds": 0.0004159000236541033,
       "findingCount": 1,
       "findings": [
         {
@@ -441,7 +441,7 @@
     },
     {
       "file": "bench_py_09.py",
-      "elapsedSeconds": 0.00109779997728765,
+      "elapsedSeconds": 0.0007445000228472054,
       "findingCount": 1,
       "findings": [
         {
@@ -457,7 +457,7 @@
     },
     {
       "file": "bench_py_10.py",
-      "elapsedSeconds": 0.0018533000256866217,
+      "elapsedSeconds": 0.0011177999549545348,
       "findingCount": 1,
       "findings": [
         {
@@ -473,7 +473,7 @@
     },
     {
       "file": "bench_py_11.py",
-      "elapsedSeconds": 0.0015241000219248235,
+      "elapsedSeconds": 0.0008453000336885452,
       "findingCount": 1,
       "findings": [
         {
@@ -489,7 +489,7 @@
     },
     {
       "file": "bench_py_12.py",
-      "elapsedSeconds": 0.002531200007069856,
+      "elapsedSeconds": 0.001130300050135702,
       "findingCount": 1,
       "findings": [
         {
@@ -505,7 +505,7 @@
     },
     {
       "file": "bench_py_13.py",
-      "elapsedSeconds": 0.0006554999854415655,
+      "elapsedSeconds": 0.0003924000193364918,
       "findingCount": 1,
       "findings": [
         {
@@ -521,7 +521,7 @@
     },
     {
       "file": "bench_py_14.py",
-      "elapsedSeconds": 0.0012925000046379864,
+      "elapsedSeconds": 0.0008829000289551914,
       "findingCount": 2,
       "findings": [
         {
@@ -546,43 +546,43 @@
     },
     {
       "file": "bench_py_15.py",
-      "elapsedSeconds": 0.0007718999986536801,
+      "elapsedSeconds": 0.0004600000102072954,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_16.py",
-      "elapsedSeconds": 0.001323400007095188,
+      "elapsedSeconds": 0.0007348000071942806,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_17.py",
-      "elapsedSeconds": 0.0005947999889031053,
+      "elapsedSeconds": 0.00031650002347305417,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_18.py",
-      "elapsedSeconds": 0.0016506999963894486,
+      "elapsedSeconds": 0.0009255000040866435,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_19.py",
-      "elapsedSeconds": 0.0020262000034563243,
+      "elapsedSeconds": 0.0013120999792590737,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_20.py",
-      "elapsedSeconds": 0.0010874000145122409,
+      "elapsedSeconds": 0.0006994000286795199,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "package.json",
-      "elapsedSeconds": 0.0006849999772384763,
+      "elapsedSeconds": 0.0003932000254280865,
       "findingCount": 1,
       "findings": [
         {

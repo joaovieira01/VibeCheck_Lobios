@@ -1,0 +1,5 @@
+# Exemplo de dependência com CVE conhecido para demonstrar a consulta OSV.
+requests==2.19.1
+
+# Nome inventado apenas para a demonstração de pacote inexistente.
+vibecheck-banca-demo-pacote-inexistente-20261115==0.0.1

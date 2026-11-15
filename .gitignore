@@ -16,6 +16,13 @@ backend/data/*
 *.db
 *.sqlite
 *.sqlite3
+# Generated local scan artifacts; the demo ZIP is an intentional fixture.
+*.sarif
+*.zip
+!demo/vibecheck-demo.zip
+# Local screen captures
+/screenshots/
+/capturas/
 # Frontend
 frontend/node_modules/
 frontend/dist/
