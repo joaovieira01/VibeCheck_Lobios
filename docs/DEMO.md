@@ -25,7 +25,7 @@
 | 2:00–2:45 | Na aba **Repositório**, envie `demo/vibecheck-demo.zip` e abra um achado. | “O ZIP é extraído em área temporária e tem limites de tamanho e quantidade. A rota exige login; o limite é 5 análises por usuário por hora.” |
 | 2:45–3:30 | Rode o CLI abaixo e mostre o SARIF e o código de saída. Mostre os YAMLs do GitLab/Bitbucket como exemplos de CI, não como execução ao vivo. | “`--fail-on Alta` retorna 1 para achados Alta ou Crítica. O bot GitHub comenta, mas não bloqueia merge sozinho. Os pipelines GitLab/Bitbucket não foram validados em serviços reais e não fazem comentários inline.” |
 | 3:30–4:20 | Rode `demo/requirements.txt` com `--online-deps`. | “Versões fixadas são consultadas no OSV; PyPI/npm confirmam existência. Só um 404 confirmado indica pacote inexistente. Timeout ou 5xx significa que a verificação está indisponível, não que o pacote não existe.” |
-| 4:20–5:00 | Mostre `docs/BENCHMARK.md` e `docs/LIMITACOES.md`. | “Na execução atual, o corpus interno marcou 27/28 (96,4%) e 2/30 achados sem rótulo. O benchmark de 500 arquivos é sintético e levou 0,252 s; nenhum desses números prova desempenho em repositórios reais.” |
+| 4:20–5:00 | Mostre `docs/BENCHMARK.md` e `docs/LIMITACOES.md`. | “Na execução de 15/11/2026, o corpus interno marcou 29/29 (100,0%) de recall, 30/30 (100,0%) de precisão e 0/30 achados sem rótulo. Os rótulos foram corrigidos depois de observar resultados anteriores, então não é uma avaliação independente. O benchmark de repositório analisou 500/500 arquivos sintéticos, com 0 achados, em 0,296 s nesta máquina; não prova desempenho em repositórios reais.” |
 
 ## Comandos prontos
 

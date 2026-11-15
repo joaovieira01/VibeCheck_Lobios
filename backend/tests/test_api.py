@@ -311,8 +311,11 @@ class ProductionStartupTests(unittest.TestCase):
         invalid_settings = (
             ({"seed_demo_user": True}, "VIBECHECK_SEED_DEMO_USER"),
             ({"cors_origins": ["https://*.example.com"]}, "VIBECHECK_CORS_ORIGINS"),
-            ({"db_password": "CHANGE_THIS_PASSWORD"}, "senha de exemplo"),
-            ({"db_password": ""}, "senha de exemplo"),
+            (
+                {"db_engine": "mysql", "db_password": "CHANGE_THIS_PASSWORD"},
+                "senha de exemplo",
+            ),
+            ({"db_engine": "mysql", "db_password": ""}, "senha de exemplo"),
         )
 
         for overrides, expected_message in invalid_settings:
@@ -350,6 +353,41 @@ class ProductionStartupTests(unittest.TestCase):
             )
             with TestClient(create_app(settings, mailer=FakeMailer())) as client:
                 self.assertEqual(client.get("/api/health").status_code, 200)
+
+    def test_production_sqlite_does_not_require_database_password(self):
+        with tempfile.TemporaryDirectory() as directory:
+            settings = Settings(
+                environment="production",
+                db_path=os.path.join(directory, "production.db"),
+                db_engine="sqlite",
+                db_password="",
+                cors_origins=["https://app.example.com"],
+                seed_demo_user=False,
+            )
+            with TestClient(create_app(settings, mailer=FakeMailer())) as client:
+                self.assertEqual(client.get("/api/health").status_code, 200)
+
+    def test_request_without_lifespan_initializes_application_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            settings = Settings(
+                db_path=os.path.join(directory, "serverless.db"),
+                db_engine="sqlite",
+                db_password="",
+                seed_demo_user=False,
+            )
+            app = create_app(settings, mailer=FakeMailer())
+            client = TestClient(app)
+            try:
+                response = client.get("/api/health")
+                database = app.state.database
+                second_response = client.get("/api/health")
+            finally:
+                client.close()
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["status"], "ok")
+            self.assertEqual(second_response.status_code, 200)
+            self.assertIs(app.state.database, database)
 
     def test_demo_user_is_seeded_when_application_starts_in_development(self):
         with tempfile.TemporaryDirectory() as directory:

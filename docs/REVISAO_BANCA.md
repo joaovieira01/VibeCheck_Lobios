@@ -6,9 +6,9 @@ executar testes/build/métricas e procurar segredos e artefatos versionados.
 
 ## Inconsistências corrigidas
 
-- [backend/README.md](../backend/README.md) dizia que havia 19 regras e 19 casos
-  golden. O código contém **41 regras** (40 para código e uma de manifesto) e o
-  corpus tem **64 casos**.
+- [backend/README.md](../backend/README.md) informava contagens desatualizadas
+  de regras e casos golden. O código contém **41 regras** (40 para código e uma
+  de manifesto) e o corpus tem **64 casos**.
 - O README do backend não listava as três rotas de repositório. Agora registra
   POST, lista e detalhe em `/api/repositories/analyses`, com autenticação,
   limite padrão de ZIP de 25 MB e rate limit de 5 análises por usuário/hora.
@@ -33,9 +33,9 @@ executar testes/build/métricas e procurar segredos e artefatos versionados.
 Saída do backend:
 
 ```text
-collected 201 items
+collected 205 items
 ...
-======================= 201 passed, 1 warning in 42.72s =======================
+======================= 205 passed, 1 warning in 41.97s =======================
 ```
 
 O aviso é de depreciação Starlette/httpx; não houve skips.
@@ -45,7 +45,7 @@ Saída do frontend:
 ```text
 Test Files  7 passed (7)
 Tests  43 passed (43)
-✓ built in 5.12s
+✓ built in 5.07s
 ```
 
 Medições atuais:
@@ -53,13 +53,13 @@ Medições atuais:
 | Comando | Resultado |
 |---|---|
 | `python scripts/metrics.py` | Recall interno 28/28, 0 por regra errada, 0 não detectados, achado extra esperado 1/1, amostra segura 0; 0,069514 s. |
-| `python scripts/benchmark.py` | 27/28 (96,4%) recall, 28/30 (93,3%) precisão, 2/30 (6,7%) sem rótulo, 0,063674 s. |
-| `python scripts/bench_repo.py` | 500/500 arquivos sintéticos, 0 achados, 0,252 s. |
+| `python scripts/benchmark.py` | 29/29 (100,0%) recall, 30/30 (100,0%) precisão, 0/30 (0,0%) sem rótulo, 0,058725 s. |
+| `python scripts/bench_repo.py` | 500/500 arquivos sintéticos, 0 achados, 0,296 s nesta máquina. |
 
-O benchmark de 40 arquivos foi escrito pela equipe e medido depois dos ajustes.
-Não é uma avaliação externa, cega ou representativa de produção. Um caso de
-path traversal tem rótulo uma linha abaixo do código; há também SSRF adicional
-num arquivo cujo rótulo principal é TLS.
+O benchmark de 40 arquivos foi escrito pela equipe. Os rótulos foram corrigidos
+depois de observar execuções anteriores, então a medição atual não é
+independente nem cega. O tempo do benchmark de repositório depende da máquina e
+se refere a 500 arquivos sintéticos, não a um repositório real.
 
 ## Varredura de segredos e arquivos
 

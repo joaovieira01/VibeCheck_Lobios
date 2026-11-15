@@ -6,10 +6,10 @@
    SAST dedicado é uma evolução, não algo que o scanner já faça.
 
 2. **Qual é a taxa de falsos positivos?**  
-   No corpus de 40 arquivos medido em 15/11/2026, 2 de 30 achados não coincidiram
-   com os rótulos (6,7%). Um é um desencontro de linha do rótulo e outro é um
-   achado SSRF adicional num arquivo com apenas um rótulo. Não é uma taxa
-   generalizável para código real.
+   No corpus de 40 arquivos medido em 15/11/2026, foram 0/30 (0,0%) achados sem
+   rótulo; recall 29/29 (100,0%) e precisão 30/30 (100,0%). Os rótulos foram
+   corrigidos depois de observar resultados anteriores, então a medição não é
+   independente nem generalizável para código real.
 
 3. **O que o scanner não detecta bem?**  
    Fluxo entre arquivos, aliases/wrappers arbitrários, sanitizadores próprios e
@@ -60,8 +60,9 @@
     import, configuração ou ajuste específico do driver.
 
 12. **Os números provam que está pronto para produção?**  
-    Não. O backend passou 201 testes e o frontend 43; o benchmark mediu um corpus
-    de 40 arquivos e o teste de repositório usa 500 arquivos sintéticos. Não
-    houve validação em repositórios grandes reais nem execução dos pipelines
-    GitLab/Bitbucket em suas plataformas.
+    Não. O backend passou 205 testes e o frontend 43; o benchmark mediu 40
+    arquivos (29/29 recall, 30/30 precisão, 0/30 sem rótulo, em 0,058725 s).
+    O teste de repositório analisou 500/500 arquivos sintéticos, 0 achados, em
+    0,296 s, dependendo da máquina. Não houve validação em repositórios grandes
+    reais nem execução dos pipelines GitLab/Bitbucket em suas plataformas.
 

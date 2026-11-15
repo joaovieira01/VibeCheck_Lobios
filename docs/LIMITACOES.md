@@ -13,11 +13,11 @@ nem uma certificação de segurança.
 - Linhas acima de 1.000 caracteres são truncadas antes das regras; arquivos
   acima de 1 MB são ignorados na análise de repositório. Só extensões
   explicitamente suportadas são analisadas.
-- O benchmark de regras usa 40 arquivos e rótulos da equipe. A execução atual
-  marcou 27/28 casos vulneráveis e 2/30 achados sem rótulo. Um achado adicional
-  é SSRF no mesmo arquivo rotulado por TLS; outro é um desencontro de uma linha.
-  Esses números não são uma taxa medida em produção nem uma avaliação externa
-  cega.
+- O benchmark de regras usa 40 arquivos, 29 rótulos e exemplos da equipe. Na
+  execução de 15/11/2026 marcou 29/29 (100,0%) recall, 30/30 (100,0%)
+  precisão e 0/30 (0,0%) achados sem rótulo, em 0,058725 s. Os rótulos foram
+  corrigidos depois de observar execuções anteriores; portanto, não é uma
+  avaliação independente ou cega, nem uma taxa medida em produção.
 
 ## Dependências (SCA)
 
@@ -45,9 +45,10 @@ nem uma certificação de segurança.
 - O endpoint de repositório exige login e permite 5 análises por usuário por
   hora. O rate limit é em memória por processo, não um limite distribuído entre
   várias instâncias.
-- O benchmark de repositório cria 500 arquivos sintéticos pequenos. A medição
-  de 0,252 s não representa monorepos, arquivos grandes, armazenamento
-  compartilhado ou concorrência real.
+- O benchmark de repositório analisou 500/500 arquivos sintéticos, com 0
+  achados, em 0,296 s na execução de 15/11/2026. O tempo depende da máquina e
+  não representa monorepos, arquivos grandes, armazenamento compartilhado ou
+  concorrência real.
 - Histórico guarda achados e evidências; uma linha contendo segredo detectado
   pode ser persistida. Proteja o banco e limite acesso ao histórico.
 - SQLite é adequado para uma instância local/teste; produção multi-instância

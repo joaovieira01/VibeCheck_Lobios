@@ -4,21 +4,21 @@
     "files": 40,
     "vulnerableFiles": 28,
     "safeFiles": 12,
-    "expectedVulnerabilities": 28,
-    "matchedVulnerabilities": 27,
-    "recall": 0.9642857142857143,
+    "expectedVulnerabilities": 29,
+    "matchedVulnerabilities": 29,
+    "recall": 1.0,
     "findings": 30,
-    "truePositiveFindings": 28,
-    "falsePositiveFindings": 2,
-    "precision": 0.9333333333333333,
-    "falsePositiveRate": 0.06666666666666667,
-    "totalScanSeconds": 0.06367399997543544,
+    "truePositiveFindings": 30,
+    "falsePositiveFindings": 0,
+    "precision": 1.0,
+    "falsePositiveRate": 0.0,
+    "totalScanSeconds": 0.05872499995166436,
     "underTwoMinutes": true,
     "recallByCategory": {
       "A01": {
-        "matched": 5,
-        "expected": 6,
-        "recall": 0.8333333333333334
+        "matched": 7,
+        "expected": 7,
+        "recall": 1.0
       },
       "A02": {
         "matched": 2,
@@ -60,7 +60,7 @@
   "files": [
     {
       "file": "bench_js_01.ts",
-      "elapsedSeconds": 0.0008223999757319689,
+      "elapsedSeconds": 0.0009362000273540616,
       "findingCount": 1,
       "findings": [
         {
@@ -76,7 +76,7 @@
     },
     {
       "file": "bench_js_02.js",
-      "elapsedSeconds": 0.0010987999849021435,
+      "elapsedSeconds": 0.001102799957152456,
       "findingCount": 1,
       "findings": [
         {
@@ -92,7 +92,7 @@
     },
     {
       "file": "bench_js_03.js",
-      "elapsedSeconds": 0.0012513999827206135,
+      "elapsedSeconds": 0.0012836000532843173,
       "findingCount": 1,
       "findings": [
         {
@@ -108,7 +108,7 @@
     },
     {
       "file": "bench_js_04.ts",
-      "elapsedSeconds": 0.0006325999856926501,
+      "elapsedSeconds": 0.0006387000321410596,
       "findingCount": 1,
       "findings": [
         {
@@ -124,7 +124,7 @@
     },
     {
       "file": "bench_js_05.js",
-      "elapsedSeconds": 0.0010163999977521598,
+      "elapsedSeconds": 0.0009790000040084124,
       "findingCount": 1,
       "findings": [
         {
@@ -140,7 +140,7 @@
     },
     {
       "file": "bench_js_06.js",
-      "elapsedSeconds": 0.0006530999671667814,
+      "elapsedSeconds": 0.0006278000073507428,
       "findingCount": 1,
       "findings": [
         {
@@ -156,7 +156,7 @@
     },
     {
       "file": "bench_js_07.ts",
-      "elapsedSeconds": 0.0008071999764069915,
+      "elapsedSeconds": 0.0008441999671049416,
       "findingCount": 1,
       "findings": [
         {
@@ -172,7 +172,7 @@
     },
     {
       "file": "bench_js_08.js",
-      "elapsedSeconds": 0.0012027999619022012,
+      "elapsedSeconds": 0.0008515000226907432,
       "findingCount": 1,
       "findings": [
         {
@@ -188,7 +188,7 @@
     },
     {
       "file": "bench_js_09.js",
-      "elapsedSeconds": 0.00037049996899440885,
+      "elapsedSeconds": 0.00033189996611326933,
       "findingCount": 1,
       "findings": [
         {
@@ -204,7 +204,7 @@
     },
     {
       "file": "bench_js_10.js",
-      "elapsedSeconds": 0.0014702000189572573,
+      "elapsedSeconds": 0.0014412999735213816,
       "findingCount": 1,
       "findings": [
         {
@@ -220,7 +220,7 @@
     },
     {
       "file": "bench_js_11.js",
-      "elapsedSeconds": 0.0007048000115901232,
+      "elapsedSeconds": 0.0007261999999172986,
       "findingCount": 1,
       "findings": [
         {
@@ -236,7 +236,7 @@
     },
     {
       "file": "bench_js_12.ts",
-      "elapsedSeconds": 0.0006587999523617327,
+      "elapsedSeconds": 0.0006624000379815698,
       "findingCount": 1,
       "findings": [
         {
@@ -252,7 +252,7 @@
     },
     {
       "file": "bench_js_14.js",
-      "elapsedSeconds": 0.0006448999629355967,
+      "elapsedSeconds": 0.0006323999841697514,
       "findingCount": 1,
       "findings": [
         {
@@ -268,43 +268,43 @@
     },
     {
       "file": "bench_js_15.ts",
-      "elapsedSeconds": 0.000561899971216917,
+      "elapsedSeconds": 0.0005658000009134412,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_js_16.js",
-      "elapsedSeconds": 0.0006270000012591481,
+      "elapsedSeconds": 0.0005686000222340226,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_js_17.ts",
-      "elapsedSeconds": 0.0004162999684922397,
+      "elapsedSeconds": 0.00039899995317682624,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_js_18.js",
-      "elapsedSeconds": 0.0010028000106103718,
+      "elapsedSeconds": 0.0007452999707311392,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_js_19.ts",
-      "elapsedSeconds": 0.002257700019981712,
+      "elapsedSeconds": 0.0011480000102892518,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_js_20.js",
-      "elapsedSeconds": 0.0005383000243455172,
+      "elapsedSeconds": 0.0005222000181674957,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_01.py",
-      "elapsedSeconds": 0.0012424999731592834,
+      "elapsedSeconds": 0.001206600049044937,
       "findingCount": 1,
       "findings": [
         {
@@ -320,7 +320,7 @@
     },
     {
       "file": "bench_py_02.py",
-      "elapsedSeconds": 0.0011548000038601458,
+      "elapsedSeconds": 0.0012369999894872308,
       "findingCount": 1,
       "findings": [
         {
@@ -336,7 +336,7 @@
     },
     {
       "file": "bench_py_03.py",
-      "elapsedSeconds": 0.0011359000345692039,
+      "elapsedSeconds": 0.0010524000390432775,
       "findingCount": 1,
       "findings": [
         {
@@ -352,7 +352,7 @@
     },
     {
       "file": "bench_py_04.py",
-      "elapsedSeconds": 0.0010294999810867012,
+      "elapsedSeconds": 0.0010463999933563173,
       "findingCount": 1,
       "findings": [
         {
@@ -368,7 +368,7 @@
     },
     {
       "file": "bench_py_05.py",
-      "elapsedSeconds": 0.0008768999832682312,
+      "elapsedSeconds": 0.0008756999741308391,
       "findingCount": 1,
       "findings": [
         {
@@ -384,7 +384,7 @@
     },
     {
       "file": "bench_py_06.py",
-      "elapsedSeconds": 0.0009254000033251941,
+      "elapsedSeconds": 0.0008954999502748251,
       "findingCount": 1,
       "findings": [
         {
@@ -400,7 +400,7 @@
     },
     {
       "file": "bench_py_07.py",
-      "elapsedSeconds": 0.0005502999993041158,
+      "elapsedSeconds": 0.0005303000216372311,
       "findingCount": 2,
       "findings": [
         {
@@ -425,7 +425,7 @@
     },
     {
       "file": "bench_py_08.py",
-      "elapsedSeconds": 0.0004159000236541033,
+      "elapsedSeconds": 0.0004191999905742705,
       "findingCount": 1,
       "findings": [
         {
@@ -441,7 +441,7 @@
     },
     {
       "file": "bench_py_09.py",
-      "elapsedSeconds": 0.0007445000228472054,
+      "elapsedSeconds": 0.0007136999629437923,
       "findingCount": 1,
       "findings": [
         {
@@ -457,7 +457,7 @@
     },
     {
       "file": "bench_py_10.py",
-      "elapsedSeconds": 0.0011177999549545348,
+      "elapsedSeconds": 0.0010481999488547444,
       "findingCount": 1,
       "findings": [
         {
@@ -473,7 +473,7 @@
     },
     {
       "file": "bench_py_11.py",
-      "elapsedSeconds": 0.0008453000336885452,
+      "elapsedSeconds": 0.000818900007288903,
       "findingCount": 1,
       "findings": [
         {
@@ -489,7 +489,7 @@
     },
     {
       "file": "bench_py_12.py",
-      "elapsedSeconds": 0.001130300050135702,
+      "elapsedSeconds": 0.001116400002501905,
       "findingCount": 1,
       "findings": [
         {
@@ -499,13 +499,13 @@
           "category": "A01",
           "title": "Possível travessia de diretório",
           "evidence": "return open(str(ROOT) + request.query_params[\"name\"], \"rb\").read()",
-          "labeled": false
+          "labeled": true
         }
       ]
     },
     {
       "file": "bench_py_13.py",
-      "elapsedSeconds": 0.0003924000193364918,
+      "elapsedSeconds": 0.00037919997703284025,
       "findingCount": 1,
       "findings": [
         {
@@ -521,7 +521,7 @@
     },
     {
       "file": "bench_py_14.py",
-      "elapsedSeconds": 0.0008829000289551914,
+      "elapsedSeconds": 0.0008398000500164926,
       "findingCount": 2,
       "findings": [
         {
@@ -531,7 +531,7 @@
           "category": "A01",
           "title": "Requisição a destino controlado pelo usuário",
           "evidence": "return requests.get(profile_url, verify=False).json()",
-          "labeled": false
+          "labeled": true
         },
         {
           "file": "bench_py_14.py",
@@ -546,43 +546,43 @@
     },
     {
       "file": "bench_py_15.py",
-      "elapsedSeconds": 0.0004600000102072954,
+      "elapsedSeconds": 0.00045270001282915473,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_16.py",
-      "elapsedSeconds": 0.0007348000071942806,
+      "elapsedSeconds": 0.0007235999801196158,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_17.py",
-      "elapsedSeconds": 0.00031650002347305417,
+      "elapsedSeconds": 0.0003136000013910234,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_18.py",
-      "elapsedSeconds": 0.0009255000040866435,
+      "elapsedSeconds": 0.0009322999976575375,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_19.py",
-      "elapsedSeconds": 0.0013120999792590737,
+      "elapsedSeconds": 0.0012054000399075449,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "bench_py_20.py",
-      "elapsedSeconds": 0.0006994000286795199,
+      "elapsedSeconds": 0.0007421000045724213,
       "findingCount": 0,
       "findings": []
     },
     {
       "file": "package.json",
-      "elapsedSeconds": 0.0003932000254280865,
+      "elapsedSeconds": 0.0003839000128209591,
       "findingCount": 1,
       "findings": [
         {
@@ -597,31 +597,6 @@
       ]
     }
   ],
-  "falseNegatives": [
-    {
-      "file": "bench_py_12.py",
-      "line": 10,
-      "category": "A01"
-    }
-  ],
-  "falsePositives": [
-    {
-      "file": "bench_py_12.py",
-      "line": 9,
-      "ruleId": "path-traversal",
-      "category": "A01",
-      "title": "Possível travessia de diretório",
-      "evidence": "return open(str(ROOT) + request.query_params[\"name\"], \"rb\").read()",
-      "labeled": false
-    },
-    {
-      "file": "bench_py_14.py",
-      "line": 6,
-      "ruleId": "ssrf",
-      "category": "A01",
-      "title": "Requisição a destino controlado pelo usuário",
-      "evidence": "return requests.get(profile_url, verify=False).json()",
-      "labeled": false
-    }
-  ]
+  "falseNegatives": [],
+  "falsePositives": []
 }

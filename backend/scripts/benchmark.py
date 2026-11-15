@@ -1,4 +1,4 @@
-"""Mede o scanner num corpus independente pequeno, sem rede."""
+"""Mede o scanner num corpus pequeno, sem rede."""
 
 from __future__ import annotations
 
@@ -30,6 +30,24 @@ def _read_labels() -> dict[str, Any]:
     return labels
 
 
+def _labels_for_file(label: dict[str, Any]) -> list[dict[str, Any]]:
+    if "labels" not in label:
+        return [label]
+
+    labels = label["labels"]
+    if not isinstance(labels, list) or not labels:
+        raise ValueError("A lista de rótulos adicionais deve conter itens.")
+    if any(
+        not isinstance(item, dict)
+        or not isinstance(item.get("category"), str)
+        or not isinstance(item.get("lines"), list)
+        or any(not isinstance(line, int) or line < 1 for line in item["lines"])
+        for item in labels
+    ):
+        raise ValueError("Cada rótulo deve informar categoria e linhas positivas.")
+    return labels
+
+
 def _safe_path(name: str) -> Path:
     path = (BENCHMARK / name).resolve()
     if path.parent != BENCHMARK.resolve() or not path.is_file():
@@ -45,8 +63,9 @@ def collect_benchmark() -> dict[str, Any]:
 
     expected: dict[tuple[str, int], set[str]] = defaultdict(set)
     for filename, label in vulnerable.items():
-        for line in label["lines"]:
-            expected[(filename, line)].add(label["category"])
+        for item in _labels_for_file(label):
+            for line in item["lines"]:
+                expected[(filename, line)].add(item["category"])
 
     total_started = time.perf_counter()
     file_results: list[dict[str, Any]] = []
@@ -91,23 +110,29 @@ def collect_benchmark() -> dict[str, Any]:
         {
             "file": filename,
             "line": line,
-            "category": label["category"],
+            "category": item["category"],
         }
         for filename, label in sorted(vulnerable.items())
-        for line in label["lines"]
-        if (filename, line, label["category"]) not in matched_labels
+        for item in _labels_for_file(label)
+        for line in item["lines"]
+        if (filename, line, item["category"]) not in matched_labels
     ]
     false_positives = [finding for finding in reported if not finding["labeled"]]
 
     category_totals: dict[str, int] = defaultdict(int)
     category_hits: dict[str, int] = defaultdict(int)
     for filename, label in vulnerable.items():
-        for line in label["lines"]:
-            category_totals[label["category"]] += 1
-            if (filename, line, label["category"]) in matched_labels:
-                category_hits[label["category"]] += 1
+        for item in _labels_for_file(label):
+            for line in item["lines"]:
+                category_totals[item["category"]] += 1
+                if (filename, line, item["category"]) in matched_labels:
+                    category_hits[item["category"]] += 1
 
-    total_labels = sum(len(item["lines"]) for item in vulnerable.values())
+    total_labels = sum(
+        len(item["lines"])
+        for label in vulnerable.values()
+        for item in _labels_for_file(label)
+    )
     matched_count = total_labels - len(false_negatives)
     finding_count = len(reported)
     metrics = {
@@ -155,7 +180,7 @@ def main() -> None:
         encoding="utf-8",
     )
     metrics = report["metrics"]
-    print("Benchmark independente do scanner")
+    print("Benchmark do scanner (corpus interno)")
     print(
         f"Recall total: {metrics['matchedVulnerabilities']}/"
         f"{metrics['expectedVulnerabilities']} ({metrics['recall']:.1%})"

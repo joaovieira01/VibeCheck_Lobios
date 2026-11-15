@@ -30,6 +30,7 @@ FastAPI precisa resolver aliases `Annotated` definidos dentro de create_app().
 
 import logging
 from contextlib import asynccontextmanager
+from threading import Lock
 from typing import Annotated, Any, AsyncIterator
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, Request, Response
@@ -100,12 +101,47 @@ def _validate_production_settings(settings: Settings) -> None:
     # Uma origem curinga permite que qualquer site faça chamadas ao backend.
     if any("*" in origin for origin in settings.cors_origins):
         raise RuntimeError("Em produção, VIBECHECK_CORS_ORIGINS não pode conter '*'.")
-    # Impede que o banco seja iniciado com a senha vazia ou do exemplo.
-    db_password = settings.db_password.strip()
-    if not db_password or db_password == "CHANGE_THIS_PASSWORD":
-        raise RuntimeError(
-            "Em produção, defina uma senha de banco diferente da senha de exemplo."
+    if settings.db_engine.strip().lower() == "mysql":
+        # SQLite usa um arquivo local e não autentica com senha de banco.
+        db_password = settings.db_password.strip()
+        if not db_password or db_password == "CHANGE_THIS_PASSWORD":
+            raise RuntimeError(
+                "Em produção, defina uma senha de banco diferente da senha de exemplo."
+            )
+
+
+def ensure_state(application: FastAPI) -> None:
+    if getattr(application.state, "_vibecheck_initialized", False):
+        return
+
+    with application.state._vibecheck_state_lock:
+        if getattr(application.state, "_vibecheck_initialized", False):
+            return
+
+        settings: Settings = application.state._vibecheck_settings
+        _validate_production_settings(settings)
+        database = Database(settings)
+        auth_manager = AuthManager(
+            database,
+            session_ttl_seconds=settings.session_ttl_hours * 3600,
+            reset_ttl_seconds=settings.reset_ttl_minutes * 60,
         )
+        store = AnalysisStore(database, max_history=settings.max_history)
+
+        if settings.seed_demo_user:
+            try:
+                auth_manager.register(DEMO_EMAIL, DEMO_PASSWORD)
+                logger.warning(
+                    "Usuário de demonstração criado (%s). Use somente em desenvolvimento.",
+                    DEMO_EMAIL,
+                )
+            except ApiError:
+                pass  # a conta de demonstração já existe
+
+        application.state.database = database
+        application.state.auth = auth_manager
+        application.state.store = store
+        application.state._vibecheck_initialized = True
 
 
 def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -> FastAPI:
@@ -124,31 +160,13 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
 
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
-        # A configuração e o banco só são inicializados ao iniciar o servidor.
-        _validate_production_settings(settings)
-        database = Database(settings)
-        auth_manager = AuthManager(
-            database,
-            session_ttl_seconds=settings.session_ttl_hours * 3600,
-            reset_ttl_seconds=settings.reset_ttl_minutes * 60,
-        )
-        application.state.database = database
-        application.state.auth = auth_manager
-        application.state.store = AnalysisStore(
-            database, max_history=settings.max_history
-        )
-        if settings.seed_demo_user:
-            try:
-                auth_manager.register(DEMO_EMAIL, DEMO_PASSWORD)
-                logger.warning(
-                    "Usuário de demonstração criado (%s). Use somente em desenvolvimento.",
-                    DEMO_EMAIL,
-                )
-            except ApiError:
-                pass  # a conta de demonstração já existe
+        ensure_state(application)
         yield
 
     app = FastAPI(title="VibeCheck API", version="0.2.0", lifespan=lifespan)
+    app.state._vibecheck_settings = settings
+    app.state._vibecheck_state_lock = Lock()
+    app.state._vibecheck_initialized = False
 
     def auth_manager() -> AuthManager:
         return app.state.auth
@@ -165,6 +183,7 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
 
     @app.middleware("http")
     async def limit_body_size(request: Request, call_next):  # type: ignore[no-untyped-def]
+        ensure_state(app)
         if request.method == "POST":
             is_repository_upload = (
                 request.url.path.rstrip("/") == "/api/repositories/analyses"

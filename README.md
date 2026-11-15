@@ -260,6 +260,16 @@ O workflow `.github/workflows/vibecheck-pr-review.yml` roda o scanner nos arquiv
 - Não exige segredos adicionais.
 - Os comentários explicam a correção, mas não alteram o código. O resultado é informativo e não bloqueia o merge.
 
+## Benchmark e limitações
+
+Na execução de 15/11/2026, o benchmark de 40 arquivos mediu **29/29 (100,0%)**
+de recall, **30/30 (100,0%)** de precisão e **0/30 (0,0%)** achados sem rótulo,
+em **0,058725 s**. Os rótulos foram corrigidos depois de observar resultados
+anteriores; portanto, esta medição não é independente nem uma avaliação cega.
+O benchmark de repositório analisou **500/500 arquivos sintéticos**, com
+**0 achados**, em **0,296 s**; o tempo depende da máquina e não representa
+repositórios reais. Detalhes e limitações em [docs/BENCHMARK.md](docs/BENCHMARK.md).
+
 ## Testes
 
 ```powershell
