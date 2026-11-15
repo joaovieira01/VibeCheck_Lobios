@@ -47,6 +47,62 @@ do scanner sobre o corpus; não representa análise de um repositório grande.
 Os tempos individuais por arquivo, além das métricas e dos achados, estão no
 `report.json` gerado pelo script.
 
+## Após correções (não independente)
+
+Esta execução ocorreu depois de as regras terem sido ajustadas com base nos
+erros observados no benchmark. Portanto, **não é uma avaliação independente**.
+O corpus e `labels.json` foram mantidos sem alterações durante esta etapa.
+
+| Métrica | Baseline publicado | Após correções |
+|---|---:|---:|
+| Recall total | 23/28 (82,1%) | 27/28 (96,4%) |
+| Precisão | 24/25 (96,0%) | 28/30 (93,3%) |
+| Achados sem rótulo / taxa de falsos positivos | 1/25 (4,0%) | 2/30 (6,7%) |
+| Tempo total para 40 arquivos | 0,059457 s | 0,097711 s |
+| Recall A01 | 3/6 (50,0%) | 5/6 (83,3%) |
+| Recall A02 | 2/2 (100,0%) | 2/2 (100,0%) |
+| Recall A03 | 1/1 (100,0%) | 1/1 (100,0%) |
+| Recall A04 | 5/6 (83,3%) | 6/6 (100,0%) |
+| Recall A05 | 7/8 (87,5%) | 8/8 (100,0%) |
+| Recall A07 | 2/2 (100,0%) | 2/2 (100,0%) |
+| Recall A08 | 2/2 (100,0%) | 2/2 (100,0%) |
+| Recall A09 | 1/1 (100,0%) | 1/1 (100,0%) |
+
+O caso de travessia de diretório é encontrado no código em
+`bench_py_12.py:9`, mas o rótulo atual aponta para a linha 10. Como a métrica
+exige correspondência exata de linha, o relatório contabiliza essa detecção
+como um achado sem rótulo e mantém uma vulnerabilidade como não detectada.
+O rótulo foi preservado conforme o requisito de não modificar o benchmark.
+
+O outro achado sem rótulo é `ssrf` em `bench_py_14.py:6`, na mesma chamada que
+desativa a verificação TLS e está rotulada como A04. A chamada usa uma URL
+originada da requisição; o benchmark possui somente um rótulo principal por
+arquivo, então a detecção adicional de SSRF é contabilizada como FP pelo
+formato de avaliação, embora não seja um falso positivo semântico comprovado.
+O achado rotulado `tls-disabled` nessa mesma linha foi contado como correto.
+
+### Erros após correções
+
+| Tipo segundo comparação exata com rótulos | Arquivo | Linha | Detalhe |
+|---|---|---:|---|
+| Não detectado | `bench_py_12.py` | 10 | Rótulo A01 de path traversal; a regra detecta o código na linha 9 |
+| Achado sem rótulo | `bench_py_12.py` | 9 | `path-traversal`, desencontro de uma linha entre código e rótulo |
+| Achado sem rótulo | `bench_py_14.py` | 6 | `ssrf` adicional na linha rotulada por `tls-disabled` (A04) |
+
+As opções seguras do cookie em `bench_js_20.js` deixaram de produzir o achado
+do baseline.
+
+### Histórico das duas execuções anteriores
+
+A primeira execução registrou 22/28 de recall e 2/25 achados sem rótulo; a
+segunda, publicada acima como baseline, registrou 23/28 e 1/25. Após observar
+a primeira execução, foi corrigido em `labels.json` o rótulo de
+`bench_py_01.py`, da linha 3 para a linha 4. Nenhum conteúdo-fonte dos exemplos
+do corpus foi alterado entre essas duas execuções. A renomeação do manifesto
+para `package.json` ocorreu antes da primeira medição. Assim, a segunda
+execução manteve os arquivos-fonte, mas não manteve os rótulos originais da
+primeira execução.
+
 ## Erros observados
 
 ### Falsos negativos

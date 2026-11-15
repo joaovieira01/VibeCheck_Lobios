@@ -176,7 +176,7 @@
     "cwe": "CWE-22",
     "owaspId": "A01",
     "owaspName": "Falhas de controle de acesso",
-    "pattern": "(?:BASE_DIR|baseDir|base_dir|base_path|ROOT|root|REPORT_ROOT|PUBLIC_DIR)\\s*(?:\\+|/)\\s*(?:filename|file_name|name|req\\.(?:query|params)\\.|request\\.(?:args|GET|query_params))|(?:open|sendFile|send_file|FileResponse|readFile|readFileSync|createReadStream)\\s*\\([^)]*(?:req\\.(?:query|params)|request\\.(?:args|GET|query_params))|Path\\s*\\([^)]{0,100}\\)\\s*/\\s*(?:request\\.(?:args|GET|query_params)|req\\.(?:query|params))",
+    "pattern": "(?:BASE_DIR|baseDir|base_dir|base_path|ROOT|root|REPORT_ROOT|PUBLIC_DIR)\\s*(?:\\+|/)\\s*(?:filename|file_name|name|req\\.(?:query|params)\\.|request\\.(?:args|GET|query_params))|(?:open|sendFile|send_file|FileResponse|readFile|readFileSync|createReadStream)\\s*\\([^\\r\\n]{0,350}(?:req\\.(?:query|params)|request\\.(?:args|GET|query_params))|Path\\s*\\([^)]{0,100}\\)\\s*/\\s*(?:request\\.(?:args|GET|query_params)|req\\.(?:query|params))",
     "flags": "i",
     "safePattern": "\\b(?:safe_join|safeJoin|secure_filename)\\s*\\(",
     "safeFlags": "i",

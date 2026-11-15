@@ -2420,10 +2420,12 @@
     "impact": "Um atacante pode ler ou sobrescrever arquivos fora da pasta esperada, incluindo configurações e segredos.",
     "prevention": "Valide caminhos após canonicalização e teste ../, barras invertidas e codificações alternativas.",
     "locations": [
-     2
+     2,
+     3
     ],
     "evidence": [
-     "return FileResponse(Path(REPORT_ROOT) / request.query_params['file'])"
+     "return FileResponse(Path(REPORT_ROOT) / request.query_params['file'])",
+     "return open(str(REPORT_ROOT) + request.query_params.get('file')).read()"
     ]
    }
   ],
