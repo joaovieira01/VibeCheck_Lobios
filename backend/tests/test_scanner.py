@@ -85,6 +85,95 @@ class ScannerPortTests(unittest.TestCase):
         )
         self.assertEqual(result.findings, [])
 
+    def test_detecta_chaves_e_segredos_comuns_sem_sinalizar_ambiente_seguro(self):
+        source = "\n".join(
+            [
+                'const stripeKey = "sk_live_EXEMPLO1234567890";',
+                'const supabaseJwt = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.assinatura";',
+                'const supabaseSecret = "sb_secret_EXEMPLO12345678";',
+                'const databaseUrl = "postgresql://usuario:senha@db.example.test/app";',
+                'JWT_SECRET = "secret123";',
+                'jwt.sign(x, "literal");',
+                'const awsKey = "AKIAIOSFODNN7EXAMPLE";',
+                'const githubToken = "ghp_EXEMPLO1234567890123456";',
+                'const googleKey = "AIzaSyEXEMPLO_NAO_REAL_1234567890";',
+                'const slackToken = "xoxb-EXEMPLO-NAO-REAL-123456";',
+                "const stripeKey = process.env.STRIPE_KEY;",
+                'const dbSecret = os.environ["DB_SECRET"]',
+                "const resetToken = secrets.token_urlsafe(32);",
+            ]
+        )
+        result = scan_source(source, "credenciais.js")
+        finding = next(item for item in result.findings if item.id == "hardcoded-secret")
+        self.assertEqual(finding.locations, list(range(1, 11)))
+        self.assertNotIn("weak-random-token", ids(result))
+
+    def test_detecta_sql_em_template_literal_e_aceita_consulta_parametrizada(self):
+        source = "\n".join(
+            [
+                "const query = `SELECT * FROM users WHERE id = ${req.params.id}`;",
+                'db.query("SELECT * FROM users WHERE id = $1", [req.params.id]);',
+            ]
+        )
+        result = scan_source(source, "consulta.js")
+        finding = next(item for item in result.findings if item.id == "sql-injection")
+        self.assertEqual(finding.locations, [1])
+
+    def test_detecta_token_previsivel_e_aceita_token_criptografico(self):
+        source = "\n".join(
+            [
+                "const authToken = Math.random().toString(36);",
+                "const resetToken = secrets.token_urlsafe(32);",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "tokens.js").findings
+            if item.id == "weak-random-token"
+        )
+        self.assertEqual(finding.locations, [1])
+
+    def test_detecta_hash_fraco_de_pw_sem_mass_assignment_e_restringe_a_regra(self):
+        source = "\n".join(
+            [
+                'const pwHash = crypto.createHash("md5").update(req.body.pw).digest("hex");',
+                "User.create(req.body);",
+                "User.update(req.body);",
+                "Object.assign(user, req.body);",
+                "const user = { ...req.body };",
+                "User.update({ pw: req.body.pw });",
+                "crypto.createHash('md5').update(req.body.pw);",
+            ]
+        )
+        result = scan_source(source, "usuarios.js")
+        weak_hash = next(item for item in result.findings if item.id == "weak-password-hash")
+        mass_assignment = next(item for item in result.findings if item.id == "mass-assignment")
+        self.assertEqual(weak_hash.locations, [1, 7])
+        self.assertEqual(mass_assignment.locations, [2, 3, 4, 5])
+
+    def test_detecta_xss_em_res_send_com_template_literal(self):
+        source = "\n".join(
+            [
+                "res.send(`<p>${req.body.nome}</p>`);",
+                "res.send(`<p>${escapeHtml(req.body.nome)}</p>`);",
+            ]
+        )
+        result = scan_source(source, "resposta.js")
+        finding = next(item for item in result.findings if item.id == "xss-innerhtml")
+        self.assertEqual(finding.locations, [1])
+
+    def test_controles_seguros_nao_geram_achados_nas_novas_regras(self):
+        source = "\n".join(
+            [
+                "const apiKey = process.env.API_KEY;",
+                'const dbSecret = os.environ["DB_SECRET"]',
+                "const token = secrets.token_urlsafe(32);",
+                'db.query("SELECT * FROM users WHERE id = $1", [userId]);',
+                "User.update({ pw: req.body.pw });",
+            ]
+        )
+        self.assertEqual(scan_source(source, "controles.js").findings, [])
+
     def test_unlocked_package_manifest(self):
         result = scan_source(
             json.dumps({"dependencies": {"express": "*", "react": "^19.0.0"}}), "package.json"

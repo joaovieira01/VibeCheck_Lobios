@@ -80,6 +80,99 @@ describe("scanSource", () => {
     expect(result.findings).toEqual([]);
   });
 
+  it("detecta credenciais comuns e preserva os controles seguros", () => {
+    const source = [
+      'const stripeKey = "sk_live_EXEMPLO1234567890";',
+      'const supabaseJwt = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.assinatura";',
+      'const supabaseSecret = "sb_secret_EXEMPLO12345678";',
+      'const databaseUrl = "postgresql://usuario:senha@db.example.test/app";',
+      'JWT_SECRET = "secret123";',
+      'jwt.sign(x, "literal");',
+      'const awsKey = "AKIAIOSFODNN7EXAMPLE";',
+      'const githubToken = "ghp_EXEMPLO1234567890123456";',
+      'const googleKey = "AIzaSyEXEMPLO_NAO_REAL_1234567890";',
+      'const slackToken = "xoxb-EXEMPLO-NAO-REAL-123456";',
+      "const stripeKey = process.env.STRIPE_KEY;",
+      'const dbSecret = os.environ["DB_SECRET"]',
+      "const resetToken = secrets.token_urlsafe(32);",
+    ].join("\n");
+    const result = scanSource(source, "credenciais.js");
+    const finding = result.findings.find((item) => item.id === "hardcoded-secret");
+
+    expect(finding?.locations).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(result.findings.some((item) => item.id === "weak-random-token")).toBe(false);
+  });
+
+  it("detecta SQL em template literal e aceita consulta parametrizada", () => {
+    const result = scanSource(
+      [
+        "const query = `SELECT * FROM users WHERE id = ${req.params.id}`;",
+        'db.query("SELECT * FROM users WHERE id = $1", [req.params.id]);',
+      ].join("\n"),
+      "consulta.js",
+    );
+    expect(result.findings.find((item) => item.id === "sql-injection")?.locations).toEqual([1]);
+  });
+
+  it("detecta token previsivel e aceita gerador criptografico", () => {
+    const result = scanSource(
+      [
+        "const authToken = Math.random().toString(36);",
+        "const resetToken = secrets.token_urlsafe(32);",
+      ].join("\n"),
+      "tokens.js",
+    );
+    expect(result.findings.find((item) => item.id === "weak-random-token")?.locations).toEqual([
+      1,
+    ]);
+  });
+
+  it("detecta hash fraco de pw e restringe mass-assignment", () => {
+    const result = scanSource(
+      [
+        'const pwHash = crypto.createHash("md5").update(req.body.pw).digest("hex");',
+        "User.create(req.body);",
+        "User.update(req.body);",
+        "Object.assign(user, req.body);",
+        "const user = { ...req.body };",
+        "User.update({ pw: req.body.pw });",
+        "crypto.createHash('md5').update(req.body.pw);",
+      ].join("\n"),
+      "usuarios.js",
+    );
+    expect(result.findings.find((item) => item.id === "weak-password-hash")?.locations).toEqual([
+      1, 7,
+    ]);
+    expect(result.findings.find((item) => item.id === "mass-assignment")?.locations).toEqual([
+      2, 3, 4, 5,
+    ]);
+  });
+
+  it("detecta XSS em res.send sem reportar escape explícito", () => {
+    const result = scanSource(
+      [
+        "res.send(`<p>${req.body.nome}</p>`);",
+        "res.send(`<p>${escapeHtml(req.body.nome)}</p>`);",
+      ].join("\n"),
+      "resposta.js",
+    );
+    expect(result.findings.find((item) => item.id === "xss-innerhtml")?.locations).toEqual([1]);
+  });
+
+  it("nao gera achados para os novos controles seguros", () => {
+    const result = scanSource(
+      [
+        "const apiKey = process.env.API_KEY;",
+        'const dbSecret = os.environ["DB_SECRET"]',
+        "const token = secrets.token_urlsafe(32);",
+        'db.query("SELECT * FROM users WHERE id = $1", [userId]);',
+        "User.update({ pw: req.body.pw });",
+      ].join("\n"),
+      "controles.js",
+    );
+    expect(result.findings).toEqual([]);
+  });
+
   it("checks unlocked package manifests and maps all OWASP Top 10 categories", () => {
     const result = scanSource(
       JSON.stringify({

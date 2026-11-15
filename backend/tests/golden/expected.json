@@ -251,7 +251,7 @@
     "cwe": "CWE-79",
     "owaspId": "A05",
     "owaspName": "Injeção",
-    "description": "HTML bruto está sendo inserido no DOM, possivelmente sem escape ou sanitização.",
+    "description": "HTML bruto está sendo inserido no DOM ou enviado pela resposta, possivelmente sem escape ou sanitização.",
     "recommendation": "Prefira textContent e renderização escapada. Se HTML for necessário, sanitize com uma biblioteca mantida.",
     "impact": "Conteúdo controlado por usuários pode executar JavaScript no navegador de outras pessoas.",
     "prevention": "Escape de acordo com o contexto, evite HTML bruto e use CSP como defesa complementar.",
@@ -678,7 +678,7 @@
     "cwe": "CWE-79",
     "owaspId": "A05",
     "owaspName": "Injeção",
-    "description": "HTML bruto está sendo inserido no DOM, possivelmente sem escape ou sanitização.",
+    "description": "HTML bruto está sendo inserido no DOM ou enviado pela resposta, possivelmente sem escape ou sanitização.",
     "recommendation": "Prefira textContent e renderização escapada. Se HTML for necessário, sanitize com uma biblioteca mantida.",
     "impact": "Conteúdo controlado por usuários pode executar JavaScript no navegador de outras pessoas.",
     "prevention": "Escape de acordo com o contexto, evite HTML bruto e use CSP como defesa complementar.",
@@ -1571,8 +1571,8 @@
      2
     ],
     "evidence": [
-     "user.update(**request.data)",
-     "Account.objects.filter(pk=account_id).update(**dados)"
+     "user.update(**request.json)",
+     "Account.objects.filter(pk=account_id).update(**request.json)"
     ]
    }
   ],
@@ -1597,7 +1597,7 @@
     ],
     "evidence": [
      "User.findByIdAndUpdate(req.params.id, req.body)",
-     "account.update(payload)"
+     "account.update(req.body)"
     ]
    }
   ],
@@ -2003,6 +2003,194 @@
     ]
    }
   ],
+  "rulesRun": 41
+ },
+ "segredos-comuns-de-ia": {
+  "findings": [
+   {
+    "id": "hardcoded-secret",
+    "title": "Credencial fixa no código",
+    "severity": "Crítica",
+    "cwe": "CWE-798",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "Uma senha, chave ou token parece estar definido como texto literal no código.",
+    "recommendation": "Revogue e substitua o segredo exposto. Leia o novo valor de um gerenciador de segredos ou variável de ambiente.",
+    "impact": "Quem obtiver acesso ao repositório pode usar a credencial para acessar sistemas, dados ou contas associados.",
+    "prevention": "Adicione secret scanning ao pre-commit e CI, não versione arquivos locais de configuração e rotacione segredos após qualquer exposição.",
+    "locations": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ],
+    "evidence": [
+     "const stripeKey = \"sk_live_EXEMPLO1234567890\";",
+     "const supabaseJwt = \"eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.assinatura\";",
+     "const supabaseSecret = \"sb_secret_EXEMPLO12345678\";",
+     "const databaseUrl = \"postgresql://usuario:senha@db.example.test/app\";",
+     "JWT_SECRET = \"secret123\";",
+     "jwt.sign(x, \"literal\");",
+     "const awsKey = \"AKIAIOSFODNN7EXAMPLE\";",
+     "const githubToken = \"ghp_EXEMPLO1234567890123456\";",
+     "const googleKey = \"AIzaSyEXEMPLO_NAO_REAL_1234567890\";",
+     "const slackToken = \"xoxb-EXEMPLO-NAO-REAL-123456\";"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "sql-template-literal-javascript": {
+  "findings": [
+   {
+    "id": "sql-injection",
+    "title": "Possível SQL Injection",
+    "severity": "Crítica",
+    "cwe": "CWE-89",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "A consulta SQL parece misturar instruções e valores dinâmicos por interpolação ou concatenação.",
+    "recommendation": "Use parâmetros vinculados (prepared statements) para todos os valores. Não concatene entradas externas no texto SQL.",
+    "impact": "Um atacante pode alterar consultas, ler ou modificar dados, contornar autenticação ou destruir informações.",
+    "prevention": "Prefira ORM/consultas parametrizadas e teste entradas manipuladas nos limites da aplicação.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "const query = `SELECT * FROM users WHERE id = ${req.params.id}`;"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "token-previsivel-javascript": {
+  "findings": [
+   {
+    "id": "weak-random-token",
+    "title": "Token potencialmente previsível",
+    "severity": "Alta",
+    "cwe": "CWE-330",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Um token de segurança parece ser criado com um gerador não criptográfico.",
+    "recommendation": "Use crypto.randomBytes() ou secrets.token_urlsafe() e limite validade e uso do token.",
+    "impact": "Tokens previsíveis podem permitir redefinição de senha ou sequestro de sessão.",
+    "prevention": "Use APIs criptográficas para tokens de autenticação e teste sua entropia e expiração.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "const authToken = Math.random().toString(36);"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "hash-pw-e-mass-assignment-javascript": {
+  "findings": [
+   {
+    "id": "mass-assignment",
+    "title": "Atualização de objeto com dados não filtrados",
+    "severity": "Alta",
+    "cwe": "CWE-915",
+    "owaspId": "A01",
+    "owaspName": "Falhas de controle de acesso",
+    "description": "Um objeto parece aceitar diretamente campos enviados pelo cliente sem filtragem visível.",
+    "recommendation": "Construa a atualização apenas com campos explicitamente permitidos e valide cada valor.",
+    "impact": "Campos internos como papel, proprietário ou estado podem ser alterados por um cliente.",
+    "prevention": "Use DTOs com allowlist, valide autorização por campo e teste propriedades inesperadas.",
+    "locations": [
+     2,
+     3,
+     4,
+     5
+    ],
+    "evidence": [
+     "User.create(req.body);",
+     "User.update(req.body);",
+     "Object.assign(user, req.body);",
+     "const user = { ...req.body };"
+    ]
+   },
+   {
+    "id": "weak-password-hash",
+    "title": "Hash criptográfico fraco para senha",
+    "severity": "Alta",
+    "cwe": "CWE-328",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "MD5 e SHA-1 são algoritmos rápidos e inadequados para armazenamento de senhas.",
+    "recommendation": "Migre para Argon2id, scrypt ou bcrypt com salt individual e custo atual; re-hashe senhas durante o próximo login.",
+    "impact": "Após vazamento do banco, atacantes podem quebrar hashes offline e reutilizar senhas descobertas em outros serviços.",
+    "prevention": "Use uma biblioteca mantida de password hashing e adicione uma regra de lint que bloqueie algoritmos obsoletos para credenciais.",
+    "locations": [
+     1,
+     7
+    ],
+    "evidence": [
+     "const pwHash = crypto.createHash(\"md5\").update(req.body.pw).digest(\"hex\");",
+     "crypto.createHash('md5').update(req.body.pw);"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "hash-fraco-variavel-pw": {
+  "findings": [
+   {
+    "id": "weak-password-hash",
+    "title": "Hash criptográfico fraco para senha",
+    "severity": "Alta",
+    "cwe": "CWE-328",
+    "owaspId": "A04",
+    "owaspName": "Falhas criptográficas",
+    "description": "MD5 e SHA-1 são algoritmos rápidos e inadequados para armazenamento de senhas.",
+    "recommendation": "Migre para Argon2id, scrypt ou bcrypt com salt individual e custo atual; re-hashe senhas durante o próximo login.",
+    "impact": "Após vazamento do banco, atacantes podem quebrar hashes offline e reutilizar senhas descobertas em outros serviços.",
+    "prevention": "Use uma biblioteca mantida de password hashing e adicione uma regra de lint que bloqueie algoritmos obsoletos para credenciais.",
+    "locations": [
+     1,
+     2
+    ],
+    "evidence": [
+     "const pwHash = crypto.createHash(\"md5\").update(pw).digest(\"hex\");",
+     "const passwordHash = crypto.createHash(\"sha1\").update(password).digest(\"hex\");"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "xss-res-send-javascript": {
+  "findings": [
+   {
+    "id": "xss-innerhtml",
+    "title": "Possível Cross-Site Scripting (XSS)",
+    "severity": "Alta",
+    "cwe": "CWE-79",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "HTML bruto está sendo inserido no DOM ou enviado pela resposta, possivelmente sem escape ou sanitização.",
+    "recommendation": "Prefira textContent e renderização escapada. Se HTML for necessário, sanitize com uma biblioteca mantida.",
+    "impact": "Conteúdo controlado por usuários pode executar JavaScript no navegador de outras pessoas.",
+    "prevention": "Escape de acordo com o contexto, evite HTML bruto e use CSP como defesa complementar.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "res.send(`<p>${req.body.nome}</p>`);"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "controles-seguros-novos": {
+  "findings": [],
   "rulesRun": 41
  }
 }
