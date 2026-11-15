@@ -185,6 +185,63 @@ def test_cli_errors_do_not_expose_input_paths(tmp_path, capsys):
     assert str(tmp_path) not in error
 
 
+def test_cli_check_report_applies_severity_policy(tmp_path, capsys):
+    report_path = tmp_path / "report.json"
+    report_path.write_text(
+        json.dumps(
+            {
+                "findingsByFile": {
+                    "src/settings.py": [{"severity": "Alta"}],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(
+        ["--check-report", str(report_path), "--fail-on", "Alta"]
+    ) == 1
+    assert "Política reprovada" in capsys.readouterr().out
+    assert main(
+        ["--check-report", str(report_path), "--fail-on", "Crítica"]
+    ) == 0
+    assert "Política aprovada" in capsys.readouterr().out
+
+
+def test_cli_check_report_rejects_invalid_json(tmp_path, capsys):
+    report_path = tmp_path / "invalid.json"
+    report_path.write_text("{", encoding="utf-8")
+
+    assert main(
+        ["--check-report", str(report_path), "--fail-on", "Alta"]
+    ) == 2
+    assert "relatório JSON válido" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "reference",
+    ["-option", "--help", "feature branch", "ref\twith-tab", "ref\nwith-newline"],
+)
+def test_cli_rejects_unsafe_changed_since_reference(tmp_path, capsys, reference):
+    assert main([str(tmp_path), f"--changed-since={reference}"]) == 2
+    error = capsys.readouterr().err
+    assert "referência Git inválida" in error
+    assert str(tmp_path) not in error
+
+
+@pytest.mark.skipif(
+    shutil.which("git") is None,
+    reason="Git não está instalado; o teste de histórico exige Git local.",
+)
+def test_cli_reports_how_to_fix_missing_git_history(tmp_path, capsys):
+    assert main(
+        [str(tmp_path), "--changed-since", "origin/main"]
+    ) == 2
+    error = capsys.readouterr().err
+    assert "git fetch origin <ref>" in error
+    assert "git fetch --unshallow" in error
+
+
 @pytest.mark.skipif(
     shutil.which("git") is None,
     reason="Git não está instalado; --changed-since exige um repositório Git local.",

@@ -41,7 +41,7 @@ Ferramenta de auditoria de segurança para código gerado por IA e escrito com p
 
 **Automação**
 - Revisão de Pull Requests no GitHub Actions, com comentários nas linhas novas.
-- Execução via CLI em GitLab CI e Bitbucket Pipelines, com relatório SARIF como artefato.
+- Execução via CLI em GitLab CI e Bitbucket Pipelines, com relatório como artefato.
 - Camada opcional de IA no backend para triar achados e sugerir revisões (desligada por padrão).
 
 ## Arquitetura
@@ -128,7 +128,7 @@ O CLI pode analisar um repositório inteiro ou apenas arquivos alterados desde u
 python backend/scripts/scan_repo.py . --changed-since origin/main --format sarif --fail-on Alta > vibecheck.sarif
 ```
 
-O comando retorna código `1` ao encontrar achados na severidade escolhida ou mais grave. Há exemplos prontos para [GitLab CI](integrations/gitlab/.gitlab-ci.yml) e [Bitbucket Pipelines](integrations/bitbucket/bitbucket-pipelines.yml); ambos publicam SARIF como artefato. A integração de GitHub Actions do projeto publica comentários em Pull Requests. Veja o [guia de integrações](docs/INTEGRACOES.md) para configuração, variáveis e limitações.
+O comando retorna código `1` ao encontrar achados na severidade escolhida ou mais grave. Há exemplos prontos para [GitLab CI](integrations/gitlab/.gitlab-ci.yml) e [Bitbucket Pipelines](integrations/bitbucket/bitbucket-pipelines.yml); eles publicam o relatório como artefato. A integração de GitHub Actions do projeto publica comentários em Pull Requests. Veja o [guia de integrações](docs/INTEGRACOES.md) para configuração, variáveis e limitações.
 
 **Formato de um achado.** Exemplo de resultado para `yaml.load(texto)` em um arquivo Python:
 

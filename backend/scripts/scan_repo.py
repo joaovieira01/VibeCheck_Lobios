@@ -6,6 +6,7 @@ import argparse
 import json
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -38,6 +39,41 @@ class PortugueseArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> None:
         self.print_usage(sys.stderr)
         self.exit(2, f"Erro: argumentos inválidos. Consulte --help.\n")
+
+
+def _report_has_matching_finding(
+    report: Any, fail_on: str
+) -> bool:
+    if not isinstance(report, dict) or not isinstance(
+        report.get("findingsByFile"), dict
+    ):
+        raise ValueError("Estrutura de relatório inválida.")
+
+    has_matching_finding = False
+    for findings in report["findingsByFile"].values():
+        if not isinstance(findings, list):
+            raise ValueError("Estrutura de relatório inválida.")
+        for finding in findings:
+            if not isinstance(finding, dict):
+                raise ValueError("Estrutura de relatório inválida.")
+            severity = finding.get("severity")
+            if not isinstance(severity, str) or severity not in SEVERITY_ORDER:
+                raise ValueError("Severidade inválida no relatório.")
+            if SEVERITY_ORDER[severity] <= SEVERITY_ORDER[fail_on]:
+                has_matching_finding = True
+    return has_matching_finding
+
+
+def _valid_git_ref(reference: str) -> bool:
+    return (
+        bool(reference)
+        and not reference.startswith("-")
+        and not any(
+            character.isspace()
+            or unicodedata.category(character).startswith("C")
+            for character in reference
+        )
+    )
 
 
 def _sarif(report: dict[str, Any]) -> dict[str, Any]:
@@ -152,14 +188,23 @@ def _text(report: dict[str, Any]) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = PortugueseArgumentParser(
-        description="Analisa arquivos de um diretório ou arquivo ZIP.",
-        epilog="Exemplo: python scripts/scan_repo.py ./projeto --format sarif",
+        description="Analisa repositórios ou aplica uma política a um relatório JSON.",
+        epilog=(
+            "Exemplo: python scripts/scan_repo.py ./projeto --format sarif\n"
+            "Política: python scripts/scan_repo.py --check-report relatorio.json "
+            "--fail-on Alta"
+        ),
         add_help=False,
     )
     parser.add_argument(
         "-h", "--help", action="help", help="mostra esta ajuda e encerra"
     )
-    parser.add_argument("source", type=Path, help="diretório ou arquivo ZIP")
+    parser.add_argument(
+        "source",
+        nargs="?",
+        type=Path,
+        help="diretório ou arquivo ZIP",
+    )
     parser.add_argument(
         "--fail-on",
         choices=("Crítica", "Alta", "Média", "Baixa"),
@@ -176,11 +221,56 @@ def main(argv: list[str] | None = None) -> int:
         metavar="REF",
         help="analisa apenas arquivos alterados desde uma referência Git",
     )
+    parser.add_argument(
+        "--check-report",
+        type=Path,
+        metavar="ARQUIVO.json",
+        help="aplica --fail-on a um relatório JSON já gerado",
+    )
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     if hasattr(sys.stderr, "reconfigure"):
         sys.stderr.reconfigure(encoding="utf-8")
     args = parser.parse_args(argv)
+
+    if args.check_report is not None:
+        if (
+            args.source is not None
+            or args.changed_since is not None
+            or args.format != "text"
+        ):
+            parser.error("--check-report não pode ser combinado com a entrada do scanner.")
+        if args.fail_on is None:
+            parser.error("--check-report exige a opção --fail-on.")
+        try:
+            report = json.loads(args.check_report.read_text(encoding="utf-8"))
+            has_matching_finding = _report_has_matching_finding(
+                report, args.fail_on
+            )
+        except (OSError, UnicodeError, ValueError):
+            print(
+                "Erro: não foi possível ler um relatório JSON válido do VibeCheck.",
+                file=sys.stderr,
+            )
+            return 2
+        if has_matching_finding:
+            print(
+                "Política reprovada: há achados na severidade configurada ou superior."
+            )
+            return 1
+        print("Política aprovada: nenhum achado atingiu a severidade configurada.")
+        return 0
+
+    if args.source is None:
+        parser.error("informe um diretório ou arquivo ZIP para analisar.")
+    if args.changed_since is not None and not _valid_git_ref(args.changed_since):
+        print(
+            "Erro: referência Git inválida. Não use hífen inicial, espaços "
+            "ou caracteres de controle.",
+            file=sys.stderr,
+        )
+        return 2
+
     try:
         if args.changed_since is None:
             report = scan_repository(args.source)
@@ -209,6 +299,28 @@ def main(argv: list[str] | None = None) -> int:
                 if name
             }
             report = scan_repository(args.source, only_files=changed_files)
+    except subprocess.CalledProcessError:
+        print(
+            "Erro: não foi possível comparar a referência Git. Em clones rasos, "
+            "busque o commit base com `git fetch origin <ref>` ou `git fetch --unshallow`.",
+            file=sys.stderr,
+        )
+        return 2
+    except FileNotFoundError:
+        if args.changed_since is not None:
+            print(
+                "Erro: Git não está instalado ou a referência Git não está disponível. "
+                "Em clones rasos, busque o commit base com `git fetch origin <ref>` "
+                "ou `git fetch --unshallow`.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                "Erro: não foi possível analisar a entrada. Verifique o diretório "
+                "ou arquivo ZIP.",
+                file=sys.stderr,
+            )
+        return 2
     except (RepositoryScanError, OSError, ValueError, subprocess.SubprocessError):
         print(
             "Erro: não foi possível analisar a entrada. Verifique o diretório, "

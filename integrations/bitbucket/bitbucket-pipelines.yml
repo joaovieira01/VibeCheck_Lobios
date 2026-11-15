@@ -1,20 +1,66 @@
 image: python:3.12-slim
 
+clone:
+  depth: full
+
 pipelines:
   pull-requests:
     "**":
       - step:
-          name: VibeCheck - análise de segurança
+          name: VibeCheck - gerar relatório
           script:
-            - apt-get update -qq && apt-get install -y --no-install-recommends git
             - |
-              set -eu
-              VIBECHECK_DIR="/tmp/vibecheck-${BITBUCKET_BUILD_NUMBER}"
-              git clone --depth 1 "${VIBECHECK_REPO_URL:-https://github.com/joaovieira01/VibeCheck_Lobios.git}" "$VIBECHECK_DIR"
-              python "$VIBECHECK_DIR/backend/scripts/scan_repo.py" "$BITBUCKET_CLONE_DIR" --format sarif --fail-on "${VIBECHECK_FAIL_ON:-Alta}" > vibecheck.sarif
+              set +e
+              VIBECHECK_DIR="/tmp/vibecheck-${BITBUCKET_BUILD_NUMBER}-scan"
+              printf '{}\n' > vibecheck-report.json
+              printf '1\n' > vibecheck-scan-status
+
+              git init -q "$VIBECHECK_DIR" || {
+                echo "Não foi possível preparar o VibeCheck." >&2
+                exit 0
+              }
+              git -C "$VIBECHECK_DIR" remote remove origin >/dev/null 2>&1 || true
+              git -C "$VIBECHECK_DIR" remote add origin "${VIBECHECK_REPO_URL:-https://github.com/joaovieira01/VibeCheck_Lobios.git}" || {
+                echo "Não foi possível configurar o repositório VibeCheck." >&2
+                exit 0
+              }
+              git -C "$VIBECHECK_DIR" fetch --depth 1 origin "${VIBECHECK_REF:-main}" || {
+                echo "Não foi possível buscar a versão configurada do VibeCheck." >&2
+                exit 0
+              }
+              git -C "$VIBECHECK_DIR" checkout --quiet --detach FETCH_HEAD || {
+                echo "Não foi possível selecionar a versão configurada do VibeCheck." >&2
+                exit 0
+              }
+              git fetch origin "$BITBUCKET_PR_DESTINATION_COMMIT" || {
+                echo "Não foi possível buscar a base do Pull Request." >&2
+                exit 0
+              }
+
+              python "$VIBECHECK_DIR/backend/scripts/scan_repo.py" "$BITBUCKET_CLONE_DIR" --changed-since "$BITBUCKET_PR_DESTINATION_COMMIT" --format json > vibecheck-report.json
+              scan_status=$?
+              printf '%s\n' "$scan_status" > vibecheck-scan-status
+              exit 0
           artifacts:
-            - name: vibecheck-sarif
+            - name: vibecheck-report
               type: shared
               paths:
-                - vibecheck.sarif
-              capture-on: always
+                - vibecheck-report.json
+                - vibecheck-scan-status
+      - step:
+          name: VibeCheck - aplicar política
+          script:
+            - |
+              set -eu
+              if [ "$(cat "$BITBUCKET_CLONE_DIR/vibecheck-scan-status")" != "0" ]; then
+                echo "A análise do VibeCheck não foi concluída; consulte o primeiro passo." >&2
+                exit 1
+              fi
+
+              VIBECHECK_DIR="/tmp/vibecheck-${BITBUCKET_BUILD_NUMBER}-policy"
+              git init -q "$VIBECHECK_DIR"
+              git -C "$VIBECHECK_DIR" remote remove origin >/dev/null 2>&1 || true
+              git -C "$VIBECHECK_DIR" remote add origin "${VIBECHECK_REPO_URL:-https://github.com/joaovieira01/VibeCheck_Lobios.git}"
+              git -C "$VIBECHECK_DIR" fetch --depth 1 origin "${VIBECHECK_REF:-main}"
+              git -C "$VIBECHECK_DIR" checkout --quiet --detach FETCH_HEAD
+              python "$VIBECHECK_DIR/backend/scripts/scan_repo.py" --check-report "$BITBUCKET_CLONE_DIR/vibecheck-report.json" --fail-on "${VIBECHECK_FAIL_ON:-Alta}"

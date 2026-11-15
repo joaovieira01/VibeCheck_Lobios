@@ -2,7 +2,9 @@ stages:
   - security
 
 variables:
+  GIT_DEPTH: "0"
   VIBECHECK_REPO_URL: "https://github.com/joaovieira01/VibeCheck_Lobios.git"
+  VIBECHECK_REF: "main"
   VIBECHECK_FAIL_ON: "Alta"
 
 vibecheck:
@@ -12,9 +14,19 @@ vibecheck:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   script:
     - apt-get update -qq && apt-get install -y --no-install-recommends git
-    - VIBECHECK_DIR="${CI_BUILDS_DIR}/vibecheck-${CI_JOB_ID}"
-    - git clone --depth 1 "$VIBECHECK_REPO_URL" "$VIBECHECK_DIR"
-    - python "$VIBECHECK_DIR/backend/scripts/scan_repo.py" "$CI_PROJECT_DIR" --format sarif --fail-on "$VIBECHECK_FAIL_ON" > vibecheck.sarif
+    - |
+      set -e
+      git fetch origin "$CI_MERGE_REQUEST_DIFF_BASE_SHA"
+      VIBECHECK_DIR="${CI_BUILDS_DIR}/vibecheck-${CI_JOB_ID}"
+      git init -q "$VIBECHECK_DIR"
+      git -C "$VIBECHECK_DIR" remote remove origin >/dev/null 2>&1 || true
+      git -C "$VIBECHECK_DIR" remote add origin "$VIBECHECK_REPO_URL"
+      git -C "$VIBECHECK_DIR" fetch --depth 1 origin "$VIBECHECK_REF"
+      git -C "$VIBECHECK_DIR" checkout --quiet --detach FETCH_HEAD
+      set +e
+      python "$VIBECHECK_DIR/backend/scripts/scan_repo.py" "$CI_PROJECT_DIR" --changed-since "$CI_MERGE_REQUEST_DIFF_BASE_SHA" --format sarif --fail-on "$VIBECHECK_FAIL_ON" > vibecheck.sarif
+      scan_status=$?
+      exit "$scan_status"
   artifacts:
     when: always
     expire_in: 1 week
