@@ -119,6 +119,35 @@ class ScannerPortTests(unittest.TestCase):
         finding = next(item for item in result.findings if item.id == "sql-injection")
         self.assertEqual(finding.locations, [1])
 
+    def test_detecta_sql_interpolado_diretamente_em_chamadas_javascript(self):
+        source = "\n".join(
+            [
+                "db.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+                "pool.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+                "connection.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+                "client.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+                "knex.raw(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+                "sequelize.query(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+                "prisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "consultas.js").findings
+            if item.id == "sql-injection"
+        )
+        self.assertEqual(finding.locations, list(range(1, 8)))
+
+    def test_consultas_parametrizadas_com_placeholder_e_parametros_nao_geram_achado(self):
+        source = "\n".join(
+            [
+                'db.query("SELECT * FROM users WHERE id = ?", [userId]);',
+                'pool.query("SELECT * FROM users WHERE id = $1", [userId]);',
+                'connection.query("SELECT * FROM users WHERE id = %s", (user_id,));',
+            ]
+        )
+        self.assertNotIn("sql-injection", ids(scan_source(source, "consultas.js")))
+
     def test_detecta_token_previsivel_e_aceita_token_criptografico(self):
         source = "\n".join(
             [
@@ -132,6 +161,57 @@ class ScannerPortTests(unittest.TestCase):
             if item.id == "weak-random-token"
         )
         self.assertEqual(finding.locations, [1])
+
+    def test_detecta_math_random_em_variavel_de_sessao_sem_gerar_falso_positivo(self):
+        source = "\n".join(
+            [
+                "const sessionId = Math.random();",
+                "const sessionKey = crypto.randomBytes(32).toString('hex');",
+                "const sessionId = crypto.randomUUID();",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "session.js").findings
+            if item.id == "weak-random-token"
+        )
+        self.assertEqual(finding.locations, [1])
+
+    def test_detecta_geradores_python_fracos_em_nomes_sensiveis(self):
+        source = "\n".join(
+            [
+                "token = str(random.random())",
+                "secret = str(random.random())",
+                "session = str(random.random())",
+                "sid = str(random.random())",
+                "otp = random.randint(100000, 999999)",
+                "code = random.randint(100000, 999999)",
+                "reset = str(random.random())",
+                'api_key = "".join(random.choice(chars) for _ in range(32))',
+                "password = str(random.random())",
+                "senha = str(random.random())",
+                "csrf = str(random.random())",
+                "nonce = str(random.random())",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "tokens.py").findings
+            if item.id == "weak-random-token"
+        )
+        self.assertEqual(finding.locations, list(range(1, 13)))
+
+    def test_geradores_seguros_e_random_para_uso_comum_nao_geram_achado(self):
+        source = "\n".join(
+            [
+                "token = secrets.token_urlsafe(32)",
+                "otp = secrets.randbelow(1_000_000)",
+                "retry_jitter = random.random()",
+                "color = random.choice(colors)",
+                "random.shuffle(colors)",
+            ]
+        )
+        self.assertNotIn("weak-random-token", ids(scan_source(source, "tokens.py")))
 
     def test_detecta_hash_fraco_de_pw_sem_mass_assignment_e_restringe_a_regra(self):
         source = "\n".join(

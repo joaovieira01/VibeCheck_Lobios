@@ -114,6 +114,36 @@ describe("scanSource", () => {
     expect(result.findings.find((item) => item.id === "sql-injection")?.locations).toEqual([1]);
   });
 
+  it("detecta SQL interpolado diretamente em chamadas de banco JavaScript", () => {
+    const source = [
+      "db.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+      "pool.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+      "connection.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+      "client.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+      "knex.raw(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+      "sequelize.query(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+      "prisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+    ].join("\n");
+    const finding = scanSource(source, "consultas.js").findings.find(
+      (item) => item.id === "sql-injection",
+    );
+
+    expect(finding?.locations).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it("aceita placeholders SQL com tupla ou array de parametros", () => {
+    const result = scanSource(
+      [
+        'db.query("SELECT * FROM users WHERE id = ?", [userId]);',
+        'pool.query("SELECT * FROM users WHERE id = $1", [userId]);',
+        'connection.query("SELECT * FROM users WHERE id = %s", (userId,));',
+      ].join("\n"),
+      "consultas.js",
+    );
+
+    expect(result.findings.some((item) => item.id === "sql-injection")).toBe(false);
+  });
+
   it("detecta token previsivel e aceita gerador criptografico", () => {
     const result = scanSource(
       [
@@ -125,6 +155,55 @@ describe("scanSource", () => {
     expect(result.findings.find((item) => item.id === "weak-random-token")?.locations).toEqual([
       1,
     ]);
+  });
+
+  it("detecta Math.random em identificador de sessao e aceita geradores seguros", () => {
+    const result = scanSource(
+      [
+        "const sessionId = Math.random();",
+        "const sessionKey = crypto.randomBytes(32).toString('hex');",
+        "const sessionId = crypto.randomUUID();",
+      ].join("\n"),
+      "session.js",
+    );
+
+    expect(result.findings.find((item) => item.id === "weak-random-token")?.locations).toEqual([
+      1,
+    ]);
+  });
+
+  it("detecta aleatoriedade fraca em nomes sensiveis Python", () => {
+    const source = [
+      "token = str(random.random())",
+      "secret = str(random.random())",
+      "session = str(random.random())",
+      "sid = str(random.random())",
+      "otp = random.randint(100000, 999999)",
+      "code = random.randint(100000, 999999)",
+      "reset = str(random.random())",
+      'api_key = "".join(random.choice(chars) for _ in range(32))',
+      "password = str(random.random())",
+      "senha = str(random.random())",
+      "csrf = str(random.random())",
+      "nonce = str(random.random())",
+    ].join("\n");
+    const finding = scanSource(source, "tokens.py").findings.find(
+      (item) => item.id === "weak-random-token",
+    );
+
+    expect(finding?.locations).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  });
+
+  it("nao sinaliza geradores seguros nem aleatoriedade de uso comum", () => {
+    const source = [
+      "token = secrets.token_urlsafe(32)",
+      "otp = secrets.randbelow(1_000_000)",
+      "retry_jitter = random.random()",
+      "color = random.choice(colors)",
+      "random.shuffle(colors)",
+    ].join("\n");
+
+    expect(scanSource(source, "tokens.py").findings).toEqual([]);
   });
 
   it("detecta hash fraco de pw e restringe mass-assignment", () => {

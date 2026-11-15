@@ -404,5 +404,23 @@
   "name": "controles-seguros-novos",
   "filename": "controles.js",
   "source": "const apiKey = process.env.API_KEY;\nconst dbSecret = os.environ[\"DB_SECRET\"];\nconst token = secrets.token_urlsafe(32);\ndb.query(\"SELECT * FROM users WHERE id = $1\", [userId]);\nUser.update({ pw: req.body.pw });"
+ },
+ {
+  "name": "sql-template-direto-javascript",
+  "filename": "consultas.js",
+  "source": "db.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);\npool.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);\nconnection.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);\nclient.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);\nknex.raw(`SELECT * FROM users WHERE id = ${req.params.id}`);\nsequelize.query(`SELECT * FROM users WHERE id = ${req.params.id}`);\nprisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = ${req.params.id}`);\ndb.query(\"SELECT * FROM users WHERE id = ?\", [userId]);\npool.query(\"SELECT * FROM users WHERE id = $1\", [userId]);\nconnection.query(\"SELECT * FROM users WHERE id = %s\", (user_id,));",
+  "ruleCheck": {"ruleId": "sql-injection", "positiveLines": [1, 2, 3, 4, 5, 6, 7], "negativeLine": 8}
+ },
+ {
+  "name": "token-sessao-javascript",
+  "filename": "sessao.js",
+  "source": "const sessionId = Math.random();\nconst sessionId = crypto.randomUUID();\nconst sessionKey = crypto.randomBytes(32).toString('hex');\nconst retryJitter = Math.random();\nconst color = Math.random();",
+  "ruleCheck": {"ruleId": "weak-random-token", "positiveLine": 1, "negativeLine": 2}
+ },
+ {
+  "name": "token-python-fraco",
+  "filename": "tokens.py",
+  "source": "token = str(random.random())\nsecret = str(random.random())\nsession = str(random.random())\nsid = str(random.random())\notp = random.randint(100000, 999999)\ncode = random.randint(100000, 999999)\nreset = str(random.random())\napi_key = \"\".join(random.choice(chars) for _ in range(32))\npassword = str(random.random())\nsenha = str(random.random())\ncsrf = str(random.random())\nnonce = str(random.random())\ntoken = secrets.token_urlsafe(32)\notp = secrets.randbelow(1_000_000)\nretry_jitter = random.random()\ncolor = random.choice(colors)\nrandom.shuffle(colors)",
+  "ruleCheck": {"ruleId": "weak-random-token", "positiveLines": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "negativeLine": 13}
  }
 ]

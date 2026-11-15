@@ -2192,5 +2192,108 @@
  "controles-seguros-novos": {
   "findings": [],
   "rulesRun": 41
+ },
+ "sql-template-direto-javascript": {
+  "findings": [
+   {
+    "id": "sql-injection",
+    "title": "Possível SQL Injection",
+    "severity": "Crítica",
+    "cwe": "CWE-89",
+    "owaspId": "A05",
+    "owaspName": "Injeção",
+    "description": "A consulta SQL parece misturar instruções e valores dinâmicos por interpolação ou concatenação.",
+    "recommendation": "Use parâmetros vinculados (prepared statements) para todos os valores. Não concatene entradas externas no texto SQL.",
+    "impact": "Um atacante pode alterar consultas, ler ou modificar dados, contornar autenticação ou destruir informações.",
+    "prevention": "Prefira ORM/consultas parametrizadas e teste entradas manipuladas nos limites da aplicação.",
+    "locations": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "evidence": [
+     "db.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+     "pool.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+     "connection.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+     "client.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+     "knex.raw(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+     "sequelize.query(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+     "prisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = ${req.params.id}`);"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "token-sessao-javascript": {
+  "findings": [
+   {
+    "id": "weak-random-token",
+    "title": "Token potencialmente previsível",
+    "severity": "Alta",
+    "cwe": "CWE-330",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Um token de segurança parece ser criado com um gerador não criptográfico.",
+    "recommendation": "Use crypto.randomBytes() ou secrets.token_urlsafe() e limite validade e uso do token.",
+    "impact": "Tokens previsíveis podem permitir redefinição de senha ou sequestro de sessão.",
+    "prevention": "Use APIs criptográficas para tokens de autenticação e teste sua entropia e expiração.",
+    "locations": [
+     1
+    ],
+    "evidence": [
+     "const sessionId = Math.random();"
+    ]
+   }
+  ],
+  "rulesRun": 41
+ },
+ "token-python-fraco": {
+  "findings": [
+   {
+    "id": "weak-random-token",
+    "title": "Token potencialmente previsível",
+    "severity": "Alta",
+    "cwe": "CWE-330",
+    "owaspId": "A07",
+    "owaspName": "Falhas de autenticação",
+    "description": "Um token de segurança parece ser criado com um gerador não criptográfico.",
+    "recommendation": "Use crypto.randomBytes() ou secrets.token_urlsafe() e limite validade e uso do token.",
+    "impact": "Tokens previsíveis podem permitir redefinição de senha ou sequestro de sessão.",
+    "prevention": "Use APIs criptográficas para tokens de autenticação e teste sua entropia e expiração.",
+    "locations": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12
+    ],
+    "evidence": [
+     "token = str(random.random())",
+     "secret = str(random.random())",
+     "session = str(random.random())",
+     "sid = str(random.random())",
+     "otp = random.randint(100000, 999999)",
+     "code = random.randint(100000, 999999)",
+     "reset = str(random.random())",
+     "api_key = \"\".join(random.choice(chars) for _ in range(32))",
+     "password = str(random.random())",
+     "senha = str(random.random())",
+     "csrf = str(random.random())",
+     "nonce = str(random.random())"
+    ]
+   }
+  ],
+  "rulesRun": 41
  }
 }
