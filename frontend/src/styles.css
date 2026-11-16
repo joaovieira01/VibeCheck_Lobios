@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;700;900&family=Manrope:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap");
 
 :root {
   font-family: "DM Sans", Inter, system-ui, sans-serif;
@@ -7,6 +7,15 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  --font-display: "Inter", sans-serif;
+  --font-mono: "DM Mono", monospace;
+  --fs-label: 12px;
+  --fs-small: 14px;
+  --fs-body: 16px;
+  --fs-lead: 18px;
+  --text-strong: #f2f1ee;
+  --text-title: #f6f5f1;
+  --text-mono: #9a9893;
   --bg: #08090d;
   --sidebar: #0b0c11;
   --surface: #101117;
@@ -3274,11 +3283,11 @@ textarea:focus-visible {
 .hero-copy h1,
 .auth-story h1 {
   margin: 21px 0 14px;
-  color: #f5f3fa;
-  font-family: Manrope, sans-serif;
-  font-size: clamp(43px, 5.2vw, 67px);
-  font-weight: 800;
-  letter-spacing: -3.8px;
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: clamp(44px, 7vw, 96px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
   line-height: 1.04;
 }
 
@@ -3672,11 +3681,11 @@ textarea:focus-visible {
 .process-copy h2,
 .marketing-owasp h2 {
   margin: 13px 0 10px;
-  color: #f0eef6;
-  font-family: Manrope, sans-serif;
-  font-size: clamp(29px, 4.2vw, 43px);
-  font-weight: 800;
-  letter-spacing: -1.8px;
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3.6vw, 48px);
+  font-weight: 900;
+  letter-spacing: -0.05em;
   line-height: 1.13;
 }
 
@@ -3797,10 +3806,6 @@ textarea:focus-visible {
   margin: 0;
 }
 
-.process-copy h2 {
-  font-size: 34px;
-}
-
 .process-copy > .text-link {
   margin-top: 19px;
   font-size: 10px;
@@ -3863,10 +3868,6 @@ textarea:focus-visible {
   gap: 49px;
   padding: 102px 0 93px;
   scroll-margin-top: 90px;
-}
-
-.marketing-owasp h2 {
-  font-size: 34px;
 }
 
 .marketing-owasp > div:first-child > p {
@@ -4726,12 +4727,6 @@ textarea:focus-visible {
     padding: 72px 0 59px;
   }
 
-  .marketing-section-heading h2,
-  .process-copy h2,
-  .marketing-owasp h2 {
-    font-size: 31px;
-  }
-
   .marketing-section-heading p {
     font-size: 10px;
   }
@@ -4791,10 +4786,6 @@ textarea:focus-visible {
     padding-left: 16px;
   }
 
-  .marketing-bottom-cta h2 {
-    font-size: 22px;
-  }
-
   .marketing-bottom-cta > .eyebrow {
     font-size: 7px;
   }
@@ -4843,8 +4834,6 @@ textarea:focus-visible {
 
   .auth-story h1 {
     margin: 12px 0 8px;
-    font-size: 34px;
-    letter-spacing: -1.8px;
   }
 
   .auth-story > p {
@@ -4880,10 +4869,6 @@ textarea:focus-visible {
 
   .auth-card-heading {
     margin: 19px 0 15px;
-  }
-
-  .auth-card-heading h2 {
-    font-size: 19px;
   }
 
   .demo-credentials {
@@ -6734,11 +6719,6 @@ textarea:focus-visible {
     padding: 62px 0;
   }
 
-  .batch-copy h2,
-  .integration-copy h2 {
-    font-size: 31px;
-  }
-
   .batch-visual {
     min-height: 325px;
     padding: 31px 15px;
@@ -6797,6 +6777,9 @@ html[data-theme="light"] {
   --line-soft: #e0ddea;
   --text: #211f32;
   --subtle: #4b485e;
+  --text-strong: var(--text);
+  --text-title: var(--text);
+  --text-mono: var(--subtle);
   --muted: #656176;
   --purple: #7047d8;
   --purple-bright: #5d34c7;
@@ -6927,7 +6910,9 @@ html[data-theme="light"] .hero-copy h1 span,
 html[data-theme="light"] .marketing-section-heading h2 span,
 html[data-theme="light"] .process-copy h2 span,
 html[data-theme="light"] .marketing-owasp h2 span,
-html[data-theme="light"] .batch-copy h2 span {
+html[data-theme="light"] .batch-copy h2 span,
+html[data-theme="light"] .integration-copy h2 span,
+html[data-theme="light"] .auth-story h1 span {
   background-image: linear-gradient(95deg, #9168f2 0%, #6339d0 58%, #7951df 100%);
 }
 
@@ -7158,6 +7143,19 @@ html[data-theme="light"] .process-steps p,
 html[data-theme="light"] .marketing-proof span,
 html[data-theme="light"] .integration-preview > p {
   color: #565268;
+}
+
+/* Rótulos legados também precisam acompanhar o contraste do tema claro. */
+html[data-theme="light"] .marketing-owasp-list .map-status,
+html[data-theme="light"] .marketing-owasp-list .map-manual,
+html[data-theme="light"] .auth-local-badge,
+html[data-theme="light"] .auth-form > label,
+html[data-theme="light"] .auth-label-row label,
+html[data-theme="light"] .auth-label-row > button,
+html[data-theme="light"] .auth-label-row > button:hover,
+html[data-theme="light"] .auth-mode-switch button:hover,
+html[data-theme="light"] .auth-back-link:hover {
+  color: var(--text-mono);
 }
 
 html[data-theme="light"] .dashboard-risk-summary {
@@ -7745,4 +7743,293 @@ html[data-theme="light"] .finding-fix-copy {
   .repository-file-result > summary > span:last-child {
     margin-left: 25px;
   }
+}
+
+/* Mantém a tipografia ampliada nas páginas públicas sem afetar o dashboard. */
+.marketing-shell,
+.auth-shell {
+  font-family: var(--font-display);
+}
+
+.marketing-shell p,
+.auth-shell p {
+  color: var(--text-strong);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.marketing-shell .marketing-process .process-copy > p,
+.marketing-shell .marketing-owasp > div:first-child > p {
+  color: var(--text-strong);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+.marketing-shell .hero-copy > p {
+  font-size: var(--fs-lead);
+}
+
+.marketing-shell .hero-copy h1 {
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: clamp(44px, 7vw, 96px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+}
+
+.auth-shell .auth-story h1 {
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: clamp(36px, 4.2vw, 56px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+}
+
+.marketing-shell h2,
+.auth-shell .auth-card-heading h2 {
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3.6vw, 48px);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.marketing-shell h3 {
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.marketing-shell .eyebrow,
+.auth-shell .eyebrow,
+.marketing-shell .marketing-nav > nav a,
+.marketing-shell .marketing-login,
+.marketing-shell .marketing-cta,
+.marketing-shell .button-primary,
+.marketing-shell .process-steps article > span,
+.marketing-shell .hero-window-bar,
+.marketing-shell .hero-live,
+.marketing-shell .hero-code-lines,
+.marketing-shell .hero-finding-float small,
+.marketing-shell .hero-critical-label,
+.marketing-shell .hero-scan-status,
+.marketing-shell .hero-art-chip,
+.marketing-shell .hero-bottom-note,
+.marketing-shell .marketing-owasp-list > a > span:first-child,
+.marketing-shell .marketing-owasp-list .map-status,
+.marketing-shell .marketing-owasp-list .map-manual,
+.marketing-shell .batch-visual-heading,
+.marketing-shell .batch-file-card small,
+.marketing-shell .batch-file-count,
+.marketing-shell .batch-visual-note,
+.marketing-shell .integration-preview-bar,
+.marketing-shell .integration-status,
+.marketing-shell .integration-pr small,
+.marketing-shell .integration-comment small,
+.marketing-shell .marketing-footer > span,
+.marketing-shell .marketing-footer > a,
+.auth-shell .auth-back-link,
+.auth-shell .auth-local-badge,
+.auth-shell .auth-form > label,
+.auth-shell .auth-label-row label,
+.auth-shell .auth-label-row > button,
+.auth-shell .auth-submit,
+.auth-shell .auth-disclaimer,
+.auth-shell .auth-footer {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  line-height: 1.45;
+}
+
+.marketing-shell .eyebrow,
+.auth-shell .eyebrow,
+.marketing-shell .marketing-nav > nav a,
+.marketing-shell .marketing-login,
+.marketing-shell .marketing-footer > span,
+.marketing-shell .marketing-footer > a,
+.auth-shell .auth-back-link,
+.auth-shell .auth-disclaimer,
+.auth-shell .auth-footer {
+  color: var(--text-mono);
+}
+
+.marketing-shell .hero-window-bar,
+.marketing-shell .hero-code-lines {
+  letter-spacing: 0.02em;
+}
+
+.marketing-shell .hero-finding-float small,
+.marketing-shell .hero-critical-label,
+.marketing-shell .hero-art-chip {
+  letter-spacing: 0.06em;
+}
+
+.marketing-shell .hero-bottom-note {
+  left: 20px;
+  max-width: calc(100% - 40px);
+  letter-spacing: 0.06em;
+}
+
+.marketing-shell .marketing-nav > nav a,
+.marketing-shell .marketing-login,
+.marketing-shell .marketing-cta,
+.marketing-shell .button-primary,
+.marketing-shell .hero-art-chip,
+.marketing-shell .hero-critical-label,
+.marketing-shell .hero-bottom-note,
+.marketing-shell .marketing-footer > span,
+.marketing-shell .marketing-footer > a,
+.auth-shell .auth-back-link,
+.auth-shell .auth-local-badge,
+.auth-shell .auth-form > label,
+.auth-shell .auth-label-row label,
+.auth-shell .auth-label-row > button,
+.auth-shell .auth-submit,
+.auth-shell .auth-footer {
+  overflow-wrap: anywhere;
+}
+
+.marketing-shell .hero-secondary,
+.marketing-shell .text-link,
+.marketing-shell .marketing-proof span,
+.marketing-shell .hero-trust > span,
+.marketing-shell .process-steps strong,
+.marketing-shell .marketing-owasp-list strong,
+.marketing-shell .batch-benefits > span,
+.marketing-shell .batch-file-card strong,
+.marketing-shell .integration-tags > span,
+.marketing-shell .integration-pr strong,
+.marketing-shell .integration-comment strong,
+.auth-shell .auth-story-list > span,
+.auth-shell .auth-mode-switch,
+.auth-shell .auth-notice {
+  font-size: var(--fs-small);
+}
+
+.marketing-shell .marketing-proof span,
+.marketing-shell .hero-trust > span,
+.marketing-shell .process-steps strong,
+.marketing-shell .marketing-owasp-list strong,
+.marketing-shell .batch-benefits > span,
+.marketing-shell .batch-file-card strong,
+.marketing-shell .integration-tags > span,
+.marketing-shell .integration-pr strong,
+.marketing-shell .integration-comment strong,
+.auth-shell .auth-story-list > span {
+  color: var(--text-strong);
+}
+
+.marketing-shell .hero-finding-float strong {
+  font-size: var(--fs-small);
+}
+
+.marketing-shell .theme-toggle {
+  font-size: var(--fs-label);
+}
+
+.marketing-shell .text-link,
+.marketing-shell .hero-secondary {
+  line-height: 1.5;
+}
+
+.marketing-shell .marketing-proof > div,
+.marketing-shell .hero-copy,
+.marketing-shell .hero-art,
+.marketing-shell .marketing-feature,
+.marketing-shell .marketing-process,
+.marketing-shell .marketing-owasp,
+.marketing-shell .marketing-batch,
+.marketing-shell .marketing-integration,
+.auth-shell .auth-story,
+.auth-shell .auth-card {
+  min-width: 0;
+}
+
+.marketing-shell .marketing-proof span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.marketing-shell .marketing-owasp-list > a {
+  display: grid;
+  min-height: 52px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 3px 9px;
+  padding: 8px 10px;
+}
+
+.marketing-shell .marketing-owasp-list > a > span:first-child {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.marketing-shell .marketing-owasp-list strong {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.marketing-shell .marketing-owasp-list .map-status,
+.marketing-shell .marketing-owasp-list .map-manual {
+  grid-column: 2;
+  grid-row: 2;
+  overflow-wrap: anywhere;
+  letter-spacing: 0.04em;
+  white-space: normal;
+}
+
+.marketing-shell .marketing-owasp-list > a > svg {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+}
+
+.auth-shell .auth-input-wrap input {
+  font-size: 16px;
+}
+
+.auth-shell .auth-input-wrap input::placeholder {
+  font-size: var(--fs-small);
+}
+
+.auth-shell .auth-mode-switch button,
+.auth-shell .demo-credentials .eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+}
+
+.auth-shell .demo-credentials > span:not(.eyebrow) {
+  font-family: var(--font-display);
+  font-size: var(--fs-small);
+  letter-spacing: normal;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.auth-shell .auth-disclaimer {
+  font-family: var(--font-display);
+  letter-spacing: normal;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.auth-shell .auth-footer {
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: center;
+  padding: 10px 0;
+  text-align: center;
 }
