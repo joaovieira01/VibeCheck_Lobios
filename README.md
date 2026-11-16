@@ -300,19 +300,24 @@ As amostras e o gabarito usados nas métricas estão em `backend/tests/samples/`
 ├── frontend/              React + TypeScript + Vite
 ├── database/schema.sql    criação do banco e do usuário MySQL
 ├── docs/PROGRESS.md       histórico de evolução e métricas
-├── .github/workflows/     revisão automática de Pull Requests
+├── .github/workflows/     CI (testes) e revisão automática de Pull Requests
+├── .github/dependabot.yml atualização semanal de dependências
+├── SECURITY.md            política de segurança e relato de vulnerabilidades
 ├── docker-compose.yml     MySQL, backend e frontend
 └── .env.example           exemplo de configuração, sem credenciais reais
 ```
 
 ## Segurança
 
+Para relatar uma vulnerabilidade, os controles implementados e o checklist de hospedagem, veja a [política de segurança](SECURITY.md).
+
 - Nunca commite arquivos `.env` nem chaves de API.
+- A API envia cabeçalhos de segurança (`nosniff`, `X-Frame-Options`, `Referrer-Policy`), `Cache-Control: no-store` em `/api/*` e HSTS em produção.
 - Troque todas as senhas de exemplo.
 - Defina `VIBECHECK_ENV=production` no deploy; a inicialização rejeita seed demo, CORS com `*` e senha do banco vazia ou de exemplo.
 - O scrypt usa `N=2**17, r=8` (cerca de 128 MiB por operação). As operações são serializadas por processo e o login tem limites por IP e por IP/e-mail; dimensione a memória considerando um slot por worker.
 - Use uma conta MySQL exclusiva da aplicação, sem privilégios de administrador.
-- O `docker-compose.yml` expõe o MySQL na porta 3306 e usa `--reload`: é uma configuração de desenvolvimento. Em outros ambientes, restrinja o acesso (por exemplo, `127.0.0.1:3306:3306`) e use um servidor de produção.
+- O `docker-compose.yml` publica as portas apenas em `127.0.0.1` e usa `--reload`: é uma configuração de desenvolvimento. Em outros ambientes, não exponha o MySQL publicamente e use um servidor de produção.
 - O limitador de requisições é em memória. Em mais de uma instância, use um limitador compartilhado.
 
 ## Limitações e roadmap

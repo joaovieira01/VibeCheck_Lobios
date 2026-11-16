@@ -68,6 +68,12 @@ logger = logging.getLogger("vibecheck")
 
 # JSON com escapes (\uXXXX) pode ser bem maior que o código-fonte original.
 _BODY_LIMIT_FACTOR = 6
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+}
 DEMO_EMAIL = "demo@vibecheck.dev"
 DEMO_PASSWORD = "vibecheck2026"
 
@@ -206,6 +212,24 @@ def create_app(settings: Settings | None = None, mailer: Mailer | None = None) -
                     status_code=413,
                 )
         return await call_next(request)
+
+    is_production = settings.environment.strip().lower() == "production"
+
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):  # type: ignore[no-untyped-def]
+        # Registrado depois do limitador de corpo, logo envolve também as
+        # respostas 411/413 dele.
+        response = await call_next(request)
+        for name, value in _SECURITY_HEADERS.items():
+            response.headers.setdefault(name, value)
+        if request.url.path.startswith("/api/"):
+            # Respostas da API trazem dados da conta e achados: nunca em cache.
+            response.headers.setdefault("Cache-Control", "no-store")
+        if is_production:
+            response.headers.setdefault(
+                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+            )
+        return response
 
     # Adicionado por último = middleware mais externo, para que até as respostas
     # 411/413 do limitador de corpo levem os cabeçalhos CORS.
