@@ -16,6 +16,8 @@
   --text-strong: #f2f1ee;
   --text-title: #f6f5f1;
   --text-mono: #9a9893;
+  --text-on-dark: #f2f1ee;
+  --text-positive: #b9cc70;
   --bg: #08090d;
   --sidebar: #0b0c11;
   --surface: #101117;
@@ -2184,11 +2186,11 @@ textarea:focus-visible {
 }
 
 .finding-fix-before > span {
-  color: #e4919d !important;
+  color: var(--red) !important;
 }
 
 .finding-fix-after > span {
-  color: #b9cc70 !important;
+  color: var(--text-positive) !important;
 }
 
 .finding-fix-diff pre {
@@ -2228,7 +2230,7 @@ textarea:focus-visible {
   gap: 7px;
   padding: 10px 14px;
   border-top: 1px solid #20212a;
-  color: #8a8064;
+  color: var(--text-mono);
   font-size: 8px;
 }
 
@@ -6787,6 +6789,8 @@ html[data-theme="light"] {
   --text-strong: var(--text);
   --text-title: var(--text);
   --text-mono: var(--subtle);
+  --text-on-dark: #f2f1ee;
+  --text-positive: #547000;
   --muted: #656176;
   --purple: #7047d8;
   --purple-bright: #5d34c7;
@@ -7639,6 +7643,373 @@ html[data-theme="light"] .finding-fix-copy {
   color: var(--text);
   font-size: 10px;
   font-weight: 600;
+}
+
+/* A área logada compartilha os tokens da landing sem alterar as páginas públicas. */
+.app-shell {
+  color: var(--text);
+}
+
+.app-shell :where(*) {
+  min-width: 0;
+  border-radius: 0;
+  font-size: var(--fs-small) !important;
+}
+
+.app-shell :where(h1, h2, h3, h4) {
+  color: var(--text-title) !important;
+  font-family: var(--font-display) !important;
+  font-weight: 900 !important;
+  letter-spacing: var(--tracking-title) !important;
+}
+
+.app-shell :where(h1) {
+  font-size: clamp(36px, 3.3vw, 48px) !important;
+}
+
+.app-shell :where(h2) {
+  font-size: 24px !important;
+}
+
+.app-shell :where(h3) {
+  font-size: 20px !important;
+}
+
+.app-shell :where(h4) {
+  font-size: 18px !important;
+}
+
+.app-shell :where(h1, h2, h3, h4) span {
+  font-size: inherit !important;
+}
+
+.app-shell :where(span, small, strong, li, summary, code, label, a, button) {
+  color: var(--text-strong) !important;
+}
+
+/* O editor conserva o fundo escuro também no tema claro. */
+.app-shell .code-editor,
+.app-shell .code-editor :where(*) {
+  color: var(--text-on-dark) !important;
+}
+
+.app-shell :where(.eyebrow, .detail-label, .sidebar-label, .stack-pill,
+  .nav-shortcut, .nav-count, .metric-tile > div > span, .metric-caption,
+  .result-kpi > span, .repository-summary-card > span:last-child,
+  .repository-file-picker small, .repository-result-heading > span) {
+  color: var(--text-mono) !important;
+}
+
+.app-shell :where(.coverage-hero h2, .repository-heading h2,
+  .section-heading-row h2, .results-heading h2) {
+  font-size: clamp(30px, 3.6vw, 48px) !important;
+}
+
+.app-shell :where(p) {
+  color: var(--subtle) !important;
+  font-size: var(--fs-body) !important;
+  line-height: 1.65;
+}
+
+.app-shell :where(.eyebrow, .detail-label, .sidebar-label, .stack-pill,
+  .nav-shortcut, .nav-count, .metric-tile > div > span, .metric-caption,
+  .result-kpi > span, .repository-summary-card > span:last-child,
+  .repository-file-picker small, .repository-result-heading > span) {
+  color: var(--text-mono);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label) !important;
+  font-weight: 500;
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+}
+
+.app-shell :where(.side-link, .reference-link, .theme-toggle,
+  .breadcrumb-root, .breadcrumb-current, .workspace-user-email,
+  .workspace-meta strong, .workspace-meta span, .local-status strong,
+  .local-status small, .footer-copy, .app-footer > span:last-child) {
+  font-size: var(--fs-small) !important;
+}
+
+.app-shell :where(.side-link, .reference-link, .app-footer a) {
+  color: var(--text-strong);
+}
+
+.app-shell .side-link {
+  min-height: 42px;
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label) !important;
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+}
+
+.app-shell .side-link.active {
+  border-color: var(--purple);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-fg) !important;
+}
+
+.app-shell .side-link.active > span {
+  color: var(--button-primary-fg) !important;
+}
+
+.app-shell .side-link.active .nav-count {
+  border-color: var(--button-primary-fg);
+  background: var(--button-primary-fg);
+  color: var(--button-primary-bg) !important;
+}
+
+.app-shell .nav-count {
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0 4px;
+  border: var(--border);
+  background: var(--surface-raised);
+  color: var(--text-strong) !important;
+  font-size: var(--fs-label) !important;
+}
+
+html[data-theme="light"] .app-shell .side-link.active {
+  border-color: var(--purple);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-fg) !important;
+}
+
+.app-shell .topbar,
+.app-shell .sidebar,
+.app-shell .workspace-switcher,
+.app-shell .workspace-card,
+.app-shell .metric-strip,
+.app-shell .metric-tile,
+.app-shell .insight-card,
+.app-shell .scan-card,
+.app-shell .findings-panel,
+.app-shell .history-item,
+.app-shell .owasp-card,
+.app-shell .coverage-overview-card,
+.app-shell .coverage-search,
+.app-shell .repository-upload,
+.app-shell .repository-notice,
+.app-shell .repository-summary-card,
+.app-shell .repository-file-result,
+.app-shell .repository-finding,
+.app-shell .action-card,
+.app-shell .scan-progress-card,
+.app-shell .result-kpis,
+.app-shell .result-kpi,
+.app-shell .dashboard-risk-summary,
+.app-shell .dashboard-empty-state,
+.app-shell .dashboard-recent-icon,
+.app-shell .history-empty-icon {
+  border-color: var(--line);
+  border-radius: 0;
+}
+
+.app-shell .workspace-card,
+.app-shell .metric-strip,
+.app-shell .insight-card,
+.app-shell .scan-card,
+.app-shell .findings-panel,
+.app-shell .history-item,
+.app-shell .owasp-card,
+.app-shell .coverage-overview-card,
+.app-shell .coverage-search,
+.app-shell .repository-summary-card,
+.app-shell .repository-file-result,
+.app-shell .repository-finding,
+.app-shell .action-card,
+.app-shell .scan-progress-card,
+.app-shell .result-kpis,
+.app-shell .result-kpi,
+.app-shell .dashboard-empty-state,
+.app-shell .dashboard-risk-summary {
+  background-color: var(--surface);
+}
+
+.app-shell .metric-tile {
+  background: var(--surface);
+}
+
+.app-shell .metric-tile > div > span,
+.app-shell .metric-caption,
+.app-shell .result-kpi > span,
+.app-shell .repository-summary-card > span:last-child {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--tracking-mono);
+}
+
+.app-shell .metric-tile strong,
+.app-shell .dashboard-score,
+.app-shell .dashboard-score strong,
+.app-shell .dashboard-severity-row strong,
+.app-shell .dashboard-recent-result strong,
+.app-shell .result-kpi > strong,
+.app-shell .repository-summary-card strong {
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: 18px !important;
+}
+
+.app-shell :where(.breadcrumb-root, .breadcrumb-current, .workspace-user-email,
+  .workspace-meta strong, .workspace-meta span, .local-status strong,
+  .local-status small, .footer-copy, .app-footer > span:last-child,
+  .dashboard-risk-copy span, .dashboard-score-note, .dashboard-recent-meta strong,
+  .dashboard-recent-meta small, .dashboard-recent-result small,
+  .dashboard-activity-empty, .dashboard-integrations > div,
+  .dashboard-integrations strong, .dashboard-integration-note,
+  .history-item-main > span, .history-findings, .history-empty > span,
+  .coverage-overview-note, .owasp-card-english, .repository-notice,
+  .repository-loading, .repository-warning, .repository-empty,
+  .repository-file-picker span, .repository-file-picker small,
+  .repository-ignored, .repository-ignored li,
+  .repository-file-result > summary > span:last-child,
+  .repository-finding > summary > span:last-child) {
+  font-size: var(--fs-small) !important;
+}
+
+.app-shell .avatar-small {
+  background: var(--purple);
+  color: var(--button-primary-fg) !important;
+}
+
+.app-shell .language-icon {
+  border-color: var(--line);
+  background: var(--surface-raised);
+  color: var(--text-strong) !important;
+}
+
+.app-shell :where(.button-primary, .button-secondary, .icon-button,
+  .theme-toggle, .mobile-menu, .scan-button, .pdf-button) {
+  min-height: 40px;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label) !important;
+  font-weight: 500;
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+}
+
+.app-shell .button-primary {
+  border: 1px solid var(--button-primary-bg);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-fg) !important;
+}
+
+.app-shell .button-primary > * {
+  color: inherit !important;
+}
+
+.app-shell .button-secondary {
+  border: var(--border);
+  background: transparent;
+  color: var(--text-strong) !important;
+}
+
+.app-shell :where(.eyebrow, .detail-label, .sidebar-label, .stack-pill,
+  .nav-shortcut, .nav-count, .metric-tile > div > span, .metric-caption,
+  .result-kpi > span, .repository-summary-card > span:last-child,
+  .repository-file-picker small, .repository-result-heading > span) {
+  color: var(--text-mono) !important;
+}
+
+.app-shell .filter-tabs button.active,
+.app-shell .coverage-filter-tabs button.active {
+  color: var(--button-primary-fg) !important;
+}
+
+html[data-theme="light"] .app-shell .filter-tabs button.active,
+html[data-theme="light"] .app-shell .coverage-filter-tabs button.active {
+  color: var(--text-strong) !important;
+}
+
+.app-shell :where(.button-primary, .button-secondary):hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.app-shell .app-footer {
+  color: var(--text-mono);
+}
+
+.app-shell .app-footer a {
+  color: var(--purple) !important;
+}
+
+.app-shell .footer-copy {
+  color: var(--text-mono);
+  font-size: var(--fs-small) !important;
+}
+
+.app-shell .repository-section {
+  min-height: 0;
+  align-content: start;
+  gap: 16px;
+}
+
+.app-shell .repository-heading h2 {
+  font-size: clamp(30px, 3.6vw, 48px) !important;
+}
+
+.app-shell .repository-heading p,
+.app-shell .repository-owasp-summary > p,
+.app-shell .repository-finding-detail > p {
+  font-size: var(--fs-body);
+}
+
+.app-shell .avatar-small,
+.app-shell .online-indicator,
+.app-shell .integration-status,
+.app-shell .severity-dot,
+.app-shell .finding-severity,
+.app-shell .score-ring,
+.app-shell .dashboard-score {
+  border-radius: 50%;
+}
+
+@media (max-width: 940px) {
+  .app-shell .main-content {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .app-shell .dashboard-welcome-row {
+    overflow: hidden;
+  }
+
+  .app-shell .topbar {
+    gap: 8px;
+  }
+
+  .app-shell .topbar-end {
+    min-width: 0;
+    gap: 7px;
+  }
+
+  .app-shell .stack-pill {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-shell .workspace-user-email {
+    display: none;
+  }
+
+  .app-shell .main-content {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .app-shell .repository-section {
+    padding: 18px 14px;
+  }
+
+  .app-shell .repository-upload {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 .repository-severity-pill {
@@ -8521,5 +8892,56 @@ html .marketing-shell .marketing-hero {
     min-height: 32px;
     padding-right: 6px;
     padding-left: 6px;
+  }
+}
+
+/* Ajusta os últimos componentes da Repositório após as regras legadas. */
+.app-shell .repository-severity-pill,
+.app-shell .repository-ignored,
+.app-shell .repository-ignored li,
+.app-shell .repository-owasp-summary li,
+.app-shell .repository-file-result > summary > span:last-child,
+.app-shell .repository-finding > summary > span:last-child,
+.app-shell .repository-finding > summary strong,
+.app-shell .repository-file-picker span,
+.app-shell .repository-file-picker small,
+.app-shell .repository-file-result > summary code {
+  font-size: 12px !important;
+}
+
+.app-shell .repository-file-result,
+.app-shell .repository-finding,
+.app-shell .repository-upload,
+.app-shell .repository-file-picker,
+.app-shell .repository-summary-card,
+.app-shell .repository-ignored,
+.app-shell .repository-notice,
+.app-shell .repository-loading,
+.app-shell .repository-warning,
+.app-shell .repository-empty,
+.app-shell .repository-severity-pill {
+  border-radius: 0;
+}
+
+.app-shell .repository-finding-recommendation p {
+  font-size: var(--fs-body) !important;
+}
+
+.app-shell .brand-name {
+  font-size: 19px !important;
+}
+
+.app-shell.sidebar-is-collapsed .side-link .nav-count {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 0;
+  font-size: var(--fs-label) !important;
+  background: var(--surface-raised);
+  color: var(--text-strong) !important;
+}
+
+@media (max-width: 700px) {
+  .app-shell :where(h1) {
+    font-size: clamp(32px, 8vw, 43px) !important;
   }
 }
