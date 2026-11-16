@@ -32,6 +32,13 @@
   --red: #ff7184;
   --orange: #ffbc69;
   --blue: #78c8ff;
+  --radius: 0;
+  --tracking-mono: 0.18em;
+  --tracking-title: -0.045em;
+  --border: 1px solid var(--line);
+  --button-primary-bg: var(--purple);
+  --button-primary-fg: var(--bg);
+  --button-tertiary-fg: var(--lime);
 }
 
 * {
@@ -6787,6 +6794,10 @@ html[data-theme="light"] {
   --red: #cc3e59;
   --orange: #a85e08;
   --blue: #176f9e;
+  --button-primary-bg: var(--purple-bright);
+  --button-primary-fg: var(--surface);
+  /* No tema claro, o texto lima usa tinta escura para manter contraste. */
+  --button-tertiary-fg: var(--text-strong);
 }
 
 html[data-theme="light"],
@@ -8032,4 +8043,483 @@ html[data-theme="light"] .finding-fix-copy {
   justify-content: center;
   padding: 10px 0;
   text-align: center;
+}
+
+html .marketing-shell *,
+html .auth-shell * {
+  border-radius: var(--radius);
+}
+
+html .marketing-shell *::before,
+html .marketing-shell *::after,
+html .auth-shell *::before,
+html .auth-shell *::after {
+  border-radius: var(--radius);
+}
+
+.marketing-shell .feature-icon,
+.marketing-shell .finding-severity,
+.auth-shell .story-node,
+.marketing-shell [class*="avatar"],
+.auth-shell [class*="avatar"] {
+  border-radius: 50%;
+}
+
+html .marketing-shell .marketing-nav,
+html .auth-shell .auth-topbar {
+  border-bottom: var(--border);
+}
+
+html .marketing-shell .marketing-proof,
+html .marketing-shell .marketing-feature,
+html .marketing-shell .hero-scan-window,
+html .marketing-shell .marketing-process,
+html .marketing-shell .batch-visual,
+html .marketing-shell .batch-file-card,
+html .marketing-shell .marketing-owasp-list > a,
+html .marketing-shell .integration-preview,
+html .marketing-shell .integration-pr,
+html .marketing-shell .integration-comment,
+html .marketing-shell .marketing-bottom-cta,
+html .marketing-shell .integration-tags > span,
+html .marketing-shell .process-steps article > span,
+html .auth-shell .auth-card,
+html .auth-shell .auth-input-wrap,
+html .auth-shell .demo-credentials,
+html .auth-shell .auth-local-badge {
+  border: var(--border);
+}
+
+html .marketing-shell .marketing-nav > nav a,
+html .marketing-shell .marketing-login,
+html .marketing-shell .marketing-cta,
+html .marketing-shell .button-primary,
+html .marketing-shell .hero-secondary,
+html .marketing-shell .text-link,
+html .marketing-shell .theme-toggle,
+html .marketing-shell .marketing-footer > a,
+html .marketing-shell .integration-tags > span,
+html .auth-shell .eyebrow,
+html .auth-shell .auth-back-link,
+html .auth-shell .auth-local-badge,
+html .auth-shell .auth-form > label,
+html .auth-shell .auth-label-row label,
+html .auth-shell .auth-label-row > button,
+html .auth-shell .auth-submit,
+html .auth-shell .auth-mode-switch button {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: var(--tracking-mono);
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+html .marketing-shell .marketing-nav > nav a,
+html .marketing-shell .marketing-login,
+html .marketing-shell .marketing-footer > a,
+html .auth-shell .auth-back-link {
+  color: var(--text-mono);
+}
+
+html .marketing-shell .section-index,
+html .marketing-shell .feature-number {
+  color: var(--purple);
+}
+
+html .marketing-shell .marketing-section-heading,
+html .marketing-shell .marketing-section-heading > *,
+html .marketing-shell .batch-copy > .eyebrow,
+html .marketing-shell .process-copy > .eyebrow,
+html .marketing-shell .marketing-owasp > div:first-child > .eyebrow,
+html .marketing-shell .integration-copy > .eyebrow {
+  text-align: left;
+}
+
+html .marketing-shell .marketing-section-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0 0 32px;
+}
+
+html .marketing-shell .marketing-section-heading > .eyebrow,
+html .marketing-shell .batch-copy > .eyebrow,
+html .marketing-shell .process-copy > .eyebrow,
+html .marketing-shell .marketing-owasp > div:first-child > .eyebrow,
+html .marketing-shell .integration-copy > .eyebrow {
+  margin: 0 0 10px;
+  color: var(--text-mono);
+}
+
+html .marketing-shell .marketing-section-heading > p,
+html .marketing-shell .batch-copy > p,
+html .marketing-shell .process-copy > p,
+html .marketing-shell .marketing-owasp > div:first-child > p,
+html .marketing-shell .integration-copy > p {
+  max-width: 620px;
+  margin: 0 0 14px;
+  color: var(--text-mono);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+}
+
+html .marketing-shell .marketing-section-heading > h2,
+html .marketing-shell .batch-copy > h2,
+html .marketing-shell .process-copy > h2,
+html .marketing-shell .marketing-owasp > div:first-child > h2,
+html .marketing-shell .integration-copy > h2,
+html .marketing-shell .hero-copy h1,
+html .auth-shell .auth-story h1 {
+  letter-spacing: var(--tracking-title);
+}
+
+html .marketing-shell .marketing-section-heading > h2,
+html .marketing-shell .batch-copy > h2,
+html .marketing-shell .process-copy > h2,
+html .marketing-shell .marketing-owasp > div:first-child > h2,
+html .marketing-shell .integration-copy > h2 {
+  margin: 0 0 14px;
+}
+
+html .marketing-shell .marketing-feature {
+  min-width: 0;
+  padding: 19px;
+}
+
+html .marketing-shell .marketing-feature > .feature-index {
+  position: absolute;
+  top: 19px;
+  right: 19px;
+  margin: 0;
+  color: var(--text-mono);
+}
+
+html .marketing-shell .marketing-feature > .feature-index .feature-number {
+  font-weight: 700;
+}
+
+html .marketing-shell .hero-scan-window {
+  background: var(--button-primary-bg);
+  box-shadow: 10px 10px 0 var(--purple-bright);
+}
+
+html .marketing-shell .hero-window-bar,
+html .marketing-shell .hero-code-lines,
+html .marketing-shell .hero-live,
+html .marketing-shell .hero-scan-status,
+html .marketing-shell .hero-code-lines i,
+html .marketing-shell .hero-code-lines b,
+html .marketing-shell .hero-code-lines em,
+html .marketing-shell .hero-code-alert {
+  color: var(--button-primary-fg);
+}
+
+html .marketing-shell .hero-window-bar,
+html .marketing-shell .hero-scan-status {
+  border-color: var(--button-primary-fg);
+}
+
+html .marketing-shell .hero-code-alert {
+  border-left-color: var(--button-primary-fg);
+  background: transparent;
+}
+
+html .marketing-shell .hero-live i,
+html .marketing-shell .hero-scan-status > span,
+html .marketing-shell .hero-scan-status > svg {
+  background: var(--button-primary-fg);
+  color: var(--button-primary-fg);
+  box-shadow: none;
+}
+
+html .marketing-shell .hero-scan-status > svg {
+  background: transparent;
+}
+
+html .marketing-shell .hero-finding-float {
+  border: var(--border);
+  background: var(--surface);
+  color: var(--text-strong);
+}
+
+html .marketing-shell .hero-finding-float strong {
+  color: var(--text-title);
+}
+
+html .marketing-shell .hero-finding-float small {
+  color: var(--text-mono);
+}
+
+html .marketing-shell .hero-critical-label {
+  color: var(--red);
+}
+
+html .marketing-shell .marketing-owasp-list > a > span:first-child {
+  color: var(--purple);
+}
+
+html .marketing-shell .integration-preview-bar > strong,
+html .marketing-shell .integration-status {
+  color: var(--text-strong);
+}
+
+html .marketing-shell .integration-status {
+  width: auto;
+  height: auto;
+  background: transparent;
+}
+
+html .marketing-shell .integration-status > span {
+  background: var(--lime);
+}
+
+html .auth-shell .auth-footer > a {
+  color: var(--purple);
+}
+
+html .auth-shell .auth-input-wrap input::placeholder {
+  color: var(--subtle);
+}
+
+html .marketing-shell .button-primary,
+html .auth-shell .button-primary {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 15px;
+  border: var(--border);
+  border-color: var(--button-primary-bg);
+  background: var(--button-primary-bg);
+  box-shadow: 5px 5px 0 var(--purple-bright);
+  color: var(--button-primary-fg);
+}
+
+html .marketing-shell .marketing-cta {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+html .marketing-shell .hero-secondary,
+html .auth-shell .auth-back-link {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: var(--border);
+  border-color: var(--text-title);
+  background: transparent;
+  color: var(--text-title);
+}
+
+html .marketing-shell .text-link,
+html .marketing-shell .marketing-login,
+html .auth-shell .auth-label-row > button,
+html .auth-shell .auth-mode-switch button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border: var(--border);
+  border-color: var(--lime);
+  background: transparent;
+  color: var(--button-tertiary-fg);
+  cursor: pointer;
+}
+
+html .marketing-shell .button-primary svg.lucide-arrow-right,
+html .marketing-shell .text-link svg.lucide-arrow-right,
+html .marketing-shell .hero-secondary svg.lucide-move-right,
+html .auth-shell .button-primary svg.lucide-arrow-right {
+  transform: rotate(-45deg);
+}
+
+html .marketing-shell .marketing-feature > p,
+html .marketing-shell .marketing-proof span,
+html .marketing-shell .process-steps strong,
+html .marketing-shell .process-steps p,
+html .marketing-shell .marketing-owasp-list strong,
+html .marketing-shell .batch-benefits > span,
+html .marketing-shell .batch-file-card strong,
+html .marketing-shell .integration-pr strong,
+html .marketing-shell .integration-comment strong,
+html .marketing-shell .integration-preview > p,
+html .auth-shell .auth-story > p,
+html .auth-shell .auth-story-list > span,
+html .auth-shell .auth-card-heading > p,
+html .auth-shell .auth-mode-switch,
+html .auth-shell .demo-credentials > span:not(.eyebrow) {
+  color: var(--text-strong);
+}
+
+html .marketing-shell .marketing-feature h3,
+html .marketing-shell .marketing-proof strong,
+html .marketing-shell .process-steps strong,
+html .marketing-shell .marketing-owasp-list strong,
+html .marketing-shell .batch-file-card strong,
+html .marketing-shell .integration-pr strong,
+html .marketing-shell .integration-comment strong,
+html .marketing-shell .marketing-bottom-cta h2,
+html .auth-shell .auth-card-heading h2 {
+  color: var(--text-title);
+}
+
+html .marketing-shell .marketing-bottom-cta .eyebrow,
+html .marketing-shell .marketing-bottom-cta > p,
+html .marketing-shell .marketing-footer > span,
+html .marketing-shell .hero-bottom-note,
+html .marketing-shell .hero-trust > span,
+html .marketing-shell .batch-file-card small,
+html .marketing-shell .batch-visual-note,
+html .marketing-shell .integration-pr small,
+html .marketing-shell .integration-comment small,
+html .auth-shell .auth-disclaimer,
+html .auth-shell .auth-footer {
+  color: var(--text-mono);
+}
+
+html .marketing-shell .marketing-hero {
+  grid-template-columns: minmax(0, 2.64fr) minmax(300px, 1fr);
+}
+
+@media (max-width: 1100px) {
+  html .marketing-shell .marketing-nav {
+    position: sticky;
+  }
+
+  html .marketing-shell .marketing-nav > nav.marketing-nav-links {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    display: none;
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 8px 22px 14px;
+    border-bottom: var(--border);
+    background: var(--surface);
+  }
+
+  html .marketing-shell .marketing-nav > nav.marketing-nav-links.is-open {
+    display: grid;
+  }
+
+  html .marketing-shell .marketing-nav > nav.marketing-nav-links a {
+    min-height: 43px;
+    align-content: center;
+    border-bottom: var(--border);
+    color: var(--text-strong);
+  }
+
+  html .marketing-shell .marketing-nav > nav.marketing-nav-links a::after {
+    display: none;
+  }
+
+  html .marketing-shell .marketing-menu-toggle {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 900px) {
+  html .marketing-shell .marketing-hero {
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
+  }
+
+  html .marketing-shell .marketing-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html .marketing-shell .marketing-batch,
+  html .marketing-shell .marketing-integration {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+}
+
+@media (max-width: 650px) {
+  html .marketing-shell .marketing-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html .marketing-shell .marketing-nav {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  html .marketing-shell .marketing-nav-actions {
+    gap: 6px;
+  }
+
+  html .marketing-shell .marketing-login {
+    min-height: 32px;
+    padding: 4px 6px;
+  }
+
+  html .marketing-shell .marketing-menu-toggle,
+  html .marketing-shell .marketing-theme-toggle {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+  }
+
+  html .marketing-shell .marketing-feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html .marketing-shell .marketing-batch,
+  html .marketing-shell .marketing-integration {
+    width: calc(100% - 32px);
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  html .marketing-shell .marketing-hero {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  html .marketing-shell .marketing-nav {
+    height: auto;
+    min-height: 59px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  html .marketing-shell .marketing-nav > .brand,
+  html .marketing-shell .marketing-nav-actions {
+    width: 100%;
+  }
+
+  html .marketing-shell .marketing-nav > .brand {
+    flex-basis: 100%;
+  }
+
+  html .marketing-shell .marketing-nav-actions {
+    height: auto;
+    justify-content: flex-end;
+  }
+
+  html .marketing-shell .marketing-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html .marketing-shell .marketing-cta {
+    min-height: 32px;
+    padding-right: 6px;
+    padding-left: 6px;
+  }
 }

@@ -638,31 +638,31 @@ function MarketingPage({
 
         <section className="marketing-section" id="recursos">
           <div className="marketing-section-heading">
-            <span className="eyebrow">UM FLUXO DE TRABALHO, NÃO SÓ UM ALERTA</span>
-            <h2>Da primeira linha ao<br /><span>plano de correção.</span></h2>
+            <span className="eyebrow"><span className="section-index">01 /</span> UM FLUXO DE TRABALHO, NÃO SÓ UM ALERTA</span>
             <p>
               Entenda o que chamou atenção, onde está o padrão e quais passos
               considerar antes de publicar.
             </p>
+            <h2>Da primeira linha ao<br /><span>plano de correção.</span></h2>
           </div>
           <div className="marketing-feature-grid">
             <article className="marketing-feature feature-purple">
               <span className="feature-icon"><ScanLine size={19} /></span>
-              <span className="eyebrow">01 / ANALISAR</span>
+              <span className="eyebrow feature-index"><span className="feature-number">01</span> / ANALISAR</span>
               <h3>Revise vários arquivos de uma vez.</h3>
               <p>Selecione ou arraste até 20 arquivos de texto, com limite de 1 MB cada, ou cole um trecho. No modo local, o conteúdo fica no navegador.</p>
               <div className="feature-decoration"><Code2 size={74} strokeWidth={0.7} /></div>
             </article>
             <article className="marketing-feature feature-red">
               <span className="feature-icon"><Bug size={19} /></span>
-              <span className="eyebrow">02 / ENTENDER</span>
+              <span className="eyebrow feature-index"><span className="feature-number">02</span> / ENTENDER</span>
               <h3>Veja o contexto, não só a severidade.</h3>
               <p>Explore evidências, linhas, referências CWE/OWASP, impacto potencial e recomendações para investigar cada sinal.</p>
               <div className="feature-decoration"><Fingerprint size={74} strokeWidth={0.7} /></div>
             </article>
             <article className="marketing-feature feature-lime">
               <span className="feature-icon"><FileDown size={19} /></span>
-              <span className="eyebrow">03 / AGIR</span>
+              <span className="eyebrow feature-index"><span className="feature-number">03</span> / AGIR</span>
               <h3>Leve um relatório para o próximo passo.</h3>
               <p>Exporte os achados para PDF com resumo, prioridades, localizações e dicas para reduzir a recorrência dos mesmos padrões.</p>
               <div className="feature-decoration"><ShieldCheck size={74} strokeWidth={0.7} /></div>
@@ -672,13 +672,13 @@ function MarketingPage({
 
         <section className="marketing-batch" id="analise-em-lote">
           <div className="batch-copy">
-            <span className="eyebrow">ANÁLISE EM LOTE · ATÉ 20 ARQUIVOS</span>
-            <h2>Mais arquivos.<br /><span>Um fluxo claro.</span></h2>
+            <span className="eyebrow"><span className="section-index">02 /</span> ANÁLISE EM LOTE · ATÉ 20 ARQUIVOS</span>
             <p>
               Rode uma análise por arquivo, acompanhe o progresso e alterne entre
               relatórios individuais. Cada resultado continua ligado ao seu
               próprio código e localização.
             </p>
+            <h2>Mais arquivos.<br /><span>Um fluxo claro.</span></h2>
             <div className="batch-benefits">
               <span><CheckCircle2 size={15} /> Seleção múltipla ou arrastar e soltar</span>
               <span><CheckCircle2 size={15} /> Relatório separado para cada arquivo</span>
@@ -715,12 +715,12 @@ function MarketingPage({
 
         <section className="marketing-process" id="como-funciona">
           <div className="process-copy">
-            <span className="eyebrow">SIMPLES, TRANSPARENTE, LOCAL</span>
-            <h2>Segurança com<br /><span>clareza em cada etapa.</span></h2>
+            <span className="eyebrow"><span className="section-index">03 /</span> SIMPLES, TRANSPARENTE, LOCAL</span>
             <p>
               As heurísticas rodam no navegador por padrão. Com a API configurada,
               as análises também podem ser enviadas ao backend e salvas no histórico.
             </p>
+            <h2>Segurança com<br /><span>clareza em cada etapa.</span></h2>
             <button type="button" className="text-link" onClick={onSignup}>Experimentar a demonstração <ArrowRight size={14} /></button>
           </div>
           <div className="process-steps">
@@ -732,13 +732,13 @@ function MarketingPage({
 
         <section className="marketing-owasp" id="cobertura">
           <div>
-            <span className="eyebrow">UMA REFERÊNCIA, NÃO UMA PROMESSA</span>
-            <h2>Alinhado ao<br /><span>OWASP Top 10:2025.</span></h2>
+            <span className="eyebrow"><span className="section-index">04 /</span> UMA REFERÊNCIA, NÃO UMA PROMESSA</span>
             <p>
               As regras demonstrativas mapeiam alguns padrões às categorias
               OWASP. O Top 10 é uma orientação de conscientização, não uma
               checklist de conformidade nem cobertura completa.
             </p>
+            <h2>Alinhado ao<br /><span>OWASP Top 10:2025.</span></h2>
             <a className="text-link" href="https://top10.owasp.org/2025/" target="_blank" rel="noreferrer">
               Consultar fonte oficial <ArrowUpRight size={14} />
             </a>
@@ -758,14 +758,14 @@ function MarketingPage({
 
         <section className="marketing-integration" id="integracao">
           <div className="integration-copy">
-            <span className="eyebrow">DO CÓDIGO AO PULL REQUEST</span>
-            <h2>Segurança mais perto<br /><span>do seu fluxo.</span></h2>
+            <span className="eyebrow"><span className="section-index">05 /</span> DO CÓDIGO AO PULL REQUEST</span>
             <p>
               O repositório inclui um workflow de GitHub Actions que analisa
               linhas adicionadas em Pull Requests e pode publicar comentários
               inline. A execução depende de o workflow estar habilitado no
               repositório.
             </p>
+            <h2>Segurança mais perto<br /><span>do seu fluxo.</span></h2>
             <div className="integration-tags">
               <span><GitPullRequest size={14} /> Pull Requests</span>
               <span><MessageSquare size={14} /> Comentários inline</span>
