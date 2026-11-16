@@ -4,7 +4,7 @@
 
 **Estado:** linha de base implementada e executada; comportamento do scanner sem mudanças.
 
-- `rules.json`: 19 regras declaradas. `scanner.ts`: 19 regras estáticas mais a regra sintética `unlocked-dependency` (20 executadas); `scanner.py` também executava 20. Os 19 IDs estáticos coincidiam nos dois lados.
+- O conjunto de regras e as métricas desta etapa eram o snapshot inicial, antes da expansão de cobertura descrita nas etapas seguintes.
 - Recall total: **8/28 (28,6%)**. Os 7 itens `control` atingiram **7/7 (100%)**.
 - Recall por categoria OWASP: A01 **0/8**, A02 **0/1**, A04 **0/3**, A05 **0/5**, A07 **1/2**, A10 **0/1**. Itens `control` são contabilizados separadamente.
 - Achados sem correspondência exata de regra/linha no gabarito: **2** — `weak-password-hash` na linha 75 (não correspondia ao problema real) e `server-all-interfaces` na linha 187.
@@ -127,3 +127,28 @@ O caso previamente observado em `backend/app/main.py:296` deixou de aparecer: a 
 
 - O workflow foi renomeado para `.github/workflows/vibecheck-pr-review.yml` e seu nome exibido passou a `VibeCheck`; referências nos READMEs foram atualizadas.
 - As mensagens, o resumo e o `User-Agent` de `github_pr_review.py` usam a marca `VibeCheck`. O script não procura nem atualiza comentários anteriores, então a mudança não altera detecção; comentários já publicados permanecem como estão.
+
+## Situação consolidada para apresentação — 15/11/2026
+
+Os registros anteriores são históricos e mantêm os números medidos em cada etapa.
+Esta seção reúne o estado atual, sem transformar medições pequenas em garantias.
+
+| Etapa | Estado e números verificados | Limite importante |
+|---|---|---|
+| Correção das regras | `rules.json` e `rules.generated.json`: **41 regras** (40 para código e uma para manifestos). `metrics.py`: **28/28** pela regra esperada, **0** por regra errada, **0** não detectados, achado adicional esperado **1/1**, amostra segura **0**. Tempo desta execução: **0,069514 s**. | É uma amostra interna, não recall de produção. |
+| Benchmark | 40 arquivos, 29 rótulos; após correção dos rótulos em 15/11/2026: **29/29 (100,0%)** recall, **30/30 (100,0%)** precisão, **0/30 (0,0%)** achados sem rótulo, **0,058725 s**. | Os rótulos foram corrigidos depois de observar resultados anteriores; a medição não é independente nem cega. |
+| Correção sugerida | Correções determinísticas documentadas para **10 grupos** de regras; diff e botão de cópia no frontend; sugestões de uma linha podem virar comentário `suggestion` no GitHub. | Não são aplicadas automaticamente; precisam de revisão e algumas dependem do driver/import/configuração. |
+| Análise de repositório | CLI JSON/SARIF, filtros por Git e política `--fail-on`; API `POST/GET /api/repositories/analyses` e detalhe por ID. Upload padrão até **25 MB**, rate limit **5 análises por usuário/hora**. `bench_repo.py`: **500/500** arquivos sintéticos, **0 achados**, **0,296 s** nesta máquina. | ZIP e tempo têm limites; o tempo depende da máquina e o benchmark sintético não demonstra desempenho em repositórios reais grandes. |
+| CI | Exemplos de GitLab CI e Bitbucket Pipelines fazem análise por CLI e salvam artefato; o GitHub Actions existente comenta achados em linhas novas. | GitLab/Bitbucket não foram executados em serviços reais; não há app/webhook/comentários inline nativos nessas duas plataformas. O bot GitHub não bloqueia merge por si só. |
+| Endurecimento | `VIBECHECK_ENV=production` valida configurações críticas; scrypt `N=2**17`, aproximadamente **128 MiB por hash**; `/api/health` testa o banco. | A configuração Docker Compose é de desenvolvimento; não existem `docker-compose.prod.yml`, frontend de produção nem Nginx. Rate limit é por processo. |
+| Dependências | Checagem online opcional via OSV, PyPI e npm; máximo **50 pacotes por manifesto**, timeout de **3 s por requisição**, até **5 requisições concorrentes por processo**. Testes usam cliente falso e não acessam a rede. | Funciona somente no backend. Cobertura depende das bases públicas; 5xx/timeout não significam pacote inexistente. O frontend local não faz essa consulta. |
+
+### Validação completa desta revisão
+
+- Backend: `python -m pytest` — **205 passaram**, 1 aviso de depreciação Starlette/httpx, **nenhum skip**.
+- Frontend: `npm test` — **43 passaram em 7 arquivos**.
+- Frontend: `npm run build` — `tsc -b` e Vite concluídos.
+- `scripts/benchmark.py`: **29/29** recall, **30/30** precisão, **0/30** achados sem rótulo, tempo **0,058725 s**; rótulos corrigidos após observar resultados anteriores.
+- `scripts/bench_repo.py`: **500/500**, **0 achados**, **0,296 s** nesta máquina.
+- `scripts/metrics.py`: **28/28**, nenhum achado na amostra segura, tempo **0,069514 s**.
+- GitLab/Bitbucket reais, provedores de IA, OSV/registries online e repositórios reais grandes **não foram validados nesta revisão**.

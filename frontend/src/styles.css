@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;700;900&family=Manrope:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap");
 
 :root {
   font-family: "DM Sans", Inter, system-ui, sans-serif;
@@ -7,6 +7,17 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  --font-display: "Inter", sans-serif;
+  --font-mono: "DM Mono", monospace;
+  --fs-label: 12px;
+  --fs-small: 14px;
+  --fs-body: 16px;
+  --fs-lead: 18px;
+  --text-strong: #f2f1ee;
+  --text-title: #f6f5f1;
+  --text-mono: #9a9893;
+  --text-on-dark: #f2f1ee;
+  --text-positive: #b9cc70;
   --bg: #08090d;
   --sidebar: #0b0c11;
   --surface: #101117;
@@ -23,6 +34,13 @@
   --red: #ff7184;
   --orange: #ffbc69;
   --blue: #78c8ff;
+  --radius: 0;
+  --tracking-mono: 0.18em;
+  --tracking-title: -0.045em;
+  --border: 1px solid var(--line);
+  --button-primary-bg: var(--purple);
+  --button-primary-fg: var(--bg);
+  --button-tertiary-fg: var(--lime);
 }
 
 * {
@@ -2080,6 +2098,119 @@ textarea:focus-visible {
   color: #b8a7f7;
 }
 
+.finding-fix {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(215, 255, 54, 0.2);
+  border-radius: 8px;
+  background: rgba(215, 255, 54, 0.025);
+}
+
+.finding-fix-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.finding-fix-heading p,
+.finding-fix-item > p {
+  margin: 5px 0 0;
+  color: #a1a2af;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.finding-fix-item-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.finding-fix-line {
+  color: #858694;
+  font-family: "Roboto Mono", monospace;
+  font-size: 7px;
+  letter-spacing: 0.5px;
+}
+
+.finding-fix-copy {
+  display: inline-flex;
+  min-height: 30px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid #444a31;
+  border-radius: 6px;
+  background: #202319;
+  color: #d7ff36;
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.finding-fix-copy:hover {
+  background: #2a3020;
+}
+
+.finding-fix-item {
+  display: grid;
+  gap: 7px;
+}
+
+.finding-fix-diff {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.finding-fix-diff > div {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #292a34;
+  border-radius: 6px;
+  background: #101116;
+}
+
+.finding-fix-diff > div > span {
+  display: block;
+  padding: 6px 8px;
+  border-bottom: 1px solid #292a34;
+  color: #858694;
+  font-family: "Roboto Mono", monospace;
+  font-size: 7px;
+  letter-spacing: 0.5px;
+}
+
+.finding-fix-before > span {
+  color: var(--red) !important;
+}
+
+.finding-fix-after > span {
+  color: var(--text-positive) !important;
+}
+
+.finding-fix-diff pre {
+  overflow: auto;
+  margin: 0;
+  padding: 8px;
+  color: #d4c9ff;
+  font-family: "Roboto Mono", monospace;
+  font-size: 8px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.finding-fix-error {
+  margin: 0;
+  color: #ff9aa8;
+  font-size: 9px;
+}
+
 .owasp-learn-link {
   display: inline-flex;
   width: fit-content;
@@ -2099,7 +2230,7 @@ textarea:focus-visible {
   gap: 7px;
   padding: 10px 14px;
   border-top: 1px solid #20212a;
-  color: #8a8064;
+  color: var(--text-mono);
   font-size: 8px;
 }
 
@@ -2969,6 +3100,19 @@ textarea:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .finding-fix-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .finding-fix-copy {
+    width: fit-content;
+  }
+
+  .finding-fix-diff {
+    grid-template-columns: 1fr;
+  }
+
   .owasp-mini-map {
     grid-template-columns: 1fr;
   }
@@ -3148,11 +3292,11 @@ textarea:focus-visible {
 .hero-copy h1,
 .auth-story h1 {
   margin: 21px 0 14px;
-  color: #f5f3fa;
-  font-family: Manrope, sans-serif;
-  font-size: clamp(43px, 5.2vw, 67px);
-  font-weight: 800;
-  letter-spacing: -3.8px;
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: clamp(44px, 7vw, 96px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
   line-height: 1.04;
 }
 
@@ -3546,11 +3690,11 @@ textarea:focus-visible {
 .process-copy h2,
 .marketing-owasp h2 {
   margin: 13px 0 10px;
-  color: #f0eef6;
-  font-family: Manrope, sans-serif;
-  font-size: clamp(29px, 4.2vw, 43px);
-  font-weight: 800;
-  letter-spacing: -1.8px;
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3.6vw, 48px);
+  font-weight: 900;
+  letter-spacing: -0.05em;
   line-height: 1.13;
 }
 
@@ -3671,10 +3815,6 @@ textarea:focus-visible {
   margin: 0;
 }
 
-.process-copy h2 {
-  font-size: 34px;
-}
-
 .process-copy > .text-link {
   margin-top: 19px;
   font-size: 10px;
@@ -3737,10 +3877,6 @@ textarea:focus-visible {
   gap: 49px;
   padding: 102px 0 93px;
   scroll-margin-top: 90px;
-}
-
-.marketing-owasp h2 {
-  font-size: 34px;
 }
 
 .marketing-owasp > div:first-child > p {
@@ -4600,12 +4736,6 @@ textarea:focus-visible {
     padding: 72px 0 59px;
   }
 
-  .marketing-section-heading h2,
-  .process-copy h2,
-  .marketing-owasp h2 {
-    font-size: 31px;
-  }
-
   .marketing-section-heading p {
     font-size: 10px;
   }
@@ -4665,10 +4795,6 @@ textarea:focus-visible {
     padding-left: 16px;
   }
 
-  .marketing-bottom-cta h2 {
-    font-size: 22px;
-  }
-
   .marketing-bottom-cta > .eyebrow {
     font-size: 7px;
   }
@@ -4717,8 +4843,6 @@ textarea:focus-visible {
 
   .auth-story h1 {
     margin: 12px 0 8px;
-    font-size: 34px;
-    letter-spacing: -1.8px;
   }
 
   .auth-story > p {
@@ -4754,10 +4878,6 @@ textarea:focus-visible {
 
   .auth-card-heading {
     margin: 19px 0 15px;
-  }
-
-  .auth-card-heading h2 {
-    font-size: 19px;
   }
 
   .demo-credentials {
@@ -6608,11 +6728,6 @@ textarea:focus-visible {
     padding: 62px 0;
   }
 
-  .batch-copy h2,
-  .integration-copy h2 {
-    font-size: 31px;
-  }
-
   .batch-visual {
     min-height: 325px;
     padding: 31px 15px;
@@ -6671,6 +6786,11 @@ html[data-theme="light"] {
   --line-soft: #e0ddea;
   --text: #211f32;
   --subtle: #4b485e;
+  --text-strong: var(--text);
+  --text-title: var(--text);
+  --text-mono: var(--subtle);
+  --text-on-dark: #f2f1ee;
+  --text-positive: #547000;
   --muted: #656176;
   --purple: #7047d8;
   --purple-bright: #5d34c7;
@@ -6678,6 +6798,10 @@ html[data-theme="light"] {
   --red: #cc3e59;
   --orange: #a85e08;
   --blue: #176f9e;
+  --button-primary-bg: var(--purple-bright);
+  --button-primary-fg: var(--surface);
+  /* No tema claro, o texto lima usa tinta escura para manter contraste. */
+  --button-tertiary-fg: var(--text-strong);
 }
 
 html[data-theme="light"],
@@ -6801,7 +6925,9 @@ html[data-theme="light"] .hero-copy h1 span,
 html[data-theme="light"] .marketing-section-heading h2 span,
 html[data-theme="light"] .process-copy h2 span,
 html[data-theme="light"] .marketing-owasp h2 span,
-html[data-theme="light"] .batch-copy h2 span {
+html[data-theme="light"] .batch-copy h2 span,
+html[data-theme="light"] .integration-copy h2 span,
+html[data-theme="light"] .auth-story h1 span {
   background-image: linear-gradient(95deg, #9168f2 0%, #6339d0 58%, #7951df 100%);
 }
 
@@ -7034,6 +7160,19 @@ html[data-theme="light"] .integration-preview > p {
   color: #565268;
 }
 
+/* Rótulos legados também precisam acompanhar o contraste do tema claro. */
+html[data-theme="light"] .marketing-owasp-list .map-status,
+html[data-theme="light"] .marketing-owasp-list .map-manual,
+html[data-theme="light"] .auth-local-badge,
+html[data-theme="light"] .auth-form > label,
+html[data-theme="light"] .auth-label-row label,
+html[data-theme="light"] .auth-label-row > button,
+html[data-theme="light"] .auth-label-row > button:hover,
+html[data-theme="light"] .auth-mode-switch button:hover,
+html[data-theme="light"] .auth-back-link:hover {
+  color: var(--text-mono);
+}
+
 html[data-theme="light"] .dashboard-risk-summary {
   border-color: #c9c1df;
   background: linear-gradient(105deg, #f1edfc, #ffffff 78%);
@@ -7172,4 +7311,1637 @@ html[data-theme="light"] .visual-chip {
 html[data-theme="light"] .code-editor,
 html[data-theme="light"] .evidence-code {
   color-scheme: dark;
+}
+
+html[data-theme="light"] .finding-fix {
+  border-color: var(--line);
+  background: var(--surface-raised);
+}
+
+html[data-theme="light"] .finding-fix-heading p,
+html[data-theme="light"] .finding-fix-item > p,
+html[data-theme="light"] .finding-fix-diff > div > span,
+html[data-theme="light"] .finding-fix-line {
+  color: var(--muted);
+}
+
+html[data-theme="light"] .finding-fix-diff > div {
+  border-color: var(--line);
+  background: #f4f3f8;
+}
+
+html[data-theme="light"] .finding-fix-diff > div > span {
+  border-color: var(--line);
+}
+
+html[data-theme="light"] .finding-fix-diff pre {
+  color: var(--text);
+}
+
+html[data-theme="light"] .finding-fix-copy {
+  border-color: #c1c89d;
+  background: #f0f3e5;
+  color: #53651b;
+}
+
+.repository-section {
+  display: grid;
+  gap: 22px;
+  padding: clamp(18px, 3vw, 30px);
+}
+
+.repository-heading,
+.repository-result-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.repository-heading h2 {
+  margin: 8px 0;
+  color: var(--text);
+  font-family: Manrope, sans-serif;
+  font-size: clamp(20px, 3vw, 27px);
+}
+
+.repository-heading p,
+.repository-owasp-summary > p,
+.repository-finding-detail > p {
+  margin: 0;
+  color: var(--subtle);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.repository-heading-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(152, 122, 255, 0.24);
+  border-radius: 12px;
+  background: rgba(128, 90, 255, 0.1);
+  color: var(--purple);
+}
+
+.repository-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px dashed #393642;
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+
+.repository-file-picker {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 46px;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #b49cff;
+  cursor: pointer;
+}
+
+.repository-file-picker span {
+  overflow: hidden;
+  flex: 1;
+  color: var(--text);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repository-file-picker small {
+  color: var(--muted);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.repository-file-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.repository-upload .btn {
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.repository-upload .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.repository-notice,
+.repository-loading,
+.repository-warning,
+.repository-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--subtle);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.repository-loading {
+  color: var(--purple);
+}
+
+.repository-warning {
+  align-items: flex-start;
+  border-color: rgba(255, 188, 105, 0.25);
+  background: rgba(255, 188, 105, 0.06);
+  color: var(--orange);
+}
+
+.repository-results {
+  display: grid;
+  gap: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.repository-result-heading {
+  align-items: center;
+}
+
+.repository-result-heading h3 {
+  margin: 6px 0 0;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.repository-result-heading > span {
+  color: var(--muted);
+  font-family: "Roboto Mono", monospace;
+  font-size: 9px;
+  text-align: right;
+}
+
+.repository-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.repository-summary-card {
+  display: grid;
+  min-height: 82px;
+  grid-template-columns: auto 1fr;
+  align-content: center;
+  align-items: center;
+  gap: 5px 9px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-raised);
+}
+
+.repository-summary-card .finding-severity {
+  width: 8px;
+  height: 8px;
+  border: 0;
+  border-radius: 50%;
+}
+
+.repository-summary-card strong {
+  color: var(--text);
+  font-family: Manrope, sans-serif;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.repository-summary-card > span:last-child {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.repository-summary-total {
+  grid-template-columns: 1fr;
+}
+
+.repository-summary-total > span:last-child {
+  grid-column: 1;
+}
+
+.repository-owasp-summary,
+.repository-files {
+  display: grid;
+  gap: 10px;
+}
+
+.repository-owasp-summary ul,
+.repository-ignored ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.repository-owasp-summary li {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 9px 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 7px;
+  color: var(--subtle);
+  font-size: 10px;
+}
+
+.repository-owasp-summary li strong {
+  color: var(--text);
+  font-family: "Roboto Mono", monospace;
+}
+
+.repository-file-result,
+.repository-finding {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-raised);
+}
+
+.repository-file-result > summary,
+.repository-finding > summary {
+  display: flex;
+  min-height: 43px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  color: var(--subtle);
+  cursor: pointer;
+  list-style: none;
+}
+
+.repository-file-result > summary::-webkit-details-marker,
+.repository-finding > summary::-webkit-details-marker {
+  display: none;
+}
+
+.repository-file-result > summary > svg {
+  flex: 0 0 auto;
+  color: var(--purple);
+}
+
+.repository-file-result > summary code {
+  overflow: hidden;
+  flex: 1;
+  color: var(--text);
+  font-family: "Roboto Mono", monospace;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repository-file-result > summary > span:last-child,
+.repository-finding > summary > span:last-child {
+  color: var(--muted);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.repository-file-findings {
+  display: grid;
+  gap: 7px;
+  padding: 0 10px 10px;
+}
+
+.repository-finding {
+  border-color: var(--line-soft);
+  background: var(--surface);
+}
+
+.repository-finding > summary {
+  min-height: 39px;
+}
+
+.repository-finding > summary strong {
+  flex: 1;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* A área logada compartilha os tokens da landing sem alterar as páginas públicas. */
+.app-shell {
+  color: var(--text);
+}
+
+.app-shell :where(*) {
+  min-width: 0;
+  border-radius: 0;
+  font-size: var(--fs-small) !important;
+}
+
+.app-shell :where(h1, h2, h3, h4) {
+  color: var(--text-title) !important;
+  font-family: var(--font-display) !important;
+  font-weight: 900 !important;
+  letter-spacing: var(--tracking-title) !important;
+}
+
+.app-shell :where(h1) {
+  font-size: clamp(36px, 3.3vw, 48px) !important;
+}
+
+.app-shell :where(h2) {
+  font-size: 24px !important;
+}
+
+.app-shell :where(h3) {
+  font-size: 20px !important;
+}
+
+.app-shell :where(h4) {
+  font-size: 18px !important;
+}
+
+.app-shell :where(h1, h2, h3, h4) span {
+  font-size: inherit !important;
+}
+
+.app-shell :where(span, small, strong, li, summary, code, label, a, button) {
+  color: var(--text-strong) !important;
+}
+
+/* O editor conserva o fundo escuro também no tema claro. */
+.app-shell .code-editor,
+.app-shell .code-editor :where(*) {
+  color: var(--text-on-dark) !important;
+}
+
+.app-shell :where(.eyebrow, .detail-label, .sidebar-label, .stack-pill,
+  .nav-shortcut, .nav-count, .metric-tile > div > span, .metric-caption,
+  .result-kpi > span, .repository-summary-card > span:last-child,
+  .repository-file-picker small, .repository-result-heading > span) {
+  color: var(--text-mono) !important;
+}
+
+.app-shell :where(.coverage-hero h2, .repository-heading h2,
+  .section-heading-row h2, .results-heading h2) {
+  font-size: clamp(30px, 3.6vw, 48px) !important;
+}
+
+.app-shell :where(p) {
+  color: var(--subtle) !important;
+  font-size: var(--fs-body) !important;
+  line-height: 1.65;
+}
+
+.app-shell :where(.eyebrow, .detail-label, .sidebar-label, .stack-pill,
+  .nav-shortcut, .nav-count, .metric-tile > div > span, .metric-caption,
+  .result-kpi > span, .repository-summary-card > span:last-child,
+  .repository-file-picker small, .repository-result-heading > span) {
+  color: var(--text-mono);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label) !important;
+  font-weight: 500;
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+}
+
+.app-shell :where(.side-link, .reference-link, .theme-toggle,
+  .breadcrumb-root, .breadcrumb-current, .workspace-user-email,
+  .workspace-meta strong, .workspace-meta span, .local-status strong,
+  .local-status small, .footer-copy, .app-footer > span:last-child) {
+  font-size: var(--fs-small) !important;
+}
+
+.app-shell :where(.side-link, .reference-link, .app-footer a) {
+  color: var(--text-strong);
+}
+
+.app-shell .side-link {
+  min-height: 42px;
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label) !important;
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+}
+
+.app-shell .side-link.active {
+  border-color: var(--purple);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-fg) !important;
+}
+
+.app-shell .side-link.active > span {
+  color: var(--button-primary-fg) !important;
+}
+
+.app-shell .side-link.active .nav-count {
+  border-color: var(--button-primary-fg);
+  background: var(--button-primary-fg);
+  color: var(--button-primary-bg) !important;
+}
+
+.app-shell .nav-count {
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0 4px;
+  border: var(--border);
+  background: var(--surface-raised);
+  color: var(--text-strong) !important;
+  font-size: var(--fs-label) !important;
+}
+
+html[data-theme="light"] .app-shell .side-link.active {
+  border-color: var(--purple);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-fg) !important;
+}
+
+.app-shell .topbar,
+.app-shell .sidebar,
+.app-shell .workspace-switcher,
+.app-shell .workspace-card,
+.app-shell .metric-strip,
+.app-shell .metric-tile,
+.app-shell .insight-card,
+.app-shell .scan-card,
+.app-shell .findings-panel,
+.app-shell .history-item,
+.app-shell .owasp-card,
+.app-shell .coverage-overview-card,
+.app-shell .coverage-search,
+.app-shell .repository-upload,
+.app-shell .repository-notice,
+.app-shell .repository-summary-card,
+.app-shell .repository-file-result,
+.app-shell .repository-finding,
+.app-shell .action-card,
+.app-shell .scan-progress-card,
+.app-shell .result-kpis,
+.app-shell .result-kpi,
+.app-shell .dashboard-risk-summary,
+.app-shell .dashboard-empty-state,
+.app-shell .dashboard-recent-icon,
+.app-shell .history-empty-icon {
+  border-color: var(--line);
+  border-radius: 0;
+}
+
+.app-shell .workspace-card,
+.app-shell .metric-strip,
+.app-shell .insight-card,
+.app-shell .scan-card,
+.app-shell .findings-panel,
+.app-shell .history-item,
+.app-shell .owasp-card,
+.app-shell .coverage-overview-card,
+.app-shell .coverage-search,
+.app-shell .repository-summary-card,
+.app-shell .repository-file-result,
+.app-shell .repository-finding,
+.app-shell .action-card,
+.app-shell .scan-progress-card,
+.app-shell .result-kpis,
+.app-shell .result-kpi,
+.app-shell .dashboard-empty-state,
+.app-shell .dashboard-risk-summary {
+  background-color: var(--surface);
+}
+
+.app-shell .metric-tile {
+  background: var(--surface);
+}
+
+.app-shell .metric-tile > div > span,
+.app-shell .metric-caption,
+.app-shell .result-kpi > span,
+.app-shell .repository-summary-card > span:last-child {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: var(--tracking-mono);
+}
+
+.app-shell .metric-tile strong,
+.app-shell .dashboard-score,
+.app-shell .dashboard-score strong,
+.app-shell .dashboard-severity-row strong,
+.app-shell .dashboard-recent-result strong,
+.app-shell .result-kpi > strong,
+.app-shell .repository-summary-card strong {
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: 18px !important;
+}
+
+.app-shell :where(.breadcrumb-root, .breadcrumb-current, .workspace-user-email,
+  .workspace-meta strong, .workspace-meta span, .local-status strong,
+  .local-status small, .footer-copy, .app-footer > span:last-child,
+  .dashboard-risk-copy span, .dashboard-score-note, .dashboard-recent-meta strong,
+  .dashboard-recent-meta small, .dashboard-recent-result small,
+  .dashboard-activity-empty, .dashboard-integrations > div,
+  .dashboard-integrations strong, .dashboard-integration-note,
+  .history-item-main > span, .history-findings, .history-empty > span,
+  .coverage-overview-note, .owasp-card-english, .repository-notice,
+  .repository-loading, .repository-warning, .repository-empty,
+  .repository-file-picker span, .repository-file-picker small,
+  .repository-ignored, .repository-ignored li,
+  .repository-file-result > summary > span:last-child,
+  .repository-finding > summary > span:last-child) {
+  font-size: var(--fs-small) !important;
+}
+
+.app-shell .avatar-small {
+  background: var(--purple);
+  color: var(--button-primary-fg) !important;
+}
+
+.app-shell .language-icon {
+  border-color: var(--line);
+  background: var(--surface-raised);
+  color: var(--text-strong) !important;
+}
+
+.app-shell :where(.button-primary, .button-secondary, .icon-button,
+  .theme-toggle, .mobile-menu, .scan-button, .pdf-button) {
+  min-height: 40px;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label) !important;
+  font-weight: 500;
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+}
+
+.app-shell .button-primary {
+  border: 1px solid var(--button-primary-bg);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-fg) !important;
+}
+
+.app-shell .button-primary > * {
+  color: inherit !important;
+}
+
+.app-shell .button-secondary {
+  border: var(--border);
+  background: transparent;
+  color: var(--text-strong) !important;
+}
+
+.app-shell :where(.eyebrow, .detail-label, .sidebar-label, .stack-pill,
+  .nav-shortcut, .nav-count, .metric-tile > div > span, .metric-caption,
+  .result-kpi > span, .repository-summary-card > span:last-child,
+  .repository-file-picker small, .repository-result-heading > span) {
+  color: var(--text-mono) !important;
+}
+
+.app-shell .filter-tabs button.active,
+.app-shell .coverage-filter-tabs button.active {
+  color: var(--button-primary-fg) !important;
+}
+
+html[data-theme="light"] .app-shell .filter-tabs button.active,
+html[data-theme="light"] .app-shell .coverage-filter-tabs button.active {
+  color: var(--text-strong) !important;
+}
+
+.app-shell :where(.button-primary, .button-secondary):hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.app-shell .app-footer {
+  color: var(--text-mono);
+}
+
+.app-shell .app-footer a {
+  color: var(--purple) !important;
+}
+
+.app-shell .footer-copy {
+  color: var(--text-mono);
+  font-size: var(--fs-small) !important;
+}
+
+.app-shell .repository-section {
+  min-height: 0;
+  align-content: start;
+  gap: 16px;
+}
+
+.app-shell .repository-heading h2 {
+  font-size: clamp(30px, 3.6vw, 48px) !important;
+}
+
+.app-shell .repository-heading p,
+.app-shell .repository-owasp-summary > p,
+.app-shell .repository-finding-detail > p {
+  font-size: var(--fs-body);
+}
+
+.app-shell .avatar-small,
+.app-shell .online-indicator,
+.app-shell .integration-status,
+.app-shell .severity-dot,
+.app-shell .finding-severity,
+.app-shell .score-ring,
+.app-shell .dashboard-score {
+  border-radius: 50%;
+}
+
+@media (max-width: 940px) {
+  .app-shell .main-content {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .app-shell .dashboard-welcome-row {
+    overflow: hidden;
+  }
+
+  .app-shell .topbar {
+    gap: 8px;
+  }
+
+  .app-shell .topbar-end {
+    min-width: 0;
+    gap: 7px;
+  }
+
+  .app-shell .stack-pill {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-shell .workspace-user-email {
+    display: none;
+  }
+
+  .app-shell .main-content {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .app-shell .repository-section {
+    padding: 18px 14px;
+  }
+
+  .app-shell .repository-upload {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+.repository-severity-pill {
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.repository-severity-pill.critical {
+  background: rgba(255, 113, 132, 0.12);
+  color: var(--red);
+}
+
+.repository-severity-pill.high {
+  background: rgba(255, 188, 105, 0.12);
+  color: var(--orange);
+}
+
+.repository-severity-pill.medium {
+  background: rgba(120, 200, 255, 0.12);
+  color: var(--blue);
+}
+
+.repository-severity-pill.low {
+  background: rgba(215, 255, 54, 0.1);
+  color: var(--lime);
+}
+
+.repository-finding-detail {
+  display: grid;
+  gap: 12px;
+  padding: 2px 12px 14px;
+}
+
+.repository-evidence {
+  display: grid;
+  gap: 5px;
+}
+
+.repository-finding-recommendation {
+  display: grid;
+  gap: 5px;
+}
+
+.repository-finding-recommendation p {
+  margin: 0;
+  color: var(--subtle);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.repository-ignored {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  color: var(--subtle);
+  font-size: 10px;
+}
+
+.repository-ignored > summary {
+  cursor: pointer;
+}
+
+.repository-ignored ul {
+  margin-top: 10px;
+}
+
+.repository-ignored li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  color: var(--muted);
+}
+
+.repository-ignored li code {
+  overflow: hidden;
+  color: var(--subtle);
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 700px) {
+  .repository-upload,
+  .repository-result-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .repository-upload .btn {
+    justify-content: center;
+  }
+
+  .repository-result-heading > span {
+    text-align: left;
+  }
+
+  .repository-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .repository-summary-total {
+    grid-column: 1 / -1;
+  }
+
+  .repository-file-result > summary {
+    flex-wrap: wrap;
+  }
+
+  .repository-file-result > summary code {
+    min-width: calc(100% - 35px);
+  }
+
+  .repository-file-result > summary > span:last-child {
+    margin-left: 25px;
+  }
+}
+
+/* Mantém a tipografia ampliada nas páginas públicas sem afetar o dashboard. */
+.marketing-shell,
+.auth-shell {
+  font-family: var(--font-display);
+}
+
+.marketing-shell p,
+.auth-shell p {
+  color: var(--text-strong);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.marketing-shell .marketing-process .process-copy > p,
+.marketing-shell .marketing-owasp > div:first-child > p {
+  color: var(--text-strong);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+.marketing-shell .hero-copy > p {
+  font-size: var(--fs-lead);
+}
+
+.marketing-shell .hero-copy h1 {
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: clamp(44px, 7vw, 96px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+}
+
+.auth-shell .auth-story h1 {
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: clamp(36px, 4.2vw, 56px);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+}
+
+.marketing-shell h2,
+.auth-shell .auth-card-heading h2 {
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3.6vw, 48px);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.marketing-shell h3 {
+  color: var(--text-title);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.marketing-shell .eyebrow,
+.auth-shell .eyebrow,
+.marketing-shell .marketing-nav > nav a,
+.marketing-shell .marketing-login,
+.marketing-shell .marketing-cta,
+.marketing-shell .button-primary,
+.marketing-shell .process-steps article > span,
+.marketing-shell .hero-window-bar,
+.marketing-shell .hero-live,
+.marketing-shell .hero-code-lines,
+.marketing-shell .hero-finding-float small,
+.marketing-shell .hero-critical-label,
+.marketing-shell .hero-scan-status,
+.marketing-shell .hero-art-chip,
+.marketing-shell .hero-bottom-note,
+.marketing-shell .marketing-owasp-list > a > span:first-child,
+.marketing-shell .marketing-owasp-list .map-status,
+.marketing-shell .marketing-owasp-list .map-manual,
+.marketing-shell .batch-visual-heading,
+.marketing-shell .batch-file-card small,
+.marketing-shell .batch-file-count,
+.marketing-shell .batch-visual-note,
+.marketing-shell .integration-preview-bar,
+.marketing-shell .integration-status,
+.marketing-shell .integration-pr small,
+.marketing-shell .integration-comment small,
+.marketing-shell .marketing-footer > span,
+.marketing-shell .marketing-footer > a,
+.auth-shell .auth-back-link,
+.auth-shell .auth-local-badge,
+.auth-shell .auth-form > label,
+.auth-shell .auth-label-row label,
+.auth-shell .auth-label-row > button,
+.auth-shell .auth-submit,
+.auth-shell .auth-disclaimer,
+.auth-shell .auth-footer {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  line-height: 1.45;
+}
+
+.marketing-shell .eyebrow,
+.auth-shell .eyebrow,
+.marketing-shell .marketing-nav > nav a,
+.marketing-shell .marketing-login,
+.marketing-shell .marketing-footer > span,
+.marketing-shell .marketing-footer > a,
+.auth-shell .auth-back-link,
+.auth-shell .auth-disclaimer,
+.auth-shell .auth-footer {
+  color: var(--text-mono);
+}
+
+.marketing-shell .hero-window-bar,
+.marketing-shell .hero-code-lines {
+  letter-spacing: 0.02em;
+}
+
+.marketing-shell .hero-finding-float small,
+.marketing-shell .hero-critical-label,
+.marketing-shell .hero-art-chip {
+  letter-spacing: 0.06em;
+}
+
+.marketing-shell .hero-bottom-note {
+  left: 20px;
+  max-width: calc(100% - 40px);
+  letter-spacing: 0.06em;
+}
+
+.marketing-shell .marketing-nav > nav a,
+.marketing-shell .marketing-login,
+.marketing-shell .marketing-cta,
+.marketing-shell .button-primary,
+.marketing-shell .hero-art-chip,
+.marketing-shell .hero-critical-label,
+.marketing-shell .hero-bottom-note,
+.marketing-shell .marketing-footer > span,
+.marketing-shell .marketing-footer > a,
+.auth-shell .auth-back-link,
+.auth-shell .auth-local-badge,
+.auth-shell .auth-form > label,
+.auth-shell .auth-label-row label,
+.auth-shell .auth-label-row > button,
+.auth-shell .auth-submit,
+.auth-shell .auth-footer {
+  overflow-wrap: anywhere;
+}
+
+.marketing-shell .hero-secondary,
+.marketing-shell .text-link,
+.marketing-shell .marketing-proof span,
+.marketing-shell .hero-trust > span,
+.marketing-shell .process-steps strong,
+.marketing-shell .marketing-owasp-list strong,
+.marketing-shell .batch-benefits > span,
+.marketing-shell .batch-file-card strong,
+.marketing-shell .integration-tags > span,
+.marketing-shell .integration-pr strong,
+.marketing-shell .integration-comment strong,
+.auth-shell .auth-story-list > span,
+.auth-shell .auth-mode-switch,
+.auth-shell .auth-notice {
+  font-size: var(--fs-small);
+}
+
+.marketing-shell .marketing-proof span,
+.marketing-shell .hero-trust > span,
+.marketing-shell .process-steps strong,
+.marketing-shell .marketing-owasp-list strong,
+.marketing-shell .batch-benefits > span,
+.marketing-shell .batch-file-card strong,
+.marketing-shell .integration-tags > span,
+.marketing-shell .integration-pr strong,
+.marketing-shell .integration-comment strong,
+.auth-shell .auth-story-list > span {
+  color: var(--text-strong);
+}
+
+.marketing-shell .hero-finding-float strong {
+  font-size: var(--fs-small);
+}
+
+.marketing-shell .theme-toggle {
+  font-size: var(--fs-label);
+}
+
+.marketing-shell .text-link,
+.marketing-shell .hero-secondary {
+  line-height: 1.5;
+}
+
+.marketing-shell .marketing-proof > div,
+.marketing-shell .hero-copy,
+.marketing-shell .hero-art,
+.marketing-shell .marketing-feature,
+.marketing-shell .marketing-process,
+.marketing-shell .marketing-owasp,
+.marketing-shell .marketing-batch,
+.marketing-shell .marketing-integration,
+.auth-shell .auth-story,
+.auth-shell .auth-card {
+  min-width: 0;
+}
+
+.marketing-shell .marketing-proof span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.marketing-shell .marketing-owasp-list > a {
+  display: grid;
+  min-height: 52px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 3px 9px;
+  padding: 8px 10px;
+}
+
+.marketing-shell .marketing-owasp-list > a > span:first-child {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.marketing-shell .marketing-owasp-list strong {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.marketing-shell .marketing-owasp-list .map-status,
+.marketing-shell .marketing-owasp-list .map-manual {
+  grid-column: 2;
+  grid-row: 2;
+  overflow-wrap: anywhere;
+  letter-spacing: 0.04em;
+  white-space: normal;
+}
+
+.marketing-shell .marketing-owasp-list > a > svg {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+}
+
+.auth-shell .auth-input-wrap input {
+  font-size: 16px;
+}
+
+.auth-shell .auth-input-wrap input::placeholder {
+  font-size: var(--fs-small);
+}
+
+.auth-shell .auth-mode-switch button,
+.auth-shell .demo-credentials .eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+}
+
+.auth-shell .demo-credentials > span:not(.eyebrow) {
+  font-family: var(--font-display);
+  font-size: var(--fs-small);
+  letter-spacing: normal;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.auth-shell .auth-disclaimer {
+  font-family: var(--font-display);
+  letter-spacing: normal;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.auth-shell .auth-footer {
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: center;
+  padding: 10px 0;
+  text-align: center;
+}
+
+html .marketing-shell *,
+html .auth-shell * {
+  border-radius: var(--radius);
+}
+
+html .marketing-shell *::before,
+html .marketing-shell *::after,
+html .auth-shell *::before,
+html .auth-shell *::after {
+  border-radius: var(--radius);
+}
+
+.marketing-shell .feature-icon,
+.marketing-shell .finding-severity,
+.auth-shell .story-node,
+.marketing-shell [class*="avatar"],
+.auth-shell [class*="avatar"] {
+  border-radius: 50%;
+}
+
+html .marketing-shell .marketing-nav,
+html .auth-shell .auth-topbar {
+  border-bottom: var(--border);
+}
+
+html .marketing-shell .marketing-proof,
+html .marketing-shell .marketing-feature,
+html .marketing-shell .hero-scan-window,
+html .marketing-shell .marketing-process,
+html .marketing-shell .batch-visual,
+html .marketing-shell .batch-file-card,
+html .marketing-shell .marketing-owasp-list > a,
+html .marketing-shell .integration-preview,
+html .marketing-shell .integration-pr,
+html .marketing-shell .integration-comment,
+html .marketing-shell .marketing-bottom-cta,
+html .marketing-shell .integration-tags > span,
+html .marketing-shell .process-steps article > span,
+html .auth-shell .auth-card,
+html .auth-shell .auth-input-wrap,
+html .auth-shell .demo-credentials,
+html .auth-shell .auth-local-badge {
+  border: var(--border);
+}
+
+html .marketing-shell .marketing-nav > nav a,
+html .marketing-shell .marketing-login,
+html .marketing-shell .marketing-cta,
+html .marketing-shell .button-primary,
+html .marketing-shell .hero-secondary,
+html .marketing-shell .text-link,
+html .marketing-shell .theme-toggle,
+html .marketing-shell .marketing-footer > a,
+html .marketing-shell .integration-tags > span,
+html .auth-shell .eyebrow,
+html .auth-shell .auth-back-link,
+html .auth-shell .auth-local-badge,
+html .auth-shell .auth-form > label,
+html .auth-shell .auth-label-row label,
+html .auth-shell .auth-label-row > button,
+html .auth-shell .auth-submit,
+html .auth-shell .auth-mode-switch button {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: var(--tracking-mono);
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+html .marketing-shell .marketing-nav > nav a,
+html .marketing-shell .marketing-login,
+html .marketing-shell .marketing-footer > a,
+html .auth-shell .auth-back-link {
+  color: var(--text-mono);
+}
+
+html .marketing-shell .section-index,
+html .marketing-shell .feature-number {
+  color: var(--purple);
+}
+
+html .marketing-shell .marketing-section-heading,
+html .marketing-shell .marketing-section-heading > *,
+html .marketing-shell .batch-copy > .eyebrow,
+html .marketing-shell .process-copy > .eyebrow,
+html .marketing-shell .marketing-owasp > div:first-child > .eyebrow,
+html .marketing-shell .integration-copy > .eyebrow {
+  text-align: left;
+}
+
+html .marketing-shell .marketing-section-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0 0 32px;
+}
+
+html .marketing-shell .marketing-section-heading > .eyebrow,
+html .marketing-shell .batch-copy > .eyebrow,
+html .marketing-shell .process-copy > .eyebrow,
+html .marketing-shell .marketing-owasp > div:first-child > .eyebrow,
+html .marketing-shell .integration-copy > .eyebrow {
+  margin: 0 0 10px;
+  color: var(--text-mono);
+}
+
+html .marketing-shell .marketing-section-heading > p,
+html .marketing-shell .batch-copy > p,
+html .marketing-shell .process-copy > p,
+html .marketing-shell .marketing-owasp > div:first-child > p,
+html .marketing-shell .integration-copy > p {
+  max-width: 620px;
+  margin: 0 0 14px;
+  color: var(--text-mono);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+}
+
+html .marketing-shell .marketing-section-heading > h2,
+html .marketing-shell .batch-copy > h2,
+html .marketing-shell .process-copy > h2,
+html .marketing-shell .marketing-owasp > div:first-child > h2,
+html .marketing-shell .integration-copy > h2,
+html .marketing-shell .hero-copy h1,
+html .auth-shell .auth-story h1 {
+  letter-spacing: var(--tracking-title);
+}
+
+html .marketing-shell .marketing-section-heading > h2,
+html .marketing-shell .batch-copy > h2,
+html .marketing-shell .process-copy > h2,
+html .marketing-shell .marketing-owasp > div:first-child > h2,
+html .marketing-shell .integration-copy > h2 {
+  margin: 0 0 14px;
+}
+
+html .marketing-shell .marketing-feature {
+  min-width: 0;
+  padding: 19px;
+}
+
+html .marketing-shell .marketing-feature > .feature-index {
+  position: absolute;
+  top: 19px;
+  right: 19px;
+  margin: 0;
+  color: var(--text-mono);
+}
+
+html .marketing-shell .marketing-feature > .feature-index .feature-number {
+  font-weight: 700;
+}
+
+html .marketing-shell .hero-scan-window {
+  background: var(--button-primary-bg);
+  box-shadow: 10px 10px 0 var(--purple-bright);
+}
+
+html .marketing-shell .hero-window-bar,
+html .marketing-shell .hero-code-lines,
+html .marketing-shell .hero-live,
+html .marketing-shell .hero-scan-status,
+html .marketing-shell .hero-code-lines i,
+html .marketing-shell .hero-code-lines b,
+html .marketing-shell .hero-code-lines em,
+html .marketing-shell .hero-code-alert {
+  color: var(--button-primary-fg);
+}
+
+html .marketing-shell .hero-window-bar,
+html .marketing-shell .hero-scan-status {
+  border-color: var(--button-primary-fg);
+}
+
+html .marketing-shell .hero-code-alert {
+  border-left-color: var(--button-primary-fg);
+  background: transparent;
+}
+
+html .marketing-shell .hero-live i,
+html .marketing-shell .hero-scan-status > span,
+html .marketing-shell .hero-scan-status > svg {
+  background: var(--button-primary-fg);
+  color: var(--button-primary-fg);
+  box-shadow: none;
+}
+
+html .marketing-shell .hero-scan-status > svg {
+  background: transparent;
+}
+
+html .marketing-shell .hero-finding-float {
+  border: var(--border);
+  background: var(--surface);
+  color: var(--text-strong);
+}
+
+html .marketing-shell .hero-finding-float strong {
+  color: var(--text-title);
+}
+
+html .marketing-shell .hero-finding-float small {
+  color: var(--text-mono);
+}
+
+html .marketing-shell .hero-critical-label {
+  color: var(--red);
+}
+
+html .marketing-shell .marketing-owasp-list > a > span:first-child {
+  color: var(--purple);
+}
+
+html .marketing-shell .integration-preview-bar > strong,
+html .marketing-shell .integration-status {
+  color: var(--text-strong);
+}
+
+html .marketing-shell .integration-status {
+  width: auto;
+  height: auto;
+  background: transparent;
+}
+
+html .marketing-shell .integration-status > span {
+  background: var(--lime);
+}
+
+html .auth-shell .auth-footer > a {
+  color: var(--purple);
+}
+
+html .auth-shell .auth-input-wrap input::placeholder {
+  color: var(--subtle);
+}
+
+html .marketing-shell .button-primary,
+html .auth-shell .button-primary {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 15px;
+  border: var(--border);
+  border-color: var(--button-primary-bg);
+  background: var(--button-primary-bg);
+  box-shadow: 5px 5px 0 var(--purple-bright);
+  color: var(--button-primary-fg);
+}
+
+html .marketing-shell .marketing-cta {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+html .marketing-shell .hero-secondary,
+html .auth-shell .auth-back-link {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: var(--border);
+  border-color: var(--text-title);
+  background: transparent;
+  color: var(--text-title);
+}
+
+html .marketing-shell .text-link,
+html .marketing-shell .marketing-login,
+html .auth-shell .auth-label-row > button,
+html .auth-shell .auth-mode-switch button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border: var(--border);
+  border-color: var(--lime);
+  background: transparent;
+  color: var(--button-tertiary-fg);
+  cursor: pointer;
+}
+
+html .marketing-shell .button-primary svg.lucide-arrow-right,
+html .marketing-shell .text-link svg.lucide-arrow-right,
+html .marketing-shell .hero-secondary svg.lucide-move-right,
+html .auth-shell .button-primary svg.lucide-arrow-right {
+  transform: rotate(-45deg);
+}
+
+html .marketing-shell .marketing-feature > p,
+html .marketing-shell .marketing-proof span,
+html .marketing-shell .process-steps strong,
+html .marketing-shell .process-steps p,
+html .marketing-shell .marketing-owasp-list strong,
+html .marketing-shell .batch-benefits > span,
+html .marketing-shell .batch-file-card strong,
+html .marketing-shell .integration-pr strong,
+html .marketing-shell .integration-comment strong,
+html .marketing-shell .integration-preview > p,
+html .auth-shell .auth-story > p,
+html .auth-shell .auth-story-list > span,
+html .auth-shell .auth-card-heading > p,
+html .auth-shell .auth-mode-switch,
+html .auth-shell .demo-credentials > span:not(.eyebrow) {
+  color: var(--text-strong);
+}
+
+html .marketing-shell .marketing-feature h3,
+html .marketing-shell .marketing-proof strong,
+html .marketing-shell .process-steps strong,
+html .marketing-shell .marketing-owasp-list strong,
+html .marketing-shell .batch-file-card strong,
+html .marketing-shell .integration-pr strong,
+html .marketing-shell .integration-comment strong,
+html .marketing-shell .marketing-bottom-cta h2,
+html .auth-shell .auth-card-heading h2 {
+  color: var(--text-title);
+}
+
+html .marketing-shell .marketing-bottom-cta .eyebrow,
+html .marketing-shell .marketing-bottom-cta > p,
+html .marketing-shell .marketing-footer > span,
+html .marketing-shell .hero-bottom-note,
+html .marketing-shell .hero-trust > span,
+html .marketing-shell .batch-file-card small,
+html .marketing-shell .batch-visual-note,
+html .marketing-shell .integration-pr small,
+html .marketing-shell .integration-comment small,
+html .auth-shell .auth-disclaimer,
+html .auth-shell .auth-footer {
+  color: var(--text-mono);
+}
+
+html .marketing-shell .marketing-hero {
+  grid-template-columns: minmax(0, 2.64fr) minmax(300px, 1fr);
+}
+
+@media (max-width: 1100px) {
+  html .marketing-shell .marketing-nav {
+    position: sticky;
+  }
+
+  html .marketing-shell .marketing-nav > nav.marketing-nav-links {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    display: none;
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 8px 22px 14px;
+    border-bottom: var(--border);
+    background: var(--surface);
+  }
+
+  html .marketing-shell .marketing-nav > nav.marketing-nav-links.is-open {
+    display: grid;
+  }
+
+  html .marketing-shell .marketing-nav > nav.marketing-nav-links a {
+    min-height: 43px;
+    align-content: center;
+    border-bottom: var(--border);
+    color: var(--text-strong);
+  }
+
+  html .marketing-shell .marketing-nav > nav.marketing-nav-links a::after {
+    display: none;
+  }
+
+  html .marketing-shell .marketing-menu-toggle {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 900px) {
+  html .marketing-shell .marketing-hero {
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
+  }
+
+  html .marketing-shell .marketing-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html .marketing-shell .marketing-batch,
+  html .marketing-shell .marketing-integration {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+}
+
+@media (max-width: 650px) {
+  html .marketing-shell .marketing-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html .marketing-shell .marketing-nav {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  html .marketing-shell .marketing-nav-actions {
+    gap: 6px;
+  }
+
+  html .marketing-shell .marketing-login {
+    min-height: 32px;
+    padding: 4px 6px;
+  }
+
+  html .marketing-shell .marketing-menu-toggle,
+  html .marketing-shell .marketing-theme-toggle {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+  }
+
+  html .marketing-shell .marketing-feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html .marketing-shell .marketing-batch,
+  html .marketing-shell .marketing-integration {
+    width: calc(100% - 32px);
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  html .marketing-shell .marketing-hero {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  html .marketing-shell .marketing-nav {
+    height: auto;
+    min-height: 59px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  html .marketing-shell .marketing-nav > .brand,
+  html .marketing-shell .marketing-nav-actions {
+    width: 100%;
+  }
+
+  html .marketing-shell .marketing-nav > .brand {
+    flex-basis: 100%;
+  }
+
+  html .marketing-shell .marketing-nav-actions {
+    height: auto;
+    justify-content: flex-end;
+  }
+
+  html .marketing-shell .marketing-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html .marketing-shell .marketing-cta {
+    min-height: 32px;
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+}
+
+/* Ajusta os últimos componentes da Repositório após as regras legadas. */
+.app-shell .repository-severity-pill,
+.app-shell .repository-ignored,
+.app-shell .repository-ignored li,
+.app-shell .repository-owasp-summary li,
+.app-shell .repository-file-result > summary > span:last-child,
+.app-shell .repository-finding > summary > span:last-child,
+.app-shell .repository-finding > summary strong,
+.app-shell .repository-file-picker span,
+.app-shell .repository-file-picker small,
+.app-shell .repository-file-result > summary code {
+  font-size: 12px !important;
+}
+
+.app-shell .repository-file-result,
+.app-shell .repository-finding,
+.app-shell .repository-upload,
+.app-shell .repository-file-picker,
+.app-shell .repository-summary-card,
+.app-shell .repository-ignored,
+.app-shell .repository-notice,
+.app-shell .repository-loading,
+.app-shell .repository-warning,
+.app-shell .repository-empty,
+.app-shell .repository-severity-pill {
+  border-radius: 0;
+}
+
+.app-shell .repository-finding-recommendation p {
+  font-size: var(--fs-body) !important;
+}
+
+.app-shell .brand-name {
+  font-size: 19px !important;
+}
+
+.app-shell.sidebar-is-collapsed .side-link .nav-count {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 0;
+  font-size: var(--fs-label) !important;
+  background: var(--surface-raised);
+  color: var(--text-strong) !important;
+}
+
+@media (max-width: 700px) {
+  .app-shell :where(h1) {
+    font-size: clamp(32px, 8vw, 43px) !important;
+  }
 }

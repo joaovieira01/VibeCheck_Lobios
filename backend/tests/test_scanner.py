@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from app.scanner import RULE_COUNT, ScanTimeout, scan_source
+from app.schemas import FindingOut
 
 GOLDEN = Path(__file__).parent / "golden"
 
@@ -85,6 +86,303 @@ class ScannerPortTests(unittest.TestCase):
         )
         self.assertEqual(result.findings, [])
 
+    def test_detecta_chaves_e_segredos_comuns_sem_sinalizar_ambiente_seguro(self):
+        source = "\n".join(
+            [
+                'const stripeKey = "sk_live_EXEMPLO1234567890";',
+                'const supabaseJwt = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.assinatura";',
+                'const supabaseSecret = "sb_secret_EXEMPLO12345678";',
+                'const databaseUrl = "postgresql://usuario:senha@db.example.test/app";',
+                'JWT_SECRET = "secret123";',
+                'jwt.sign(x, "literal");',
+                'const awsKey = "AKIAIOSFODNN7EXAMPLE";',
+                'const githubToken = "ghp_EXEMPLO1234567890123456";',
+                'const googleKey = "AIzaSyEXEMPLO_NAO_REAL_1234567890";',
+                'const slackToken = "xoxb-EXEMPLO-NAO-REAL-123456";',
+                "const stripeKey = process.env.STRIPE_KEY;",
+                'const dbSecret = os.environ["DB_SECRET"]',
+                "const resetToken = secrets.token_urlsafe(32);",
+            ]
+        )
+        result = scan_source(source, "credenciais.js")
+        finding = next(item for item in result.findings if item.id == "hardcoded-secret")
+        self.assertEqual(finding.locations, list(range(1, 11)))
+        self.assertNotIn("weak-random-token", ids(result))
+
+    def test_detecta_sql_em_template_literal_e_aceita_consulta_parametrizada(self):
+        source = "\n".join(
+            [
+                "const query = `SELECT * FROM users WHERE id = ${req.params.id}`;",
+                'db.query("SELECT * FROM users WHERE id = $1", [req.params.id]);',
+            ]
+        )
+        result = scan_source(source, "consulta.js")
+        finding = next(item for item in result.findings if item.id == "sql-injection")
+        self.assertEqual(finding.locations, [1])
+
+    def test_detecta_sql_interpolado_diretamente_em_chamadas_javascript(self):
+        source = "\n".join(
+            [
+                "db.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+                "pool.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+                "connection.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+                "client.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+                "knex.raw(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+                "sequelize.query(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+                "prisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "consultas.js").findings
+            if item.id == "sql-injection"
+        )
+        self.assertEqual(finding.locations, list(range(1, 8)))
+
+    def test_consultas_parametrizadas_com_placeholder_e_parametros_nao_geram_achado(self):
+        source = "\n".join(
+            [
+                'db.query("SELECT * FROM users WHERE id = ?", [userId]);',
+                'pool.query("SELECT * FROM users WHERE id = $1", [userId]);',
+                'connection.query("SELECT * FROM users WHERE id = %s", (user_id,));',
+            ]
+        )
+        self.assertNotIn("sql-injection", ids(scan_source(source, "consultas.js")))
+
+    def test_detecta_token_previsivel_e_aceita_token_criptografico(self):
+        source = "\n".join(
+            [
+                "const authToken = Math.random().toString(36);",
+                "const resetToken = secrets.token_urlsafe(32);",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "tokens.js").findings
+            if item.id == "weak-random-token"
+        )
+        self.assertEqual(finding.locations, [1])
+
+    def test_detecta_math_random_em_variavel_de_sessao_sem_gerar_falso_positivo(self):
+        source = "\n".join(
+            [
+                "const sessionId = Math.random();",
+                "const sessionKey = crypto.randomBytes(32).toString('hex');",
+                "const sessionId = crypto.randomUUID();",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "session.js").findings
+            if item.id == "weak-random-token"
+        )
+        self.assertEqual(finding.locations, [1])
+
+    def test_detecta_geradores_python_fracos_em_nomes_sensiveis(self):
+        source = "\n".join(
+            [
+                "token = str(random.random())",
+                "secret = str(random.random())",
+                "session = str(random.random())",
+                "sid = str(random.random())",
+                "otp = random.randint(100000, 999999)",
+                "code = random.randint(100000, 999999)",
+                "reset = str(random.random())",
+                'api_key = "".join(random.choice(chars) for _ in range(32))',
+                "password = str(random.random())",
+                "senha = str(random.random())",
+                "csrf = str(random.random())",
+                "nonce = str(random.random())",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "tokens.py").findings
+            if item.id == "weak-random-token"
+        )
+        self.assertEqual(finding.locations, list(range(1, 13)))
+
+    def test_geradores_seguros_e_random_para_uso_comum_nao_geram_achado(self):
+        source = "\n".join(
+            [
+                "token = secrets.token_urlsafe(32)",
+                "otp = secrets.randbelow(1_000_000)",
+                "retry_jitter = random.random()",
+                "color = random.choice(colors)",
+                "random.shuffle(colors)",
+            ]
+        )
+        self.assertNotIn("weak-random-token", ids(scan_source(source, "tokens.py")))
+
+    def test_detecta_hash_fraco_de_pw_sem_mass_assignment_e_restringe_a_regra(self):
+        source = "\n".join(
+            [
+                'const pwHash = crypto.createHash("md5").update(req.body.pw).digest("hex");',
+                "User.create(req.body);",
+                "User.update(req.body);",
+                "Object.assign(user, req.body);",
+                "const user = { ...req.body };",
+                "User.update({ pw: req.body.pw });",
+                "crypto.createHash('md5').update(req.body.pw);",
+            ]
+        )
+        result = scan_source(source, "usuarios.js")
+        weak_hash = next(item for item in result.findings if item.id == "weak-password-hash")
+        mass_assignment = next(item for item in result.findings if item.id == "mass-assignment")
+        self.assertEqual(weak_hash.locations, [1, 7])
+        self.assertEqual(mass_assignment.locations, [2, 3, 4, 5])
+
+    def test_detecta_xss_em_res_send_com_template_literal(self):
+        source = "\n".join(
+            [
+                "res.send(`<p>${req.body.nome}</p>`);",
+                "res.send(`<p>${escapeHtml(req.body.nome)}</p>`);",
+            ]
+        )
+        result = scan_source(source, "resposta.js")
+        finding = next(item for item in result.findings if item.id == "xss-innerhtml")
+        self.assertEqual(finding.locations, [1])
+
+    def test_controles_seguros_nao_geram_achados_nas_novas_regras(self):
+        source = "\n".join(
+            [
+                "const apiKey = process.env.API_KEY;",
+                'const dbSecret = os.environ["DB_SECRET"]',
+                "const token = secrets.token_urlsafe(32);",
+                'db.query("SELECT * FROM users WHERE id = $1", [userId]);',
+                "User.update({ pw: req.body.pw });",
+            ]
+        )
+        self.assertEqual(scan_source(source, "controles.js").findings, [])
+
+    def test_formato_de_segredo_com_separadores_e_variavel_generica(self):
+        source = "\n".join(
+            [
+                'const paymentsKey = "sk_live_DEMO-KEY_1234567890";',
+                'const publishableKey = "pk_test_PUBLIC_DEMO_123456";',
+                "const apiKey = process.env.PAYMENT_KEY;",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "pagamentos.ts").findings
+            if item.id == "hardcoded-secret"
+        )
+        self.assertEqual(finding.locations, [1])
+
+    def test_ssrf_em_alias_de_url_python_e_javascript_e_destino_validado(self):
+        python_source = "\n".join(
+            [
+                "def proxy(request):",
+                "    remote = request.args.get('destination')",
+                "    return httpx.get(remote)",
+                "def safe_proxy(request):",
+                "    remote = request.args.get('destination')",
+                "    if urlparse(remote).hostname not in ALLOWED_HOSTS: raise ValueError()",
+                "    return httpx.get(remote)",
+            ]
+        )
+        python_finding = next(
+            item
+            for item in scan_source(python_source, "proxy.py").findings
+            if item.id == "ssrf"
+        )
+        self.assertEqual(python_finding.locations, [3])
+
+        javascript_source = "\n".join(
+            [
+                "async function proxy(req) {",
+                "  const remote = new URL(req.url).searchParams.get('destination');",
+                "  return fetch(remote);",
+                "}",
+                "async function safeProxy(req) {",
+                "  const remote = new URL(req.url).searchParams.get('destination');",
+                "  if (!allowlist.has(new URL(remote).hostname)) throw new Error();",
+                "  return fetch(remote);",
+                "}",
+            ]
+        )
+        javascript_finding = next(
+            item
+            for item in scan_source(javascript_source, "proxy.ts").findings
+            if item.id == "ssrf"
+        )
+        self.assertEqual(javascript_finding.locations, [3])
+
+    def test_xss_com_variavel_intermediaria_e_resposta_escapada(self):
+        source = "\n".join(
+            [
+                "function render(req, res) {",
+                "  const title = req.body.title;",
+                "  return res.send(`<article>${title}</article>`);",
+                "}",
+                "function renderSafe(req, res) {",
+                "  return res.send(`<article>${escapeHtml(req.body.title)}</article>`);",
+                "}",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "render.ts").findings
+            if item.id == "xss-innerhtml"
+        )
+        self.assertEqual(finding.locations, [3])
+
+    def test_path_traversal_com_query_params_e_helpers_seguros(self):
+        python_source = "\n".join(
+            [
+                "def download(request):",
+                "    return FileResponse(Path(REPORT_ROOT) / request.query_params['file'])",
+                "    return open(str(REPORT_ROOT) + request.query_params.get('file')).read()",
+                "def download_safe(request):",
+                "    return FileResponse(safe_join(REPORT_ROOT, request.query_params['file']))",
+            ]
+        )
+        python_finding = next(
+            item
+            for item in scan_source(python_source, "download.py").findings
+            if item.id == "path-traversal"
+        )
+        self.assertEqual(python_finding.locations, [2, 3])
+
+        javascript_source = "\n".join(
+            [
+                "function download(req, res) {",
+                "  return res.sendFile(path.join(PUBLIC_DIR, req.query.file));",
+                "}",
+                "function downloadSafe(req, res) {",
+                "  return res.sendFile(safeJoin(PUBLIC_DIR, req.query.file));",
+                "}",
+            ]
+        )
+        javascript_finding = next(
+            item
+            for item in scan_source(javascript_source, "download.js").findings
+            if item.id == "path-traversal"
+        )
+        self.assertEqual(javascript_finding.locations, [2])
+
+    def test_cookie_seguro_multilinha_e_flags_de_outra_chamada(self):
+        source = "\n".join(
+            [
+                'res.cookie("sid", sid, {',
+                "  httpOnly: true,",
+                '  sameSite: "lax",',
+                "});",
+                'res.cookie("safe", value, {',
+                "  httpOnly: true,",
+                "  secure: true,",
+                '  sameSite: "strict",',
+                "});",
+            ]
+        )
+        finding = next(
+            item
+            for item in scan_source(source, "cookies.js").findings
+            if item.id == "insecure-cookie"
+        )
+        self.assertEqual(finding.locations, [1])
+
     def test_unlocked_package_manifest(self):
         result = scan_source(
             json.dumps({"dependencies": {"express": "*", "react": "^19.0.0"}}), "package.json"
@@ -151,6 +449,108 @@ class AddedRuleTests(unittest.TestCase):
                 for line in positive_lines:
                     self.assertIn(line, finding.locations)
                 self.assertNotIn(check["negativeLine"], finding.locations)
+
+    def test_suggested_fixes_round_trip_preservando_indentacao_e_aspas(self):
+        corpus = json.loads((GOLDEN / "corpus.json").read_text(encoding="utf-8"))
+        cases = [case for case in corpus if case["name"].startswith("suggested-fix-")]
+        self.assertEqual(len(cases), 16)
+        expected_after = {
+            "suggested-fix-hardcoded-secret-python": "os.environ['SECRET_KEY']",
+            "suggested-fix-hardcoded-secret-javascript": "process.env.API_KEY",
+            "suggested-fix-sql-injection-python": '(user_id,)',
+            "suggested-fix-sql-injection-javascript": "[userId]",
+            "suggested-fix-unsafe-yaml": "yaml.safe_load",
+            "suggested-fix-debug-mode": "debug=False",
+            "suggested-fix-tls-disabled": "verify=True",
+            "suggested-fix-weak-random-token-python": "secrets.token_urlsafe(32)",
+            "suggested-fix-weak-random-token-javascript": "crypto.randomBytes(32)",
+            "suggested-fix-wildcard-cors-python": "os.environ['CORS_ALLOWED_ORIGIN']",
+            "suggested-fix-wildcard-cors-javascript": "process.env.CORS_ALLOWED_ORIGIN",
+            "suggested-fix-server-all-interfaces": "'127.0.0.1'",
+            "suggested-fix-weak-password-hash-python": "hashlib.scrypt",
+            "suggested-fix-weak-password-hash-javascript": "crypto.scryptSync",
+            "suggested-fix-dynamic-eval-python": "ast.literal_eval",
+            "suggested-fix-dynamic-eval-javascript": "JSON.parse",
+        }
+        for case in cases:
+            rule_id = case["ruleCheck"]["ruleId"]
+            with self.subTest(case=case["name"]):
+                result = scan_source(case["source"], case["filename"])
+                finding = next(item for item in result.findings if item.id == rule_id)
+                fixes = finding.to_dict()["suggestedFix"]
+                self.assertEqual(len(fixes), len(finding.locations))
+                self.assertIn(
+                    expected_after[case["name"]],
+                    "\n".join(fix["after"] for fix in fixes),
+                )
+                lines = case["source"].splitlines()
+                for location, fix in zip(finding.locations, fixes, strict=True):
+                    self.assertEqual(fix["before"], lines[location - 1])
+                    indent = fix["before"][: len(fix["before"]) - len(fix["before"].lstrip())]
+                    self.assertTrue(all(line.startswith(indent) for line in fix["after"].splitlines()))
+                    lines[location - 1 : location] = fix["after"].splitlines()
+                rescanned = scan_source("\n".join(lines), case["filename"])
+                self.assertNotIn(rule_id, ids(rescanned))
+
+        python_secret = next(
+            case for case in cases if case["name"] == "suggested-fix-hardcoded-secret-python"
+        )
+        finding = next(
+            item for item in scan_source(python_secret["source"], python_secret["filename"]).findings
+            if item.id == "hardcoded-secret"
+        )
+        self.assertEqual(
+            finding.to_dict()["suggestedFix"][0]["after"],
+            "    SECRET_KEY = os.environ['SECRET_KEY']",
+        )
+
+    def test_suggested_fix_sql_omitted_quando_driver_nao_e_identificavel(self):
+        result = scan_source(
+            'cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")',
+            "consulta.py",
+        )
+        finding = next(item for item in result.findings if item.id == "sql-injection")
+        self.assertNotIn("suggestedFix", finding.to_dict())
+
+    def test_suggested_fix_omitido_para_linguagem_sem_transformacao_validada(self):
+        result = scan_source('password = "fake-secret"', "config.rb")
+        finding = next(item for item in result.findings if item.id == "hardcoded-secret")
+        self.assertNotIn("suggestedFix", finding.to_dict())
+
+    def test_schema_aceita_historico_antigo_sem_suggested_fix(self):
+        finding = {
+            "id": "debug-mode",
+            "title": "Modo debug habilitado",
+            "severity": "Alta",
+            "cwe": "CWE-489",
+            "owaspId": "A02",
+            "owaspName": "Configuração insegura",
+            "description": "Descrição",
+            "recommendation": "Recomendação",
+            "impact": "Impacto",
+            "prevention": "Prevenção",
+            "locations": [1],
+            "evidence": ["DEBUG = True"],
+        }
+
+        old_history = FindingOut.model_validate(finding)
+        self.assertNotIn(
+            "suggestedFix",
+            old_history.model_dump(by_alias=True, exclude_unset=True),
+        )
+
+        finding["suggestedFix"] = [
+            {
+                "before": "DEBUG = True",
+                "after": "DEBUG = False",
+                "explanation": "Desative debug.",
+            }
+        ]
+        new_history = FindingOut.model_validate(finding)
+        self.assertEqual(
+            new_history.model_dump(by_alias=True, exclude_unset=True)["suggestedFix"],
+            finding["suggestedFix"],
+        )
 
     def test_safe_extractall_forms_are_not_reported(self):
         source = (

@@ -259,13 +259,13 @@
  {
   "name": "generalized-mass-assignment-python",
   "filename": "serializers.py",
-  "source": "user.update(**request.data)\nAccount.objects.filter(pk=account_id).update(**dados)\nuser.update(name=validated['name'])",
+  "source": "user.update(**request.json)\nAccount.objects.filter(pk=account_id).update(**request.json)\nuser.update(name=validated['name'])",
   "ruleCheck": {"ruleId": "mass-assignment", "positiveLines": [1, 2], "negativeLine": 3}
  },
  {
   "name": "generalized-mass-assignment-javascript",
   "filename": "models.js",
-  "source": "User.findByIdAndUpdate(req.params.id, req.body)\naccount.update(payload)\naccount.update({ displayName: validatedName })",
+  "source": "User.findByIdAndUpdate(req.params.id, req.body)\naccount.update(req.body)\naccount.update({ displayName: validatedName })",
   "ruleCheck": {"ruleId": "mass-assignment", "positiveLines": [1, 2], "negativeLine": 3}
  },
  {
@@ -363,5 +363,202 @@
   "filename": "routes.js",
   "source": "router.delete('/users/:id', (req, res) => {\n  db.users.deleteOne({ id: req.params.id });\n});\nrouter.patch('/users/:id', (req, res) => {\n  db.users.updateMany({ id: req.params.id }, req.body);\n});\nrouter.patch('/private/:id', authMiddleware, (req, res) => {\n  db.users.updateMany({ id: req.params.id }, req.body);\n});",
   "ruleCheck": {"ruleId": "missing-authentication", "positiveLines": [1, 4], "negativeLine": 7}
+ },
+ {
+  "name": "segredos-comuns-de-ia",
+  "filename": "credenciais.js",
+  "source": "const stripeKey = \"sk_live_EXEMPLO1234567890\";\nconst supabaseJwt = \"eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.assinatura\";\nconst supabaseSecret = \"sb_secret_EXEMPLO12345678\";\nconst databaseUrl = \"postgresql://usuario:senha@db.example.test/app\";\nJWT_SECRET = \"secret123\";\njwt.sign(x, \"literal\");\nconst awsKey = \"AKIAIOSFODNN7EXAMPLE\";\nconst githubToken = \"ghp_EXEMPLO1234567890123456\";\nconst googleKey = \"AIzaSyEXEMPLO_NAO_REAL_1234567890\";\nconst slackToken = \"xoxb-EXEMPLO-NAO-REAL-123456\";\nconst stripeKey = process.env.STRIPE_KEY;\nconst dbSecret = os.environ[\"DB_SECRET\"];\nconst resetToken = secrets.token_urlsafe(32);",
+  "ruleCheck": {"ruleId": "hardcoded-secret", "positiveLines": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "negativeLine": 11}
+ },
+ {
+  "name": "sql-template-literal-javascript",
+  "filename": "consulta.js",
+  "source": "const query = `SELECT * FROM users WHERE id = ${req.params.id}`;\ndb.query(\"SELECT * FROM users WHERE id = $1\", [req.params.id]);",
+  "ruleCheck": {"ruleId": "sql-injection", "positiveLine": 1, "negativeLine": 2}
+ },
+ {
+  "name": "token-previsivel-javascript",
+  "filename": "tokens.js",
+  "source": "const authToken = Math.random().toString(36);\nconst resetToken = secrets.token_urlsafe(32);",
+  "ruleCheck": {"ruleId": "weak-random-token", "positiveLine": 1, "negativeLine": 2}
+ },
+ {
+  "name": "hash-pw-e-mass-assignment-javascript",
+  "filename": "usuarios.js",
+  "source": "const pwHash = crypto.createHash(\"md5\").update(req.body.pw).digest(\"hex\");\nUser.create(req.body);\nUser.update(req.body);\nObject.assign(user, req.body);\nconst user = { ...req.body };\nUser.update({ pw: req.body.pw });\ncrypto.createHash('md5').update(req.body.pw);",
+  "ruleCheck": {"ruleId": "mass-assignment", "positiveLines": [2, 3, 4, 5], "negativeLine": 1}
+ },
+ {
+  "name": "hash-fraco-variavel-pw",
+  "filename": "senha.js",
+  "source": "const pwHash = crypto.createHash(\"md5\").update(pw).digest(\"hex\");\nconst passwordHash = crypto.createHash(\"sha1\").update(password).digest(\"hex\");\nconst hash = crypto.createHash(\"md5\").update(payload).digest(\"hex\");",
+  "ruleCheck": {"ruleId": "weak-password-hash", "positiveLines": [1, 2], "negativeLine": 3}
+ },
+ {
+  "name": "xss-res-send-javascript",
+  "filename": "resposta.js",
+  "source": "res.send(`<p>${req.body.nome}</p>`);\nres.send(`<p>${escapeHtml(req.body.nome)}</p>`);",
+  "ruleCheck": {"ruleId": "xss-innerhtml", "positiveLine": 1, "negativeLine": 2}
+ },
+ {
+  "name": "controles-seguros-novos",
+  "filename": "controles.js",
+  "source": "const apiKey = process.env.API_KEY;\nconst dbSecret = os.environ[\"DB_SECRET\"];\nconst token = secrets.token_urlsafe(32);\ndb.query(\"SELECT * FROM users WHERE id = $1\", [userId]);\nUser.update({ pw: req.body.pw });"
+ },
+ {
+  "name": "sql-template-direto-javascript",
+  "filename": "consultas.js",
+  "source": "db.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);\npool.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);\nconnection.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);\nclient.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);\nknex.raw(`SELECT * FROM users WHERE id = ${req.params.id}`);\nsequelize.query(`SELECT * FROM users WHERE id = ${req.params.id}`);\nprisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = ${req.params.id}`);\ndb.query(\"SELECT * FROM users WHERE id = ?\", [userId]);\npool.query(\"SELECT * FROM users WHERE id = $1\", [userId]);\nconnection.query(\"SELECT * FROM users WHERE id = %s\", (user_id,));",
+  "ruleCheck": {"ruleId": "sql-injection", "positiveLines": [1, 2, 3, 4, 5, 6, 7], "negativeLine": 8}
+ },
+ {
+  "name": "token-sessao-javascript",
+  "filename": "sessao.js",
+  "source": "const sessionId = Math.random();\nconst sessionId = crypto.randomUUID();\nconst sessionKey = crypto.randomBytes(32).toString('hex');\nconst retryJitter = Math.random();\nconst color = Math.random();",
+  "ruleCheck": {"ruleId": "weak-random-token", "positiveLine": 1, "negativeLine": 2}
+ },
+ {
+  "name": "token-python-fraco",
+  "filename": "tokens.py",
+  "source": "token = str(random.random())\nsecret = str(random.random())\nsession = str(random.random())\nsid = str(random.random())\notp = random.randint(100000, 999999)\ncode = random.randint(100000, 999999)\nreset = str(random.random())\napi_key = \"\".join(random.choice(chars) for _ in range(32))\npassword = str(random.random())\nsenha = str(random.random())\ncsrf = str(random.random())\nnonce = str(random.random())\ntoken = secrets.token_urlsafe(32)\notp = secrets.randbelow(1_000_000)\nretry_jitter = random.random()\ncolor = random.choice(colors)\nrandom.shuffle(colors)",
+  "ruleCheck": {"ruleId": "weak-random-token", "positiveLines": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "negativeLine": 13}
+ },
+ {
+  "name": "segredo-com-separadores-variados",
+  "filename": "pagamentos.ts",
+  "source": "const paymentsKey = \"sk_live_DEMO-KEY_1234567890\";\nconst publishableKey = \"pk_test_PUBLIC_DEMO_123456\";\nconst apiKey = process.env.PAYMENT_KEY;",
+  "ruleCheck": {"ruleId": "hardcoded-secret", "positiveLine": 1, "negativeLine": 2}
+ },
+ {
+  "name": "ssrf-por-alias-python",
+  "filename": "proxy.py",
+  "source": "def proxy(request):\n    remote = request.args.get('destination')\n    return httpx.get(remote)\ndef safe_proxy(request):\n    remote = request.args.get('destination')\n    if urlparse(remote).hostname not in ALLOWED_HOSTS: raise ValueError()\n    return httpx.get(remote)",
+  "ruleCheck": {"ruleId": "ssrf", "positiveLine": 3, "negativeLine": 7}
+ },
+ {
+  "name": "ssrf-por-alias-javascript",
+  "filename": "proxy.ts",
+  "source": "async function proxy(req) {\n  const remote = new URL(req.url).searchParams.get('destination');\n  return fetch(remote);\n}\nasync function safeProxy(req) {\n  const remote = new URL(req.url).searchParams.get('destination');\n  if (!allowlist.has(new URL(remote).hostname)) throw new Error();\n  return fetch(remote);\n}",
+  "ruleCheck": {"ruleId": "ssrf", "positiveLine": 3, "negativeLine": 8}
+ },
+ {
+  "name": "xss-template-alias-javascript",
+  "filename": "render.ts",
+  "source": "function render(req, res) {\n  const title = req.body.title;\n  return res.send(`<article>${title}</article>`);\n}\nfunction renderSafe(req, res) {\n  return res.send(`<article>${escapeHtml(req.body.title)}</article>`);\n}",
+  "ruleCheck": {"ruleId": "xss-innerhtml", "positiveLine": 3, "negativeLine": 6}
+ },
+ {
+  "name": "path-traversal-query-python",
+  "filename": "download.py",
+  "source": "def download(request):\n    return FileResponse(Path(REPORT_ROOT) / request.query_params['file'])\n    return open(str(REPORT_ROOT) + request.query_params.get('file')).read()\ndef download_safe(request):\n    return FileResponse(safe_join(REPORT_ROOT, request.query_params['file']))",
+  "ruleCheck": {"ruleId": "path-traversal", "positiveLines": [2, 3], "negativeLine": 5}
+ },
+ {
+  "name": "path-traversal-query-javascript",
+  "filename": "download.js",
+  "source": "function download(req, res) {\n  return res.sendFile(path.join(PUBLIC_DIR, req.query.file));\n}\nfunction downloadSafe(req, res) {\n  return res.sendFile(safeJoin(PUBLIC_DIR, req.query.file));\n}",
+  "ruleCheck": {"ruleId": "path-traversal", "positiveLine": 2, "negativeLine": 5}
+ },
+ {
+  "name": "cookie-seguro-multilinha",
+  "filename": "cookies.js",
+  "source": "res.cookie(\"sid\", sid, {\n  httpOnly: true,\n  sameSite: \"lax\",\n});\nres.cookie(\"safe\", value, {\n  httpOnly: true,\n  secure: true,\n  sameSite: \"strict\",\n});",
+  "ruleCheck": {"ruleId": "insecure-cookie", "positiveLine": 1, "negativeLine": 5}
+ },
+ {
+  "name": "suggested-fix-hardcoded-secret-python",
+  "filename": "settings.py",
+  "source": "def configurar():\n    SECRET_KEY = 'demo-secret'\n    jwt.sign(x, 'literal')\n    SECRET_KEY = os.environ['SECRET_KEY']",
+  "ruleCheck": {"ruleId": "hardcoded-secret", "positiveLines": [2, 3], "negativeLine": 4}
+ },
+ {
+  "name": "suggested-fix-hardcoded-secret-javascript",
+  "filename": "settings.js",
+  "source": "function configurar() {\n  const apiKey = 'demo-api-key';\n  jwt.sign(x, 'literal');\n  const apiKeyFromEnv = process.env.API_KEY;\n}",
+  "ruleCheck": {"ruleId": "hardcoded-secret", "positiveLines": [2, 3], "negativeLine": 4}
+ },
+ {
+  "name": "suggested-fix-sql-injection-python",
+  "filename": "query.py",
+  "source": "import sqlite3\ndef buscar(cursor, user_id):\n    cursor.execute(f\"SELECT * FROM users WHERE id = {user_id}\")\n    cursor.execute(\"SELECT * FROM users WHERE id = ?\", (user_id,))",
+  "ruleCheck": {"ruleId": "sql-injection", "positiveLine": 3, "negativeLine": 4}
+ },
+ {
+  "name": "suggested-fix-sql-injection-javascript",
+  "filename": "query.js",
+  "source": "const mysql = require(\"mysql2\");\nfunction buscar(db, userId) {\n  db.query(`SELECT * FROM users WHERE id = ${userId}`);\n  db.query(\"SELECT * FROM users WHERE id = ?\", [userId]);\n}",
+  "ruleCheck": {"ruleId": "sql-injection", "positiveLine": 3, "negativeLine": 4}
+ },
+ {
+  "name": "suggested-fix-unsafe-yaml",
+  "filename": "config.py",
+  "source": "def carregar(raw):\n    config = yaml.load(raw)\n    config = yaml.safe_load(raw)",
+  "ruleCheck": {"ruleId": "unsafe-yaml", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-debug-mode",
+  "filename": "app.py",
+  "source": "def iniciar(app):\n    app.run(debug=True)\n    app.run(debug=False)",
+  "ruleCheck": {"ruleId": "debug-mode", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-tls-disabled",
+  "filename": "client.py",
+  "source": "def buscar(url):\n    requests.get(url, verify=False)\n    requests.get(url, verify=True)",
+  "ruleCheck": {"ruleId": "tls-disabled", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-weak-random-token-python",
+  "filename": "tokens.py",
+  "source": "def gerar():\n    reset_token = str(random.random())\n    reset_token = secrets.token_urlsafe(32)",
+  "ruleCheck": {"ruleId": "weak-random-token", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-weak-random-token-javascript",
+  "filename": "tokens.js",
+  "source": "function gerar() {\n  const sessionId = Math.random();\n  const sessionIdSafe = crypto.randomBytes(32).toString(\"hex\");\n}",
+  "ruleCheck": {"ruleId": "weak-random-token", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-wildcard-cors-python",
+  "filename": "cors.py",
+  "source": "def configurar(app):\n    CORS(app, origins='*')\n    CORS(app, origins=os.environ['CORS_ALLOWED_ORIGIN'])",
+  "ruleCheck": {"ruleId": "wildcard-cors", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-wildcard-cors-javascript",
+  "filename": "cors.js",
+  "source": "function configurar(cors) {\n  cors({ origin: '*' });\n  cors({ origin: process.env.CORS_ALLOWED_ORIGIN });\n}",
+  "ruleCheck": {"ruleId": "wildcard-cors", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-server-all-interfaces",
+  "filename": "app.py",
+  "source": "def iniciar(app):\n    app.run(host='0.0.0.0')\n    app.run(host='127.0.0.1')",
+  "ruleCheck": {"ruleId": "server-all-interfaces", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-weak-password-hash-python",
+  "filename": "passwords.py",
+  "source": "def gerar_hash(password, salt):\n    password_hash = hashlib.md5(password.encode()).hexdigest()\n    password_hash = hashlib.scrypt(password.encode(), salt=salt, n=16384, r=8, p=1)",
+  "ruleCheck": {"ruleId": "weak-password-hash", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-weak-password-hash-javascript",
+  "filename": "passwords.js",
+  "source": "function gerarHash(password, salt) {\n  const passwordHash = crypto.createHash('md5').update(password).digest('hex');\n  const passwordHashSafe = crypto.scryptSync(password, salt, 64).toString('hex');\n}",
+  "ruleCheck": {"ruleId": "weak-password-hash", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-dynamic-eval-python",
+  "filename": "parser.py",
+  "source": "def analisar(payload):\n    result = eval(payload)\n    result = ast.literal_eval(payload)",
+  "ruleCheck": {"ruleId": "dynamic-eval", "positiveLine": 2, "negativeLine": 3}
+ },
+ {
+  "name": "suggested-fix-dynamic-eval-javascript",
+  "filename": "parser.js",
+  "source": "function analisar(payload) {\n  const result = eval(payload);\n  const resultFromJson = JSON.parse(payload);\n}",
+  "ruleCheck": {"ruleId": "dynamic-eval", "positiveLine": 2, "negativeLine": 3}
  }
 ]

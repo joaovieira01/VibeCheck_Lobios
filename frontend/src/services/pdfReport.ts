@@ -315,6 +315,17 @@ export function buildSecurityReport(analysis: Analysis): jsPDF {
           .map((evidence, index) => `${finding.locations[index]}  ${evidence}`)
           .join("\n"),
       ],
+      ...(finding.suggestedFix
+        ? [[
+            "CORREÇÃO SUGERIDA",
+            finding.suggestedFix
+              .map(
+                (fix, index) =>
+                  `ANTES · linha ${finding.locations[index]}\n${fix.before}\nDEPOIS\n${fix.after}\n${fix.explanation}`,
+              )
+              .join("\n\n"),
+          ]]
+        : []),
       ["COMO RESOLVER", finding.recommendation],
       ["IMPLICAÇÕES DE MANTER", finding.impact],
       ["PREVENÇÃO DE RECORRÊNCIA", finding.prevention],
@@ -338,7 +349,11 @@ export function buildSecurityReport(analysis: Analysis): jsPDF {
         1: { cellWidth: 115 },
       },
       didParseCell(data) {
-        if (data.section === "body" && data.column.index === 1 && data.row.index === 2) {
+        if (
+          data.section === "body" &&
+          data.column.index === 1 &&
+          (data.row.index === 2 || (finding.suggestedFix && data.row.index === 3))
+        ) {
           data.cell.styles.font = "courier";
           data.cell.styles.fontSize = 7;
           data.cell.styles.fillColor = [245, 246, 250];

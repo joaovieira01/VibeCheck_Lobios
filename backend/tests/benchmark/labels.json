@@ -1,0 +1,51 @@
+{
+  "vulnerable": {
+    "bench_py_01.py": {"category": "A04", "lines": [4]},
+    "bench_py_02.py": {"category": "A05", "lines": [7]},
+    "bench_py_03.py": {"category": "A01", "lines": [6]},
+    "bench_py_04.py": {"category": "A04", "lines": [4]},
+    "bench_py_05.py": {"category": "A05", "lines": [5]},
+    "bench_py_06.py": {"category": "A01", "lines": [9]},
+    "bench_py_07.py": {"category": "A02", "lines": [4]},
+    "bench_py_08.py": {"category": "A08", "lines": [5]},
+    "bench_py_09.py": {"category": "A08", "lines": [6]},
+    "bench_py_10.py": {"category": "A05", "lines": [6]},
+    "bench_py_11.py": {"category": "A09", "lines": [4]},
+    "bench_py_12.py": {"category": "A01", "lines": [9]},
+    "bench_py_13.py": {"category": "A07", "lines": [4]},
+    "bench_py_14.py": {
+      "labels": [
+        {"category": "A04", "lines": [6]},
+        {"category": "A01", "lines": [6]}
+      ]
+    },
+    "bench_js_01.ts": {"category": "A04", "lines": [1]},
+    "bench_js_02.js": {"category": "A05", "lines": [2]},
+    "bench_js_03.js": {"category": "A01", "lines": [4]},
+    "bench_js_04.ts": {"category": "A05", "lines": [2]},
+    "bench_js_05.js": {"category": "A04", "lines": [4]},
+    "bench_js_06.js": {"category": "A07", "lines": [2]},
+    "bench_js_07.ts": {"category": "A01", "lines": [3]},
+    "bench_js_08.js": {"category": "A02", "lines": [2]},
+    "bench_js_09.js": {"category": "A05", "lines": [2]},
+    "bench_js_10.js": {"category": "A04", "lines": [4]},
+    "bench_js_11.js": {"category": "A05", "lines": [4]},
+    "bench_js_12.ts": {"category": "A01", "lines": [2]},
+    "package.json": {"category": "A03", "lines": [4]},
+    "bench_js_14.js": {"category": "A05", "lines": [3]}
+  },
+  "safe_files": [
+    "bench_py_15.py",
+    "bench_py_16.py",
+    "bench_py_17.py",
+    "bench_py_18.py",
+    "bench_py_19.py",
+    "bench_py_20.py",
+    "bench_js_15.ts",
+    "bench_js_16.js",
+    "bench_js_17.ts",
+    "bench_js_18.js",
+    "bench_js_19.ts",
+    "bench_js_20.js"
+  ]
+}

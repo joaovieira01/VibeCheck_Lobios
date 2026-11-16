@@ -1,5 +1,6 @@
 import ruleDefinitions from "../data/rules.generated.json" with { type: "json" };
 import type { Finding } from "../types";
+import { suggestedFixesFor } from "./suggestedFix.ts";
 
 interface Rule {
   id: string;
@@ -17,6 +18,8 @@ interface Rule {
   safeOnLine?: RegExp;
   safeOnContext?: RegExp;
   contextLines?: number;
+  safeOnCallContext?: RegExp;
+  safeCallContextLines?: number;
   requiredContext?: RegExp;
   requiredContextLines?: number;
   manifestOnly?: boolean;
@@ -63,6 +66,12 @@ const rules: Rule[] = ruleDefinitions.map((definition) => ({
     ? {
         requiredContext: new RegExp(definition.requiredContextPattern, "i"),
         requiredContextLines: definition.requiredContextLines ?? 0,
+      }
+    : {}),
+  ...(definition.safeCallContextPattern
+    ? {
+        safeOnCallContext: new RegExp(definition.safeCallContextPattern, "i"),
+        safeCallContextLines: definition.safeCallContextLines ?? 0,
       }
     : {}),
 }));
@@ -372,6 +381,12 @@ export function scanSource(source: string, filename: string): {
     for (const rule of scannableRules) {
       if (rule.id === "missing-authentication" || !rule.expression.test(candidate)) continue;
       if (rule.safeOnLine?.test(candidate)) continue;
+      if (rule.safeOnCallContext) {
+        const callContext = scannableLines
+          .slice(index, index + (rule.safeCallContextLines ?? 0) + 1)
+          .join("\n");
+        if (rule.safeOnCallContext.test(callContext)) continue;
+      }
       if (rule.safeOnContext || rule.requiredContext) {
         const contextLines = Math.max(
           rule.contextLines ?? 0,
@@ -425,20 +440,24 @@ export function scanSource(source: string, filename: string): {
   }
 
   const findings = Array.from(grouped.values())
-    .map(({ rule, locations, evidence }): Finding => ({
-      id: rule.id,
-      title: rule.title,
-      severity: rule.severity,
-      cwe: rule.cwe,
-      owaspId: rule.owaspId,
-      owaspName: rule.owaspName,
-      description: rule.description,
-      recommendation: rule.recommendation,
-      impact: rule.impact,
-      prevention: rule.prevention,
-      locations,
-      evidence,
-    }))
+    .map(({ rule, locations, evidence }): Finding => {
+      const suggestedFix = suggestedFixesFor(rule.id, filename, source, locations);
+      return {
+        id: rule.id,
+        title: rule.title,
+        severity: rule.severity,
+        cwe: rule.cwe,
+        owaspId: rule.owaspId,
+        owaspName: rule.owaspName,
+        description: rule.description,
+        recommendation: rule.recommendation,
+        impact: rule.impact,
+        prevention: rule.prevention,
+        locations,
+        evidence,
+        ...(suggestedFix ? { suggestedFix } : {}),
+      };
+    })
     .sort(
       (left, right) =>
         severityOrder[left.severity] - severityOrder[right.severity] ||

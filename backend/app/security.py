@@ -12,14 +12,17 @@ import base64
 import hashlib
 import hmac
 import secrets
+import threading
 
-# N=2**15, r=8 usa ~32 MiB por hash. Aumente (N=2**17 é o recomendado pela OWASP
-# para o mínimo) se o servidor tiver memória e a latência de login permitir.
-SCRYPT_N = 2**15
+# N=2**17, r=8 usa cerca de 128 MiB por operação. O semáforo mantém apenas uma
+# operação simultânea por processo para limitar o pico de memória.
+SCRYPT_N = 2**17
 SCRYPT_R = 8
 SCRYPT_P = 1
+SCRYPT_MAXMEM = 192 * 1024 * 1024
 _SALT_BYTES = 16
 _KEY_BYTES = 32
+_SCRYPT_SEMAPHORE = threading.BoundedSemaphore(1)
 
 
 def _b64(raw: bytes) -> str:
@@ -27,15 +30,16 @@ def _b64(raw: bytes) -> str:
 
 
 def _scrypt(password: str, salt: bytes, n: int, r: int, p: int) -> bytes:
-    return hashlib.scrypt(
-        password.encode("utf-8"),
-        salt=salt,
-        n=n,
-        r=r,
-        p=p,
-        dklen=_KEY_BYTES,
-        maxmem=256 * n * r * p,
-    )
+    with _SCRYPT_SEMAPHORE:
+        return hashlib.scrypt(
+            password.encode("utf-8"),
+            salt=salt,
+            n=n,
+            r=r,
+            p=p,
+            dklen=_KEY_BYTES,
+            maxmem=SCRYPT_MAXMEM,
+        )
 
 
 def hash_password(password: str, *, n: int = SCRYPT_N, r: int = SCRYPT_R, p: int = SCRYPT_P) -> str:
@@ -55,6 +59,20 @@ def verify_password(password: str, stored: str) -> bool:
     except (ValueError, TypeError):
         return False
     return hmac.compare_digest(actual, expected)
+
+
+def password_hash_needs_rehash(stored: str) -> bool:
+    try:
+        scheme, n, r, p, _, _ = stored.split("$")
+        if scheme != "scrypt":
+            return True
+        return (
+            int(n) < SCRYPT_N
+            or int(r) < SCRYPT_R
+            or int(p) < SCRYPT_P
+        )
+    except (ValueError, TypeError):
+        return True
 
 
 _dummy_hash: str | None = None

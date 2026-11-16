@@ -24,6 +24,17 @@ class AnalysisRequest(CamelModel):
     source: str
 
 
+class RepositoryAnalysisRequest(CamelModel):
+    filename: str = Field(min_length=1, max_length=255)
+    archive_base64: str = Field(min_length=1)
+
+
+class SuggestedFixOut(CamelModel):
+    before: str
+    after: str
+    explanation: str
+
+
 class FindingOut(CamelModel):
     id: str
     title: str
@@ -37,6 +48,7 @@ class FindingOut(CamelModel):
     prevention: str
     locations: list[int]
     evidence: list[str]
+    suggested_fix: list[SuggestedFixOut] | None = None
     ai_verdict: Literal["confirmado", "falso_positivo", "incerto"] | None = None
     ai_confidence: float | None = Field(default=None, ge=0, le=1)
     ai_reason: str | None = Field(default=None, max_length=200)
@@ -73,6 +85,12 @@ class AISummaryOut(CamelModel):
     ] | None = None
 
 
+class OnlineDependencyCheckOut(CamelModel):
+    status: Literal["concluida", "indisponivel", "limitada"]
+    packages_checked: int = Field(ge=0)
+    message: str | None = None
+
+
 class AnalysisOut(CamelModel):
     id: str
     filename: str
@@ -84,6 +102,46 @@ class AnalysisOut(CamelModel):
     rules_run: int
     ai_findings: list[AIFindingOut] = Field(default_factory=list, max_length=20)
     ai_summary: AISummaryOut | None = None
+    online_dependency_check: OnlineDependencyCheckOut | None = None
+
+
+class IgnoredFileOut(CamelModel):
+    path: str
+    reason: str
+
+
+class RepositoryAnalysisOut(CamelModel):
+    id: str
+    analysis_type: Literal["repository"]
+    filename: str
+    created_at: str
+    findings_by_file: dict[str, list[FindingOut]]
+    counts_by_severity: dict[Severity, int]
+    counts_by_owasp: dict[str, int]
+    files_analyzed: list[str]
+    ignored_files: list[IgnoredFileOut]
+    files_not_analyzed: list[str]
+    partial: bool
+    duration_seconds: float
+    findings_truncated: bool
+    truncated_findings_count: int
+    truncated_occurrences_count: int
+    paths_truncated: bool
+    online_dependency_check: OnlineDependencyCheckOut | None = None
+
+
+class RepositoryAnalysisListOut(CamelModel):
+    id: str
+    filename: str
+    created_at: str
+    counts_by_severity: dict[Severity, int]
+    counts_by_owasp: dict[str, int]
+    files_analyzed_count: int
+    partial: bool
+    duration_seconds: float
+    findings_truncated: bool
+    truncated_findings_count: int
+    truncated_occurrences_count: int
 
 
 class RuleOut(CamelModel):
@@ -101,7 +159,7 @@ class RuleOut(CamelModel):
 
 
 class HealthOut(CamelModel):
-    status: Literal["ok"]
+    status: Literal["ok", "degraded"]
     rules: int
 
 

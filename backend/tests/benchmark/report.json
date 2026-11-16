@@ -1,0 +1,602 @@
+{
+  "method": "Uma detecção é correta quando coincide arquivo, linha e categoria OWASP.",
+  "metrics": {
+    "files": 40,
+    "vulnerableFiles": 28,
+    "safeFiles": 12,
+    "expectedVulnerabilities": 29,
+    "matchedVulnerabilities": 29,
+    "recall": 1.0,
+    "findings": 30,
+    "truePositiveFindings": 30,
+    "falsePositiveFindings": 0,
+    "precision": 1.0,
+    "falsePositiveRate": 0.0,
+    "totalScanSeconds": 0.05872499995166436,
+    "underTwoMinutes": true,
+    "recallByCategory": {
+      "A01": {
+        "matched": 7,
+        "expected": 7,
+        "recall": 1.0
+      },
+      "A02": {
+        "matched": 2,
+        "expected": 2,
+        "recall": 1.0
+      },
+      "A03": {
+        "matched": 1,
+        "expected": 1,
+        "recall": 1.0
+      },
+      "A04": {
+        "matched": 6,
+        "expected": 6,
+        "recall": 1.0
+      },
+      "A05": {
+        "matched": 8,
+        "expected": 8,
+        "recall": 1.0
+      },
+      "A07": {
+        "matched": 2,
+        "expected": 2,
+        "recall": 1.0
+      },
+      "A08": {
+        "matched": 2,
+        "expected": 2,
+        "recall": 1.0
+      },
+      "A09": {
+        "matched": 1,
+        "expected": 1,
+        "recall": 1.0
+      }
+    }
+  },
+  "files": [
+    {
+      "file": "bench_js_01.ts",
+      "elapsedSeconds": 0.0009362000273540616,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_01.ts",
+          "line": 1,
+          "ruleId": "hardcoded-secret",
+          "category": "A04",
+          "title": "Credencial fixa no código",
+          "evidence": "export const paymentsKey = \"sk_live_EXEMPLO_falso_123456789\";",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_02.js",
+      "elapsedSeconds": 0.001102799957152456,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_02.js",
+          "line": 2,
+          "ruleId": "sql-injection",
+          "category": "A05",
+          "title": "Possível SQL Injection",
+          "evidence": "return db.query(`SELECT * FROM users WHERE id = ${req.params.id}`, (error, rows) => rows);",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_03.js",
+      "elapsedSeconds": 0.0012836000532843173,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_03.js",
+          "line": 4,
+          "ruleId": "missing-authentication",
+          "category": "A01",
+          "title": "Operação sensível sem verificação de autenticação visível",
+          "evidence": "router.delete(\"/invoices/:invoiceId\", async (req, res) => {",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_04.ts",
+      "elapsedSeconds": 0.0006387000321410596,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_04.ts",
+          "line": 2,
+          "ruleId": "xss-innerhtml",
+          "category": "A05",
+          "title": "Possível Cross-Site Scripting (XSS)",
+          "evidence": "element.innerHTML = message;",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_05.js",
+      "elapsedSeconds": 0.0009790000040084124,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_05.js",
+          "line": 4,
+          "ruleId": "hardcoded-secret",
+          "category": "A04",
+          "title": "Credencial fixa no código",
+          "evidence": "return jwt.sign(claims, \"demo-jwt-secret-only\");",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_06.js",
+      "elapsedSeconds": 0.0006278000073507428,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_06.js",
+          "line": 2,
+          "ruleId": "weak-random-token",
+          "category": "A07",
+          "title": "Token potencialmente previsível",
+          "evidence": "const sessionId = Math.random();",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_07.ts",
+      "elapsedSeconds": 0.0008441999671049416,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_07.ts",
+          "line": 3,
+          "ruleId": "ssrf",
+          "category": "A01",
+          "title": "Requisição a destino controlado pelo usuário",
+          "evidence": "return fetch(target!);",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_08.js",
+      "elapsedSeconds": 0.0008515000226907432,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_08.js",
+          "line": 2,
+          "ruleId": "insecure-cookie",
+          "category": "A02",
+          "title": "Cookie de sessão sem proteções completas",
+          "evidence": "res.cookie(\"session\", sessionId, { httpOnly: true, sameSite: \"lax\" });",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_09.js",
+      "elapsedSeconds": 0.00033189996611326933,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_09.js",
+          "line": 2,
+          "ruleId": "dynamic-eval",
+          "category": "A05",
+          "title": "Execução dinâmica de código",
+          "evidence": "return eval(input);",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_10.js",
+      "elapsedSeconds": 0.0014412999735213816,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_10.js",
+          "line": 4,
+          "ruleId": "weak-password-hash",
+          "category": "A04",
+          "title": "Hash criptográfico fraco para senha",
+          "evidence": "return crypto.createHash(\"md5\").update(password).digest(\"hex\");",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_11.js",
+      "elapsedSeconds": 0.0007261999999172986,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_11.js",
+          "line": 4,
+          "ruleId": "command-injection",
+          "category": "A05",
+          "title": "Possível injeção de comando do sistema operacional",
+          "evidence": "exec(`resize-image ${req.body.filename} --width 640`);",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_12.ts",
+      "elapsedSeconds": 0.0006624000379815698,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_12.ts",
+          "line": 2,
+          "ruleId": "mass-assignment",
+          "category": "A01",
+          "title": "Atualização de objeto com dados não filtrados",
+          "evidence": "const profile = await Profile.create(req.body);",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_14.js",
+      "elapsedSeconds": 0.0006323999841697514,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_js_14.js",
+          "line": 3,
+          "ruleId": "xss-innerhtml",
+          "category": "A05",
+          "title": "Possível Cross-Site Scripting (XSS)",
+          "evidence": "return res.send(`<section>${label}</section>`);",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_js_15.ts",
+      "elapsedSeconds": 0.0005658000009134412,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_js_16.js",
+      "elapsedSeconds": 0.0005686000222340226,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_js_17.ts",
+      "elapsedSeconds": 0.00039899995317682624,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_js_18.js",
+      "elapsedSeconds": 0.0007452999707311392,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_js_19.ts",
+      "elapsedSeconds": 0.0011480000102892518,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_js_20.js",
+      "elapsedSeconds": 0.0005222000181674957,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_py_01.py",
+      "elapsedSeconds": 0.001206600049044937,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_01.py",
+          "line": 4,
+          "ruleId": "hardcoded-secret",
+          "category": "A04",
+          "title": "Credencial fixa no código",
+          "evidence": "app.secret_key = \"dev-only-fake-key-123\"",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_02.py",
+      "elapsedSeconds": 0.0012369999894872308,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_02.py",
+          "line": 7,
+          "ruleId": "sql-injection",
+          "category": "A05",
+          "title": "Possível SQL Injection",
+          "evidence": "statement = f\"SELECT * FROM people WHERE name = '{name}'\"",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_03.py",
+      "elapsedSeconds": 0.0010524000390432775,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_03.py",
+          "line": 6,
+          "ruleId": "missing-authentication",
+          "category": "A01",
+          "title": "Operação sensível sem verificação de autenticação visível",
+          "evidence": "def remove_account(account_id):",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_04.py",
+      "elapsedSeconds": 0.0010463999933563173,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_04.py",
+          "line": 4,
+          "ruleId": "weak-password-hash",
+          "category": "A04",
+          "title": "Hash criptográfico fraco para senha",
+          "evidence": "return hashlib.md5(password.encode()).hexdigest()",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_05.py",
+      "elapsedSeconds": 0.0008756999741308391,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_05.py",
+          "line": 5,
+          "ruleId": "template-injection",
+          "category": "A05",
+          "title": "Possível injeção em template do servidor",
+          "evidence": "return render_template_string(f\"<h1>Welcome {name}</h1>\")",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_06.py",
+      "elapsedSeconds": 0.0008954999502748251,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_06.py",
+          "line": 9,
+          "ruleId": "ssrf",
+          "category": "A01",
+          "title": "Requisição a destino controlado pelo usuário",
+          "evidence": "return requests.get(address).text",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_07.py",
+      "elapsedSeconds": 0.0005303000216372311,
+      "findingCount": 2,
+      "findings": [
+        {
+          "file": "bench_py_07.py",
+          "line": 4,
+          "ruleId": "debug-mode",
+          "category": "A02",
+          "title": "Modo debug habilitado",
+          "evidence": "app.run(host=\"0.0.0.0\", debug=True)",
+          "labeled": true
+        },
+        {
+          "file": "bench_py_07.py",
+          "line": 4,
+          "ruleId": "server-all-interfaces",
+          "category": "A02",
+          "title": "Servidor de desenvolvimento exposto na rede",
+          "evidence": "app.run(host=\"0.0.0.0\", debug=True)",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_08.py",
+      "elapsedSeconds": 0.0004191999905742705,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_08.py",
+          "line": 5,
+          "ruleId": "pickle",
+          "category": "A08",
+          "title": "Desserialização insegura com pickle",
+          "evidence": "return pickle.loads(request.data)",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_09.py",
+      "elapsedSeconds": 0.0007136999629437923,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_09.py",
+          "line": 6,
+          "ruleId": "unsafe-yaml",
+          "category": "A08",
+          "title": "Desserialização YAML potencialmente insegura",
+          "evidence": "return yaml.load(source)",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_10.py",
+      "elapsedSeconds": 0.0010481999488547444,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_10.py",
+          "line": 6,
+          "ruleId": "command-injection",
+          "category": "A05",
+          "title": "Possível injeção de comando do sistema operacional",
+          "evidence": "return subprocess.check_output(f\"convert {image} /tmp/output.png\", shell=True)",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_11.py",
+      "elapsedSeconds": 0.000818900007288903,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_11.py",
+          "line": 4,
+          "ruleId": "sensitive-logging",
+          "category": "A09",
+          "title": "Possível registro de dados sensíveis",
+          "evidence": "logging.warning(\"Rejected login for %s with password %s\", email, password)",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_12.py",
+      "elapsedSeconds": 0.001116400002501905,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_12.py",
+          "line": 9,
+          "ruleId": "path-traversal",
+          "category": "A01",
+          "title": "Possível travessia de diretório",
+          "evidence": "return open(str(ROOT) + request.query_params[\"name\"], \"rb\").read()",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_13.py",
+      "elapsedSeconds": 0.00037919997703284025,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "bench_py_13.py",
+          "line": 4,
+          "ruleId": "weak-random-token",
+          "category": "A07",
+          "title": "Token potencialmente previsível",
+          "evidence": "reset_code = random.randint(100000, 999999)",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_14.py",
+      "elapsedSeconds": 0.0008398000500164926,
+      "findingCount": 2,
+      "findings": [
+        {
+          "file": "bench_py_14.py",
+          "line": 6,
+          "ruleId": "ssrf",
+          "category": "A01",
+          "title": "Requisição a destino controlado pelo usuário",
+          "evidence": "return requests.get(profile_url, verify=False).json()",
+          "labeled": true
+        },
+        {
+          "file": "bench_py_14.py",
+          "line": 6,
+          "ruleId": "tls-disabled",
+          "category": "A04",
+          "title": "Verificação de certificado TLS desativada",
+          "evidence": "return requests.get(profile_url, verify=False).json()",
+          "labeled": true
+        }
+      ]
+    },
+    {
+      "file": "bench_py_15.py",
+      "elapsedSeconds": 0.00045270001282915473,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_py_16.py",
+      "elapsedSeconds": 0.0007235999801196158,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_py_17.py",
+      "elapsedSeconds": 0.0003136000013910234,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_py_18.py",
+      "elapsedSeconds": 0.0009322999976575375,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_py_19.py",
+      "elapsedSeconds": 0.0012054000399075449,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "bench_py_20.py",
+      "elapsedSeconds": 0.0007421000045724213,
+      "findingCount": 0,
+      "findings": []
+    },
+    {
+      "file": "package.json",
+      "elapsedSeconds": 0.0003839000128209591,
+      "findingCount": 1,
+      "findings": [
+        {
+          "file": "package.json",
+          "line": 4,
+          "ruleId": "unlocked-dependency",
+          "category": "A03",
+          "title": "Dependência sem versão fixada",
+          "evidence": "\"express\": \"latest\"",
+          "labeled": true
+        }
+      ]
+    }
+  ],
+  "falseNegatives": [],
+  "falsePositives": []
+}

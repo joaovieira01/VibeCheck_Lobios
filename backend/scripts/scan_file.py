@@ -74,6 +74,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="triagem opcional usando AI_ENABLED=true e variáveis AI_*",
     )
+    parser.add_argument(
+        "--online-deps",
+        action="store_true",
+        help="confere dependências em registries públicos e no OSV",
+    )
     args = parser.parse_args(argv)
     try:
         source = args.file.read_text(encoding="utf-8")
@@ -81,8 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Erro ao ler arquivo: {exc}", file=sys.stderr)
         return 2
 
-    if args.ai:
-        _load_root_env()
+    _load_root_env()
     settings, warning = _ai_configuration(args.ai)
     if warning:
         print(
@@ -106,6 +110,7 @@ def main(argv: list[str] | None = None) -> int:
         scan_timeout_seconds=10,
         ai_settings=settings,
         ai_provider=timed_provider,
+        online_deps=True if args.online_deps else None,
     )
     ai_summary = analysis.get("aiSummary")
     if ai_summary is None:
@@ -125,6 +130,11 @@ def main(argv: list[str] | None = None) -> int:
                 timed_provider.elapsed_seconds if timed_provider else 0, 6
             ),
         },
+        **(
+            {"onlineDependencyCheck": analysis["onlineDependencyCheck"]}
+            if "onlineDependencyCheck" in analysis
+            else {}
+        ),
     }
     if ai_summary["status"] == "indisponivel" and settings.enabled:
         print(

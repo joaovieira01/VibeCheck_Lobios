@@ -61,6 +61,9 @@ class Settings:
     max_source_bytes: int = field(
         default_factory=lambda: _int_env("VIBECHECK_MAX_SOURCE_BYTES", 1_000_000)
     )
+    max_repo_zip_bytes: int = field(
+        default_factory=lambda: _int_env("VIBECHECK_MAX_REPO_ZIP_BYTES", 25_000_000)
+    )
     max_history: int = field(default_factory=lambda: _int_env("VIBECHECK_MAX_HISTORY", 20))
     # Linhas maiores que isso são truncadas antes de aplicar as regex. Protege
     # contra regex lentas (ReDoS) em arquivos minificados de uma linha só.
@@ -102,6 +105,11 @@ class Settings:
     )
     smtp_starttls: bool = field(
         default_factory=lambda: _bool_env("VIBECHECK_SMTP_STARTTLS", True)
+    )
+    environment: str = field(
+        default_factory=lambda: (
+            _str_env("VIBECHECK_ENV", "development").lower() or "development"
+        )
     )
 
 

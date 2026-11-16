@@ -80,6 +80,298 @@ describe("scanSource", () => {
     expect(result.findings).toEqual([]);
   });
 
+  it("detecta credenciais comuns e preserva os controles seguros", () => {
+    const source = [
+      'const stripeKey = "sk_live_EXEMPLO1234567890";',
+      'const supabaseJwt = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.assinatura";',
+      'const supabaseSecret = "sb_secret_EXEMPLO12345678";',
+      'const databaseUrl = "postgresql://usuario:senha@db.example.test/app";',
+      'JWT_SECRET = "secret123";',
+      'jwt.sign(x, "literal");',
+      'const awsKey = "AKIAIOSFODNN7EXAMPLE";',
+      'const githubToken = "ghp_EXEMPLO1234567890123456";',
+      'const googleKey = "AIzaSyEXEMPLO_NAO_REAL_1234567890";',
+      'const slackToken = "xoxb-EXEMPLO-NAO-REAL-123456";',
+      "const stripeKey = process.env.STRIPE_KEY;",
+      'const dbSecret = os.environ["DB_SECRET"]',
+      "const resetToken = secrets.token_urlsafe(32);",
+    ].join("\n");
+    const result = scanSource(source, "credenciais.js");
+    const finding = result.findings.find((item) => item.id === "hardcoded-secret");
+
+    expect(finding?.locations).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(result.findings.some((item) => item.id === "weak-random-token")).toBe(false);
+  });
+
+  it("detecta SQL em template literal e aceita consulta parametrizada", () => {
+    const result = scanSource(
+      [
+        "const query = `SELECT * FROM users WHERE id = ${req.params.id}`;",
+        'db.query("SELECT * FROM users WHERE id = $1", [req.params.id]);',
+      ].join("\n"),
+      "consulta.js",
+    );
+    expect(result.findings.find((item) => item.id === "sql-injection")?.locations).toEqual([1]);
+  });
+
+  it("omite a sugestão de SQL quando o driver não pode ser identificado", () => {
+    const finding = scanSource(
+      'cursor.execute(f"SELECT * FROM users WHERE id = {userId}")',
+      "query.py",
+    ).findings.find((item) => item.id === "sql-injection");
+    expect(finding).toBeDefined();
+    expect(finding).not.toHaveProperty("suggestedFix");
+  });
+
+  it("omite a sugestão para linguagens sem transformação validada", () => {
+    const finding = scanSource('password = "fake-secret"', "config.rb").findings.find(
+      (item) => item.id === "hardcoded-secret",
+    );
+    expect(finding).toBeDefined();
+    expect(finding).not.toHaveProperty("suggestedFix");
+  });
+
+  it("detecta SQL interpolado diretamente em chamadas de banco JavaScript", () => {
+    const source = [
+      "db.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+      "pool.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+      "connection.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+      "client.query(`SELECT * FROM users WHERE id = ${req.params.id}`, cb);",
+      "knex.raw(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+      "sequelize.query(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+      "prisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = ${req.params.id}`);",
+    ].join("\n");
+    const finding = scanSource(source, "consultas.js").findings.find(
+      (item) => item.id === "sql-injection",
+    );
+
+    expect(finding?.locations).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it("aceita placeholders SQL com tupla ou array de parametros", () => {
+    const result = scanSource(
+      [
+        'db.query("SELECT * FROM users WHERE id = ?", [userId]);',
+        'pool.query("SELECT * FROM users WHERE id = $1", [userId]);',
+        'connection.query("SELECT * FROM users WHERE id = %s", (userId,));',
+      ].join("\n"),
+      "consultas.js",
+    );
+
+    expect(result.findings.some((item) => item.id === "sql-injection")).toBe(false);
+  });
+
+  it("detecta token previsivel e aceita gerador criptografico", () => {
+    const result = scanSource(
+      [
+        "const authToken = Math.random().toString(36);",
+        "const resetToken = secrets.token_urlsafe(32);",
+      ].join("\n"),
+      "tokens.js",
+    );
+    expect(result.findings.find((item) => item.id === "weak-random-token")?.locations).toEqual([
+      1,
+    ]);
+  });
+
+  it("detecta Math.random em identificador de sessao e aceita geradores seguros", () => {
+    const result = scanSource(
+      [
+        "const sessionId = Math.random();",
+        "const sessionKey = crypto.randomBytes(32).toString('hex');",
+        "const sessionId = crypto.randomUUID();",
+      ].join("\n"),
+      "session.js",
+    );
+
+    expect(result.findings.find((item) => item.id === "weak-random-token")?.locations).toEqual([
+      1,
+    ]);
+  });
+
+  it("detecta aleatoriedade fraca em nomes sensiveis Python", () => {
+    const source = [
+      "token = str(random.random())",
+      "secret = str(random.random())",
+      "session = str(random.random())",
+      "sid = str(random.random())",
+      "otp = random.randint(100000, 999999)",
+      "code = random.randint(100000, 999999)",
+      "reset = str(random.random())",
+      'api_key = "".join(random.choice(chars) for _ in range(32))',
+      "password = str(random.random())",
+      "senha = str(random.random())",
+      "csrf = str(random.random())",
+      "nonce = str(random.random())",
+    ].join("\n");
+    const finding = scanSource(source, "tokens.py").findings.find(
+      (item) => item.id === "weak-random-token",
+    );
+
+    expect(finding?.locations).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  });
+
+  it("nao sinaliza geradores seguros nem aleatoriedade de uso comum", () => {
+    const source = [
+      "token = secrets.token_urlsafe(32)",
+      "otp = secrets.randbelow(1_000_000)",
+      "retry_jitter = random.random()",
+      "color = random.choice(colors)",
+      "random.shuffle(colors)",
+    ].join("\n");
+
+    expect(scanSource(source, "tokens.py").findings).toEqual([]);
+  });
+
+  it("detecta hash fraco de pw e restringe mass-assignment", () => {
+    const result = scanSource(
+      [
+        'const pwHash = crypto.createHash("md5").update(req.body.pw).digest("hex");',
+        "User.create(req.body);",
+        "User.update(req.body);",
+        "Object.assign(user, req.body);",
+        "const user = { ...req.body };",
+        "User.update({ pw: req.body.pw });",
+        "crypto.createHash('md5').update(req.body.pw);",
+      ].join("\n"),
+      "usuarios.js",
+    );
+    expect(result.findings.find((item) => item.id === "weak-password-hash")?.locations).toEqual([
+      1, 7,
+    ]);
+    expect(result.findings.find((item) => item.id === "mass-assignment")?.locations).toEqual([
+      2, 3, 4, 5,
+    ]);
+  });
+
+  it("detecta XSS em res.send sem reportar escape explícito", () => {
+    const result = scanSource(
+      [
+        "res.send(`<p>${req.body.nome}</p>`);",
+        "res.send(`<p>${escapeHtml(req.body.nome)}</p>`);",
+      ].join("\n"),
+      "resposta.js",
+    );
+    expect(result.findings.find((item) => item.id === "xss-innerhtml")?.locations).toEqual([1]);
+  });
+
+  it("nao gera achados para os novos controles seguros", () => {
+    const result = scanSource(
+      [
+        "const apiKey = process.env.API_KEY;",
+        'const dbSecret = os.environ["DB_SECRET"]',
+        "const token = secrets.token_urlsafe(32);",
+        'db.query("SELECT * FROM users WHERE id = $1", [userId]);',
+        "User.update({ pw: req.body.pw });",
+      ].join("\n"),
+      "controles.js",
+    );
+    expect(result.findings).toEqual([]);
+  });
+
+  it("detecta formatos alternativos de segredo e preserva chaves de ambiente", () => {
+    const result = scanSource(
+      [
+        'const paymentsKey = "sk_live_DEMO-KEY_1234567890";',
+        'const publishableKey = "pk_test_PUBLIC_DEMO_123456";',
+        "const apiKey = process.env.PAYMENT_KEY;",
+      ].join("\n"),
+      "pagamentos.ts",
+    );
+    expect(result.findings.find((item) => item.id === "hardcoded-secret")?.locations).toEqual([1]);
+  });
+
+  it("detecta SSRF por alias em Python e JavaScript, mas aceita destinos validados", () => {
+    const python = [
+      "def proxy(request):",
+      "    remote = request.args.get('destination')",
+      "    return httpx.get(remote)",
+      "def safe_proxy(request):",
+      "    remote = request.args.get('destination')",
+      "    if urlparse(remote).hostname not in ALLOWED_HOSTS: raise ValueError()",
+      "    return httpx.get(remote)",
+    ].join("\n");
+    expect(
+      scanSource(python, "proxy.py").findings.find((item) => item.id === "ssrf")?.locations,
+    ).toEqual([3]);
+
+    const javascript = [
+      "async function proxy(req) {",
+      "  const remote = new URL(req.url).searchParams.get('destination');",
+      "  return fetch(remote);",
+      "}",
+      "async function safeProxy(req) {",
+      "  const remote = new URL(req.url).searchParams.get('destination');",
+      "  if (!allowlist.has(new URL(remote).hostname)) throw new Error();",
+      "  return fetch(remote);",
+      "}",
+    ].join("\n");
+    expect(
+      scanSource(javascript, "proxy.ts").findings.find((item) => item.id === "ssrf")?.locations,
+    ).toEqual([3]);
+  });
+
+  it("detecta XSS em template com dado intermediario e aceita escape inline", () => {
+    const source = [
+      "function render(req, res) {",
+      "  const title = req.body.title;",
+      "  return res.send(`<article>${title}</article>`);",
+      "}",
+      "function renderSafe(req, res) {",
+      "  return res.send(`<article>${escapeHtml(req.body.title)}</article>`);",
+      "}",
+    ].join("\n");
+    expect(
+      scanSource(source, "render.ts").findings.find((item) => item.id === "xss-innerhtml")
+        ?.locations,
+    ).toEqual([3]);
+  });
+
+  it("detecta path traversal com query_params e preserva helpers de caminho seguro", () => {
+    const python = [
+      "def download(request):",
+      "    return FileResponse(Path(REPORT_ROOT) / request.query_params['file'])",
+      "    return open(str(REPORT_ROOT) + request.query_params.get('file')).read()",
+      "def download_safe(request):",
+      "    return FileResponse(safe_join(REPORT_ROOT, request.query_params['file']))",
+    ].join("\n");
+    expect(
+      scanSource(python, "download.py").findings.find((item) => item.id === "path-traversal")
+        ?.locations,
+    ).toEqual([2, 3]);
+
+    const javascript = [
+      "function download(req, res) {",
+      "  return res.sendFile(path.join(PUBLIC_DIR, req.query.file));",
+      "}",
+      "function downloadSafe(req, res) {",
+      "  return res.sendFile(safeJoin(PUBLIC_DIR, req.query.file));",
+      "}",
+    ].join("\n");
+    expect(
+      scanSource(javascript, "download.js").findings.find((item) => item.id === "path-traversal")
+        ?.locations,
+    ).toEqual([2]);
+  });
+
+  it("reconhece flags de cookie em varias linhas da mesma chamada", () => {
+    const source = [
+      'res.cookie("sid", sid, {',
+      "  httpOnly: true,",
+      '  sameSite: "lax",',
+      "});",
+      'res.cookie("safe", value, {',
+      "  httpOnly: true,",
+      "  secure: true,",
+      '  sameSite: "strict",',
+      "});",
+    ].join("\n");
+    expect(
+      scanSource(source, "cookies.js").findings.find((item) => item.id === "insecure-cookie")
+        ?.locations,
+    ).toEqual([1]);
+  });
+
   it("checks unlocked package manifests and maps all OWASP Top 10 categories", () => {
     const result = scanSource(
       JSON.stringify({

@@ -16,6 +16,7 @@ from .security import (
     hash_password,
     hash_token,
     new_token,
+    password_hash_needs_rehash,
     verify_password,
 )
 
@@ -95,6 +96,14 @@ class AuthManager:
             raise ApiError(401, "E-mail ou senha incorretos.")
         if not verify_password(password, row[2]):
             raise ApiError(401, "E-mail ou senha incorretos.")
+        if password_hash_needs_rehash(row[2]):
+            upgraded_hash = hash_password(password)
+            with self._db.connect() as conn:
+                conn.execute(
+                    "UPDATE users SET password_hash = ? "
+                    "WHERE id = ? AND password_hash = ?",
+                    (upgraded_hash, row[0], row[2]),
+                )
         return {"id": row[0], "email": row[1]}, self._create_session(row[0])
 
     # ---------- sessões ----------

@@ -73,16 +73,40 @@ def comments_for_findings(
             if line_number not in changed_lines:
                 continue
             evidence = finding["evidence"][index] if index < len(finding["evidence"]) else ""
+            fixes = finding.get("suggestedFix")
+            fix = fixes[index] if isinstance(fixes, list) and index < len(fixes) else None
             code_fence = "`" * max(
                 3,
                 max((len(match.group()) for match in re.finditer(r"`+", evidence)), default=0)
                 + 1,
             )
+            fix_section = ""
+            if isinstance(fix, dict):
+                before = fix.get("before")
+                after = fix.get("after")
+                explanation = fix.get("explanation")
+                if (
+                    isinstance(before, str)
+                    and isinstance(after, str)
+                    and isinstance(explanation, str)
+                ):
+                    if "\n" not in before and "\r" not in before and "\n" not in after and "\r" not in after:
+                        fix_section = (
+                            "\n\n**Correção sugerida:**\n\n"
+                            f"```suggestion\n{after}\n```\n\n{explanation}"
+                        )
+                    else:
+                        fix_section = (
+                            "\n\n**Correção sugerida (revise antes de aplicar):**\n\n"
+                            f"{code_fence}text\n{after}\n{code_fence}\n\n"
+                            f"{explanation}"
+                        )
             body = (
                 f"**{finding['severity']} — {finding['title']}** "
                 f"({finding['cwe']}, {finding['owaspId']}:2025)\n\n"
                 f"{finding['description']}\n\n"
                 f"**Recomendação:** {finding['recommendation']}\n\n"
+                f"{fix_section}\n\n"
                 f"{code_fence}text\n{evidence[:500]}\n{code_fence}\n\n"
                 "_Achado heurístico do VibeCheck; confirme no contexto do projeto._"
             )

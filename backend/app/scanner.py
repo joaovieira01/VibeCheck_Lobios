@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.suggested_fixes import suggested_fixes_for
+
 # \w e \b em JavaScript são ASCII; re.ASCII mantém o mesmo comportamento.
 _FLAGS = re.IGNORECASE | re.ASCII
 
@@ -47,6 +49,8 @@ class Rule:
     safe_on_line: re.Pattern[str] | None = None
     safe_on_context: re.Pattern[str] | None = None
     context_lines: int = 0
+    safe_on_call_context: re.Pattern[str] | None = None
+    safe_call_context_lines: int = 0
     required_context: re.Pattern[str] | None = None
     required_context_lines: int = 0
     manifest_only: bool = False
@@ -66,10 +70,11 @@ class Finding:
     prevention: str
     locations: list[int] = field(default_factory=list)
     evidence: list[str] = field(default_factory=list)
+    suggested_fix: list[dict[str, str]] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Formato camelCase esperado pelo frontend (interface ``Finding``)."""
-        return {
+        result: dict[str, Any] = {
             "id": self.id,
             "title": self.title,
             "severity": self.severity,
@@ -83,6 +88,9 @@ class Finding:
             "locations": self.locations,
             "evidence": self.evidence,
         }
+        if self.suggested_fix is not None:
+            result["suggestedFix"] = self.suggested_fix
+        return result
 
 
 @dataclass
@@ -98,6 +106,7 @@ def _load_rules() -> list[Rule]:
     for item in raw_rules:
         safe = item.get("safePattern")
         safe_context = item.get("safeContextPattern")
+        safe_call_context = item.get("safeCallContextPattern")
         rules.append(
             Rule(
                 id=item["id"],
@@ -117,6 +126,12 @@ def _load_rules() -> list[Rule]:
                     re.compile(safe_context, _FLAGS) if safe_context else None
                 ),
                 context_lines=item.get("contextLines", 0),
+                safe_on_call_context=(
+                    re.compile(safe_call_context, _FLAGS)
+                    if safe_call_context
+                    else None
+                ),
+                safe_call_context_lines=item.get("safeCallContextLines", 0),
                 required_context=(
                     re.compile(item["requiredContextPattern"], _FLAGS)
                     if item.get("requiredContextPattern")
@@ -498,6 +513,14 @@ def scan_source(
                 continue
             if rule.safe_on_line and rule.safe_on_line.search(candidate):
                 continue
+            if rule.safe_on_call_context:
+                context_end = min(
+                    len(scannable_lines),
+                    index + rule.safe_call_context_lines + 1,
+                )
+                call_context = "\n".join(scannable_lines[index:context_end])
+                if rule.safe_on_call_context.search(call_context):
+                    continue
             if rule.safe_on_context or rule.required_context:
                 context_radius = max(
                     rule.context_lines, rule.required_context_lines
@@ -532,4 +555,8 @@ def scan_source(
         add(rule, line, evidence)
 
     findings = sorted(grouped.values(), key=_sort_key)
+    for finding in findings:
+        finding.suggested_fix = suggested_fixes_for(
+            finding.id, filename, source, finding.locations
+        )
     return ScanResult(findings=findings, rules_run=RULE_COUNT)

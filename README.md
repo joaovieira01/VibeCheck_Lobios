@@ -15,6 +15,7 @@ Ferramenta de auditoria de segurança para código gerado por IA e escrito com p
 - [Início rápido](#início-rápido)
 - [Execução manual](#execução-manual)
 - [Uso](#uso)
+- [Integrações CI/CD](#integrações-cicd)
 - [Configuração](#configuração)
 - [Análise com IA (opcional)](#análise-com-ia-opcional)
 - [Revisão automática de Pull Requests](#revisão-automática-de-pull-requests)
@@ -29,17 +30,20 @@ Ferramenta de auditoria de segurança para código gerado por IA e escrito com p
 
 **Análise de código**
 - Entrada por upload de arquivo ou colagem de trecho.
-- 41 regras, com severidade, CWE e categoria OWASP Top 10:2025 (A01 a A10).
+- 41 regras estáticas: 40 para código e uma para manifestos de dependências, com severidade, CWE e categoria OWASP Top 10:2025 (A01 a A10).
 - Cada achado informa linha, evidência, impacto, recomendação e forma de prevenção.
 - Relatório em PDF gerado no navegador.
+- A checagem online opcional de vulnerabilidades de dependências roda apenas no backend.
 
 **Contas e histórico**
 - Cadastro e login pela API.
 - Histórico de análises persistido no banco.
+- Aba Repositório para upload ZIP e histórico, pelas rotas `/api/repositories/analyses`; requer login e permite 5 análises por usuário/hora.
 - Modo local: sem `VITE_API_URL`, a análise roda no navegador e o código não é enviado a nenhum servidor.
 
 **Automação**
-- Revisão de Pull Requests no GitHub Actions, com comentários nas linhas novas.
+- Revisão de Pull Requests no GitHub Actions, com comentários nas linhas novas; o bot não bloqueia merge por si só.
+- Templates CLI para GitLab CI e Bitbucket Pipelines, com relatório como artefato; não foram executados em serviços reais.
 - Camada opcional de IA no backend para triar achados e sugerir revisões (desligada por padrão).
 
 ## Arquitetura
@@ -118,6 +122,16 @@ Use `npm ci` para instalar exatamente as versões do `package-lock.json`.
 
 **Limites.** Cada análise aceita até 1 MB de código, as linhas são truncadas em 1.000 caracteres e há um tempo máximo de execução. Acima disso, a API responde com erro explicando o motivo.
 
+## Integrações CI/CD
+
+O CLI pode analisar um repositório inteiro ou apenas arquivos alterados desde uma referência Git:
+
+```sh
+python backend/scripts/scan_repo.py . --changed-since origin/main --format sarif --fail-on Alta > vibecheck.sarif
+```
+
+O comando retorna código `1` ao encontrar achados na severidade escolhida ou mais grave. Há exemplos prontos para [GitLab CI](integrations/gitlab/.gitlab-ci.yml) e [Bitbucket Pipelines](integrations/bitbucket/bitbucket-pipelines.yml); eles publicam o relatório como artefato. A integração de GitHub Actions do projeto publica comentários em Pull Requests. Veja o [guia de integrações](docs/INTEGRACOES.md) para configuração, variáveis e limitações.
+
 **Formato de um achado.** Exemplo de resultado para `yaml.load(texto)` em um arquivo Python:
 
 ```json
@@ -150,6 +164,7 @@ A documentação interativa dos endpoints fica em `/docs` na API.
 
 | Variável | Descrição | Exemplo |
 |---|---|---|
+| `VIBECHECK_ENV` | Ambiente; `production` ativa validações de segurança | `development` |
 | `MYSQL_ROOT_PASSWORD` | Senha do root do MySQL no Docker Compose | defina uma senha forte |
 | `VIBECHECK_DB_ENGINE` | Banco usado pelo backend | `mysql` ou `sqlite` |
 | `VIBECHECK_DB_HOST`, `VIBECHECK_DB_PORT` | Endereço do MySQL | `127.0.0.1`, `3306` |
@@ -161,9 +176,18 @@ A documentação interativa dos endpoints fica em `/docs` na API.
 | `VIBECHECK_FRONTEND_URL` | URL do frontend | `http://localhost:5173` |
 | `VIBECHECK_RATE_LIMIT` | Limite de requisições | `true` |
 | `VIBECHECK_SEED_DEMO_USER` | Cria usuário de demonstração | `false` |
+| `VIBECHECK_ONLINE_DEPS` | Consulta opcional de dependências em serviços públicos pelo backend | `false` |
+| `VIBECHECK_MAX_SOURCE_BYTES` | Tamanho máximo da análise de arquivo | `1000000` |
+| `VIBECHECK_MAX_REPO_ZIP_BYTES` | Tamanho máximo do ZIP enviado a `/api/repositories/analyses` | `25000000` |
+| `VIBECHECK_MAX_LINE_CHARS` | Limite de caracteres analisados por linha | `1000` |
+| `VIBECHECK_SCAN_TIMEOUT_SECONDS` | Orçamento de análise por arquivo | `10` |
 | `VITE_API_URL` | URL da API usada pelo frontend | `http://localhost:8000` |
 
 Sem `VITE_API_URL`, o frontend funciona em modo local: cadastro, análise e histórico ficam no navegador.
+O modo local do frontend não consulta serviços externos para análise de dependências.
+O `docker-compose.yml` encaminha `VIBECHECK_MAX_REPO_ZIP_BYTES` e
+`VIBECHECK_ONLINE_DEPS` do `.env` para o backend; o Compose continua sendo uma
+configuração de desenvolvimento, não de produção.
 
 As variáveis da camada de IA estão na seção seguinte.
 
@@ -213,6 +237,18 @@ O backend carrega o `.env` da raiz na inicialização. O `scan_file.py`, por out
 
 A IA não é usada pelo modo local do frontend nem, por enquanto, pela revisão de Pull Requests.
 
+## Verificação online de dependências (opcional)
+
+O backend pode consultar o OSV para vulnerabilidades em versões fixadas e os registries oficiais
+PyPI/npm para confirmar se o pacote existe. A opção fica desligada por padrão; ative
+`VIBECHECK_ONLINE_DEPS=true` ou passe `--online-deps` aos CLIs `scripts/scan_file.py` e
+`scripts/scan_repo.py`. Cada requisição tem timeout de 3 segundos, cada manifesto verifica até
+50 pacotes e falhas externas não interrompem a análise.
+
+**Privacidade.** Os nomes dos pacotes são enviados a PyPI ou npm para consulta de existência. Para
+versões fixadas, nome, ecossistema e versão são enviados ao OSV. O conteúdo do código-fonte não é
+enviado. O frontend em modo local não faz essas consultas.
+
 ## Revisão automática de Pull Requests
 
 O workflow `.github/workflows/vibecheck-pr-review.yml` roda o scanner nos arquivos alterados de cada Pull Request e comenta nas linhas novas que tiverem achados.
@@ -223,6 +259,16 @@ O workflow `.github/workflows/vibecheck-pr-review.yml` roda o scanner nos arquiv
 - Usa o token padrão com permissões mínimas: `contents: read` e `pull-requests: write`.
 - Não exige segredos adicionais.
 - Os comentários explicam a correção, mas não alteram o código. O resultado é informativo e não bloqueia o merge.
+
+## Benchmark e limitações
+
+Na execução de 15/11/2026, o benchmark de 40 arquivos mediu **29/29 (100,0%)**
+de recall, **30/30 (100,0%)** de precisão e **0/30 (0,0%)** achados sem rótulo,
+em **0,058725 s**. Os rótulos foram corrigidos depois de observar resultados
+anteriores; portanto, esta medição não é independente nem uma avaliação cega.
+O benchmark de repositório analisou **500/500 arquivos sintéticos**, com
+**0 achados**, em **0,296 s**; o tempo depende da máquina e não representa
+repositórios reais. Detalhes e limitações em [docs/BENCHMARK.md](docs/BENCHMARK.md).
 
 ## Testes
 
@@ -263,7 +309,8 @@ As amostras e o gabarito usados nas métricas estão em `backend/tests/samples/`
 
 - Nunca commite arquivos `.env` nem chaves de API.
 - Troque todas as senhas de exemplo.
-- Não habilite `VIBECHECK_SEED_DEMO_USER` em ambientes expostos.
+- Defina `VIBECHECK_ENV=production` no deploy; a inicialização rejeita seed demo, CORS com `*` e senha do banco vazia ou de exemplo.
+- O scrypt usa `N=2**17, r=8` (cerca de 128 MiB por operação). As operações são serializadas por processo e o login tem limites por IP e por IP/e-mail; dimensione a memória considerando um slot por worker.
 - Use uma conta MySQL exclusiva da aplicação, sem privilégios de administrador.
 - O `docker-compose.yml` expõe o MySQL na porta 3306 e usa `--reload`: é uma configuração de desenvolvimento. Em outros ambientes, restrinja o acesso (por exemplo, `127.0.0.1:3306:3306`) e use um servidor de produção.
 - O limitador de requisições é em memória. Em mais de uma instância, use um limitador compartilhado.
@@ -274,14 +321,15 @@ As amostras e o gabarito usados nas métricas estão em `backend/tests/samples/`
 - As regras analisam uma linha por vez, com algum contexto de função. Elas não acompanham o fluxo de dados entre arquivos, e wrappers próprios, sanitizadores customizados e construções multilinha complexas podem escapar.
 - Nas amostras internas o scanner detecta todos os itens esperados. Em amostras escritas de forma independente, a cobertura foi menor (cerca de 60% na última medição, com poucos casos), o que mostra o limite de uma abordagem baseada em regex.
 - A categoria A06 (design inseguro) depende de decisões de arquitetura e exige revisão manual.
-- A análise de dependências aponta versões não fixadas, mas não consulta bases de vulnerabilidades conhecidas.
+- A análise online de dependências é opcional, depende da disponibilidade dos serviços públicos e verifica até 50 pacotes por manifesto.
 - As metas de taxa de falsos positivos e de tempo de análise por repositório ainda não foram medidas em repositórios reais.
 
 **Próximos passos**
 - [ ] Tela de recuperação de senha no frontend (os endpoints do backend já existem e exigem SMTP).
 - [ ] IA na revisão de Pull Requests e na interface.
-- [ ] Sugestão de correção em código.
-- [ ] Integração com GitLab e Bitbucket.
+- [x] Sugestões determinísticas de correção nos achados suportados.
+- [x] Integração via CI/CLI com GitLab e Bitbucket (relatório como artefato; sem comentário inline).
+- [ ] Webhook ou app nativo com comentário inline no GitLab e Bitbucket.
 - [ ] Análise com contexto de fluxo de dados (motor SAST de código aberto).
 - [ ] Medição de falsos positivos e de desempenho em repositórios reais.
 - [ ] Configuração de deploy de produção para backend e banco.

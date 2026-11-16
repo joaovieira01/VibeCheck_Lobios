@@ -1,16 +1,17 @@
 # VibeCheck — backend
 
-API FastAPI para o [frontend do VibeCheck](../VibeCheck_Lobios-frontend). Faz a análise
-estática de segurança no servidor, com **as mesmas 19 regras** do `scanner.ts` do frontend
-(+ a regra de manifestos de dependência), e acrescenta contas de usuário, sessões,
+API FastAPI para o frontend do VibeCheck. Faz a análise estática de segurança no servidor,
+com **41 regras** (40 para código e uma para manifestos), em paridade com o scanner local
+do frontend, e acrescenta contas de usuário, sessões,
 recuperação de senha e histórico persistente por usuário.
 
-O formato JSON é idêntico às interfaces de `src/types.ts` (`Analysis`, `Finding`), então o
-frontend troca o analisador local pelo HTTP sem mudar telas nem o relatório PDF.
+As análises por regras usam o formato das interfaces `Analysis` e `Finding` do frontend.
+A checagem SCA online é um complemento exclusivo do backend e pode acrescentar achados e
+`onlineDependencyCheck`; o scanner local do frontend não faz chamadas externas.
 
 ## Executar
 
-Requer Python 3.11+.
+Python 3.12 é a versão usada nos testes e no contêiner do projeto.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
@@ -36,6 +37,16 @@ serverless, pois o armazenamento local não é persistente entre execuções.
 Em desenvolvimento, para entrar com a conta que a tela de login já exibe:
 `VIBECHECK_SEED_DEMO_USER=true` cria `demo@vibecheck.dev` / `vibecheck2026`.
 **É uma credencial pública; nunca ligue isso em ambiente exposto.**
+Defina `VIBECHECK_ENV=production` no deploy. A inicialização então rejeita a
+credencial de demonstração, CORS com `*` e senha de banco vazia ou igual ao
+valor de exemplo.
+
+O custo atual de senha é scrypt `N=2**17, r=8`, aproximadamente 128 MiB por
+operação (`maxmem` de 192 MiB). Um semáforo serializa operações scrypt por
+processo; os limites de login são 5 tentativas por IP/e-mail e 20 por IP a cada
+15 minutos. Cada worker tem seu próprio semáforo e limitadores, então dimensione
+a memória para o número de workers. Hashes antigos continuam válidos e são
+atualizados após login bem-sucedido.
 
 Docker: `docker build -t vibecheck-api . && docker run -p 8000:8000 -v vibecheck-data:/srv/data vibecheck-api`
 
@@ -43,7 +54,7 @@ Docker: `docker build -t vibecheck-api . && docker run -p 8000:8000 -v vibecheck
 
 | Método | Rota | Auth | Descrição |
 |---|---|---|---|
-| GET | `/api/health` | — | Saúde e nº de regras |
+| GET | `/api/health` | — | Conexão com o banco e nº de regras (`503 degraded` se o banco falhar) |
 | GET | `/api/rules` | — | Metadados das regras |
 | POST | `/api/auth/register` | — | `{email, password}` → `{token, user}` (201) |
 | POST | `/api/auth/login` | — | `{email, password}` → `{token, user}` |
@@ -55,6 +66,9 @@ Docker: `docker build -t vibecheck-api . && docker run -p 8000:8000 -v vibecheck
 | GET | `/api/analyses` | Bearer | Histórico (até 20, mais recentes primeiro) |
 | GET | `/api/analyses/{id}` | Bearer | Uma análise (só se for do usuário) |
 | DELETE | `/api/analyses` | Bearer | Limpa o histórico do usuário (204) |
+| POST | `/api/repositories/analyses` | Bearer | Envia ZIP, analisa e salva (201); limite padrão de 25 MB e 5 análises por usuário/hora |
+| GET | `/api/repositories/analyses` | Bearer | Histórico resumido de repositórios do usuário |
+| GET | `/api/repositories/analyses/{id}` | Bearer | Detalhes de uma análise de repositório do usuário |
 
 Erros vêm como `{"detail": "mensagem em português"}`, que é o que o frontend exibe.
 
@@ -64,23 +78,33 @@ Variáveis de ambiente (todas opcionais; veja `.env.example`):
 
 | Variável | Padrão | Para quê |
 |---|---|---|
+| `VIBECHECK_ENV` | `development` | Ativa validações rígidas quando `production` |
+| `VIBECHECK_DB_ENGINE` | `sqlite` | Motor de banco (`sqlite` ou `mysql`) |
 | `VIBECHECK_DB_PATH` | `data/vibecheck.db` | Arquivo SQLite |
-| `VIBECHECK_CORS_ORIGINS` | `localhost:5173,127.0.0.1:5173` | Origens do frontend (CORS) |
+| `VIBECHECK_DB_HOST/PORT/NAME/USER/PASSWORD` | `127.0.0.1:3306/vibecheck` | Conexão MySQL |
+| `VIBECHECK_CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Origens do frontend (CORS) |
 | `VIBECHECK_FRONTEND_URL` | `http://localhost:5173` | Base do link de recuperação |
 | `VIBECHECK_SMTP_HOST/PORT/USER/PASSWORD/FROM/STARTTLS` | — | E-mail de recuperação |
 | `VIBECHECK_SESSION_TTL_HOURS` | 168 | Validade da sessão |
 | `VIBECHECK_RESET_TTL_MINUTES` | 30 | Validade do link de recuperação |
 | `VIBECHECK_MAX_SOURCE_BYTES` | 1000000 | Limite do código (bytes UTF-8) |
+| `VIBECHECK_MAX_REPO_ZIP_BYTES` | 25000000 | Limite do ZIP de `/api/repositories/analyses` |
+| `VIBECHECK_MAX_HISTORY` | 20 | Análises mantidas por usuário |
 | `VIBECHECK_MAX_LINE_CHARS` | 1000 | Truncamento de linha antes das regex |
 | `VIBECHECK_SCAN_TIMEOUT_SECONDS` | 10 | Orçamento de tempo por análise |
 | `VIBECHECK_RATE_LIMIT` | true | Limites de taxa |
+| `VIBECHECK_ONLINE_DEPS` | false | Consulta opcional de dependências no OSV, PyPI e npm |
+| `VIBECHECK_SEED_DEMO_USER` | false | Cria o usuário de demonstração (não usar em produção) |
 | `AI_ENABLED` | false | Ativa a triagem opcional OpenAI-compatible |
 | `AI_BASE_URL` | — | Endpoint de chat completions (HTTPS; HTTP apenas localhost) |
 | `AI_API_KEY` | — | Chave do provedor, somente em variável de ambiente |
 | `AI_MODEL` | — | Identificador do modelo |
 | `AI_TIMEOUT_SECONDS` | 20 | Timeout da chamada |
+| `AI_TOTAL_TIMEOUT_SECONDS` | 60 | Limite de duração total da triagem |
 | `AI_MAX_CALLS_PER_SCAN` | 10 | Orçamento de chamadas por análise |
 | `AI_CONCURRENCY` | 2 | Concorrência máxima do cliente |
+| `AI_MAX_COMPLETION_TOKENS` | — | Limite opcional de tokens de resposta (até 8192) |
+| `AI_REASONING_EFFORT` | — | `none`, `minimal`, `low`, `medium` ou `high` |
 | `AI_DISCOVERY` | false | Habilita revisão heurística de funções de risco |
 
 **Sem `VIBECHECK_SMTP_HOST`, o link de recuperação só é impresso no log do servidor.**
@@ -94,6 +118,10 @@ também precisa estar ligado para enviar funções de risco e receber sugestões
 separadas. O backend usa o formato OpenAI-compatible com a biblioteca padrão,
 sem SDKs de fornecedor ou dependências adicionais. O código é enviado ao
 endpoint selecionado somente quando a IA está habilitada.
+
+Os resultados da IA são retornados pela API/CLI, mas ainda não são apresentados
+em uma tela própria no frontend. A tela de recuperação de senha também não está
+implementada; os endpoints existem.
 
 Exemplos **a confirmar** (endpoints e modelos podem mudar; confira a documentação
 vigente e os termos do provedor):
@@ -116,6 +144,8 @@ Ferramentas manuais, executadas a partir de `backend/`:
 ```powershell
 python scripts/scan_file.py caminho\para\arquivo.py
 python scripts/scan_file.py caminho\para\arquivo.py --ai
+python scripts/scan_file.py caminho\para\requirements.txt --online-deps
+python scripts/scan_repo.py caminho\para\repositorio --online-deps --format json
 python scripts/metrics.py
 python scripts/metrics.py --ai
 ```
@@ -125,6 +155,22 @@ regras. As métricas rules-only permanecem disponíveis. Não foram validados
 provedores/modelos reais nesta implementação; consulte `../README.md` para
 detalhes de privacidade.
 
+## Verificação online de dependências
+
+A checagem SCA online fica desligada por padrão. Ative `VIBECHECK_ONLINE_DEPS=true`
+para análises do backend ou use `--online-deps` nos CLIs. Versões fixadas são
+consultadas no OSV; PyPI e npm são consultados para confirmar a existência dos
+pacotes. Cada requisição tem timeout de 3 segundos, há no máximo cinco requisições
+concorrentes por processo e cada arquivo de manifesto verifica até 50 pacotes.
+Falhas de rede não interrompem a análise: o resultado indica
+“Verificação online indisponível.”. Pacotes acima do limite também são indicados.
+
+**Privacidade:** os nomes dos pacotes são enviados ao registry correspondente
+(PyPI ou npm). Para consulta ao OSV, são enviados o ecossistema, nome e versão
+fixada. Nenhum trecho do código-fonte é enviado por essa checagem. A análise local
+do frontend não faz chamadas externas; os resultados online aparecem somente
+nas análises do backend.
+
 ## Estrutura
 
 ```
@@ -133,6 +179,9 @@ app/
   schemas.py    modelos Pydantic (JSON camelCase)
   scanner.py    porte do scanner.ts; regras em rules.json
   rules.json    regras extraídas do TypeScript (mesma regex)
+  deps.py       verificações online opcionais via OSV/PyPI/npm
+  repo_scan.py  varredura de diretórios e ZIP
+  suggested_fixes.py  correções determinísticas conservadoras
   service.py    validação e montagem do resultado da análise
   auth.py       cadastro, login, sessões, recuperação de senha
   security.py   scrypt (hash de senha), tokens
@@ -142,11 +191,13 @@ app/
   mailer.py     SMTP / log
 tests/          unittest (roda com pytest)
 scripts/generate_golden.mjs   regenera a referência de paridade a partir do frontend
+scripts/scan_file.py          varredura local de um arquivo
+scripts/scan_repo.py          CLI de repositório, JSON/SARIF e política de saída
 ```
 
 ## Fidelidade com o frontend
 
-`tests/golden/expected.json` guarda a saída do `scanner.ts` **original** para 19 entradas
+`tests/golden/expected.json` guarda a saída do scanner TypeScript para 64 casos
 (os exemplos do frontend, casos dos testes dele e casos de borda: CRLF, `package.json`
 inválido, caminhos do Windows, acentos…). `tests/test_scanner.py::ParityTests` exige
 resultado idêntico no Python. Se alterar regras no frontend, regenere (Node 22.6+):
@@ -156,6 +207,8 @@ node --experimental-strip-types scripts/generate_golden.mjs ../VibeCheck_Lobios-
 ```
 
 e copie as novas regras para `app/rules.json` (campos `pattern`/`safePattern`).
+Em modo local, o frontend aplica as regras estáticas e não consulta a internet;
+a checagem online de dependências é um complemento opcional exclusivo do backend.
 
 ## Revisão de Pull Requests no GitHub
 
@@ -168,20 +221,25 @@ base** e busca os arquivos alterados pela API; nenhum código do PR é executado
 O bot aceita os formatos cobertos pelo scanner, ignora arquivos acima de 1 MB e
 limita a análise a 10 segundos por arquivo. Achados em linhas antigas não são
 comentados. O GitHub Actions fornece `GITHUB_TOKEN` automaticamente com permissões
-mínimas de leitura do repositório e escrita em comentários de PR. GitLab e Bitbucket,
-além de aplicação automática de correções, permanecem fora deste primeiro adaptador.
+mínimas de leitura do repositório e escrita em comentários de PR. GitLab e Bitbucket
+estão disponíveis por templates de CI/CLI; webhooks/apps nativos e comentários inline
+nessas plataformas ainda não existem. As sugestões de correção são exibidas para revisão,
+não aplicadas automaticamente.
 
 ## Segurança: decisões e limites
 
-- **Senhas**: scrypt (N=2¹⁵, r=8, p=1) com salt por senha; parâmetros ficam no hash. Para o
-  mínimo recomendado pela OWASP use N=2¹⁷ (`app/security.py`), com ~128 MiB por login.
+- **Senhas**: scrypt (N=2¹⁷, r=8, p=1) com salt por senha; parâmetros ficam no hash.
+  O custo é aproximadamente 128 MiB por hash; `maxmem` é 192 MiB e operações são
+  serializadas por processo.
 - **Sessões**: token aleatório de 256 bits; o banco guarda só o SHA-256. Revogáveis (logout e
   redefinição de senha encerram sessões).
-- **Login**: mensagem igual para e-mail inexistente e senha errada, com gasto de tempo
-  equivalente. Limite de 10 tentativas/15 min por IP+e-mail.
+- **Login**: mensagem igual para e-mail inexistente e senha errada. Limites de 5 tentativas
+  por IP/e-mail e 20 por IP a cada 15 minutos.
 - **Recuperação**: resposta idêntica exista a conta ou não; token de uso único, 30 min, no
   fragmento `#` da URL; e-mail enviado após a resposta.
 - **Histórico isolado por usuário**; outro usuário recebe 404.
+- **Repositórios**: ZIP até `VIBECHECK_MAX_REPO_ZIP_BYTES` (25 MB por padrão), extração
+  temporária com limites de segurança e rate limit de 5 análises por usuário/hora.
 - **Entradas hostis**: algumas regex herdadas do frontend têm custo polinomial. Medido com
   1 MB hostil: sem proteção, 53 s (regex de IDOR); com linhas truncadas a 1000 caracteres,
   3,7 s no pior caso testado; o orçamento de 10 s é a segunda barreira. Consequência: **achados

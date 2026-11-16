@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
+import hashlib
+import json
 import logging
 import re
+import tempfile
 import time
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from .ai.config import AIConfigurationError, AISettings
@@ -17,10 +23,17 @@ from .ai.provider import (
     normalize_ai_error_code,
 )
 from .ai.triage import AIAnalyzer, AIProvider, triage_findings
+from .deps import check_dependencies, online_dependencies_enabled
 from .errors import ApiError
+from .repo_scan import RepositoryScanError, scan_repository
 from .scanner import ScanTimeout, scan_source
 
 _MAX_AI_FINDINGS = 20
+_MAX_REPOSITORY_FINDINGS_PER_FILE = 20
+_MAX_REPOSITORY_FINDINGS_TOTAL = 1000
+_MAX_REPOSITORY_OCCURRENCES_PER_FINDING = 20
+_MAX_REPOSITORY_PAYLOAD_BYTES = 8_000_000
+_MAX_REPOSITORY_PATH_CHARS = 512
 _CREDENTIAL_URL = re.compile(r"(?i)https?://[^\s/@:]+:[^\s/@]+@")
 _LOGGER = logging.getLogger("vibecheck.ai")
 
@@ -75,6 +88,7 @@ def run_analysis(
     scan_timeout_seconds: float | None = None,
     ai_settings: AISettings | None = None,
     ai_provider: AIProvider | None = None,
+    online_deps: bool | None = None,
 ) -> dict[str, Any]:
     """Retorna um dict no formato ``Analysis`` do frontend (camelCase)."""
     try:
@@ -113,6 +127,15 @@ def run_analysis(
         "findings": [finding.to_dict() for finding in result.findings],
         "rulesRun": result.rules_run,
     }
+    check_online_dependencies = (
+        online_dependencies_enabled() if online_deps is None else online_deps
+    )
+    if check_online_dependencies:
+        dependency_check = check_dependencies(source, filename)
+        analysis["findings"].extend(
+            finding.to_dict() for finding in dependency_check.findings
+        )
+        analysis["onlineDependencyCheck"] = dependency_check.to_dict()
 
     try:
         ai_settings = ai_settings or AISettings.from_env()
@@ -198,4 +221,139 @@ def run_analysis(
                 else {}
             ),
         }
+    return analysis
+
+
+def _repository_display_path(path: str) -> tuple[str, bool]:
+    if len(path) <= _MAX_REPOSITORY_PATH_CHARS:
+        return path, False
+    digest = hashlib.sha256(path.encode("utf-8")).hexdigest()[:16]
+    return f"{path[:_MAX_REPOSITORY_PATH_CHARS - 18]}…{digest}", True
+
+
+def _compact_size(payload: dict[str, Any]) -> int:
+    return len(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    )
+
+
+def run_repository_analysis(
+    filename: str,
+    archive_base64: str,
+    *,
+    max_archive_bytes: int,
+) -> dict[str, Any]:
+    """Decodifica, analisa e limita o histórico de uma varredura de repositório."""
+    safe_filename = PurePosixPath(filename.replace("\\", "/")).name
+    if not safe_filename.casefold().endswith(".zip"):
+        raise ApiError(400, "Envie um arquivo ZIP válido.")
+
+    max_encoded_length = ((max_archive_bytes + 2) // 3) * 4
+    if len(archive_base64) > max_encoded_length:
+        raise ApiError(413, "O arquivo ZIP excede o limite configurado.")
+    try:
+        archive_bytes = base64.b64decode(archive_base64, validate=True)
+    except (binascii.Error, ValueError):
+        raise ApiError(400, "O conteúdo enviado não é um arquivo ZIP válido.") from None
+    if len(archive_bytes) > max_archive_bytes:
+        raise ApiError(413, "O arquivo ZIP excede o limite configurado.")
+
+    try:
+        with tempfile.TemporaryDirectory(prefix="vibecheck-upload-") as temporary:
+            archive_path = Path(temporary) / "repository.zip"
+            archive_path.write_bytes(archive_bytes)
+            result = scan_repository(archive_path)
+    except RepositoryScanError:
+        raise ApiError(
+            400, "O ZIP é inválido ou excede os limites de segurança."
+        ) from None
+
+    display_paths: dict[str, str] = {}
+    paths_truncated = False
+
+    def display(path: str) -> str:
+        nonlocal paths_truncated
+        if path not in display_paths:
+            display_paths[path], was_truncated = _repository_display_path(path)
+            paths_truncated = paths_truncated or was_truncated
+        return display_paths[path]
+
+    analysis: dict[str, Any] = {
+        "id": str(uuid.uuid4()),
+        "analysisType": "repository",
+        "filename": safe_filename,
+        "createdAt": _iso_now(),
+        "findingsByFile": {},
+        "countsBySeverity": result["countsBySeverity"],
+        "countsByOwasp": result["countsByOwasp"],
+        "filesAnalyzed": [display(path) for path in result["filesAnalyzed"]],
+        "ignoredFiles": [
+            {"path": display(item["path"]), "reason": item["reason"]}
+            for item in result["ignoredFiles"]
+        ],
+        "filesNotAnalyzed": [display(path) for path in result["filesNotAnalyzed"]],
+        "partial": result["partial"],
+        "durationSeconds": result["durationSeconds"],
+        "findingsTruncated": False,
+        "truncatedFindingsCount": 0,
+        "truncatedOccurrencesCount": 0,
+        "pathsTruncated": False,
+    }
+
+    current_size = _compact_size(analysis)
+    total_findings = 0
+    for path, findings in result["findingsByFile"].items():
+        display_path = display(path)
+        stored_for_file: list[dict[str, Any]] = []
+        for finding in findings:
+            locations = finding.get("locations", [])
+            if (
+                len(stored_for_file) >= _MAX_REPOSITORY_FINDINGS_PER_FILE
+                or total_findings >= _MAX_REPOSITORY_FINDINGS_TOTAL
+            ):
+                analysis["truncatedFindingsCount"] += 1
+                analysis["truncatedOccurrencesCount"] += len(locations)
+                continue
+
+            stored = dict(finding)
+            kept_locations = locations[:_MAX_REPOSITORY_OCCURRENCES_PER_FINDING]
+            stored["locations"] = kept_locations
+            stored["evidence"] = finding.get("evidence", [])[: len(kept_locations)]
+            if isinstance(finding.get("suggestedFix"), list):
+                stored["suggestedFix"] = finding["suggestedFix"][: len(kept_locations)]
+            omitted_occurrences = len(locations) - len(kept_locations)
+            encoded_item = json.dumps(
+                stored, ensure_ascii=False, separators=(",", ":")
+            )
+            item_size = len(encoded_item.encode("utf-8"))
+            if not stored_for_file and display_path not in analysis["findingsByFile"]:
+                encoded_key = json.dumps(display_path, ensure_ascii=False)
+                delta = len(encoded_key.encode("utf-8")) + item_size + (
+                    3 if not analysis["findingsByFile"] else 4
+                )
+            else:
+                delta = item_size + 1
+            if current_size + delta + 64 > _MAX_REPOSITORY_PAYLOAD_BYTES:
+                analysis["truncatedFindingsCount"] += 1
+                analysis["truncatedOccurrencesCount"] += len(locations)
+                continue
+
+            stored_for_file.append(stored)
+            analysis["truncatedOccurrencesCount"] += omitted_occurrences
+            total_findings += 1
+            current_size += delta
+
+        if stored_for_file:
+            analysis["findingsByFile"][display_path] = stored_for_file
+
+    analysis["findingsTruncated"] = bool(
+        analysis["truncatedFindingsCount"]
+        or analysis["truncatedOccurrencesCount"]
+    )
+    analysis["pathsTruncated"] = paths_truncated
+    if _compact_size(analysis) > _MAX_REPOSITORY_PAYLOAD_BYTES:
+        raise ApiError(
+            413,
+            "O resultado é grande demais para ser salvo no histórico. Reduza o tamanho do repositório.",
+        )
     return analysis
