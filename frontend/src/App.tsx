@@ -55,6 +55,7 @@ import {
   type DragEvent,
 } from "react";
 import { owaspCategories } from "./data/owasp";
+import { CodeEditor } from "./components/CodeEditor";
 import { FindingFix } from "./components/FindingFix";
 import { RepositoryTab } from "./components/RepositoryTab";
 import {
@@ -1741,21 +1742,11 @@ function App() {
                           />
                           <span className="editor-language">{filename.split(".").pop()?.toUpperCase() || "CODE"}</span>
                         </div>
-                        <div className="editor-body">
-                          <div className="line-gutter" aria-hidden="true">
-                            {Array.from({ length: Math.max(10, source.split(/\r?\n/).length) }, (_, index) => (
-                              <span key={index}>{index + 1}</span>
-                            ))}
-                          </div>
-                          <textarea
-                            value={source}
-                            onChange={(event) => setSource(event.target.value)}
-                            placeholder={"# Cole seu código aqui\n\n# Você também pode carregar um dos exemplos vulneráveis"}
-                            aria-label="Código fonte para análise"
-                            spellCheck={false}
-                            maxLength={1_000_000}
-                          />
-                        </div>
+                        <CodeEditor
+                          filename={filename}
+                          source={source}
+                          onChange={setSource}
+                        />
                         <div className="editor-footer">
                           <span><span className="editor-live-dot" /> LOCAL · NENHUM ENVIO</span>
                           <span>{source.length.toLocaleString("pt-BR")} / 1.000.000 caracteres</span>

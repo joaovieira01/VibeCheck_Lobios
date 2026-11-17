@@ -1149,6 +1149,7 @@ textarea:focus-visible {
 
 .line-gutter {
   display: flex;
+  flex: 0 0 39px;
   min-width: 39px;
   flex-direction: column;
   overflow: hidden;
@@ -1162,26 +1163,70 @@ textarea:focus-visible {
   user-select: none;
 }
 
-.editor-body textarea {
-  width: 100%;
+.line-gutter span {
+  flex: 0 0 18px;
+  height: 18px;
+}
+
+.editor-code {
+  position: relative;
+  flex: 1;
+  min-width: 0;
   height: 100%;
-  resize: vertical;
+  overflow: hidden;
+}
+
+.editor-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
   padding: 11px 13px;
-  border: 0;
-  outline: 0;
-  background: transparent;
   color: #d0d1de;
   font-family: "Roboto Mono", monospace;
   font-size: 9px;
   line-height: 18px;
+  white-space: pre;
+  pointer-events: none;
+}
+
+.editor-highlight code {
+  font: inherit;
+}
+
+.editor-code textarea {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  overflow: auto;
+  padding: 11px 13px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: #d0d1de;
+  font-family: "Roboto Mono", monospace;
+  font-size: 9px;
+  line-height: 18px;
   tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
 }
 
-.editor-body textarea::placeholder {
+.editor-code textarea::selection {
+  background: rgba(130, 120, 255, 0.35);
+}
+
+.editor-code textarea::placeholder {
   color: #545664;
+  -webkit-text-fill-color: #545664;
 }
 
-.editor-body textarea:focus-visible {
+.editor-code textarea:focus-visible {
   outline: 0;
 }
 
@@ -7691,6 +7736,39 @@ html[data-theme="light"] .finding-fix-copy {
 .app-shell .code-editor,
 .app-shell .code-editor :where(*) {
   color: var(--text-on-dark) !important;
+}
+
+.app-shell .editor-highlight .syntax-keyword {
+  color: #c586c0 !important;
+}
+
+.app-shell .editor-highlight .syntax-string {
+  color: #ce9178 !important;
+}
+
+.app-shell .editor-highlight .syntax-number {
+  color: #b5cea8 !important;
+}
+
+.app-shell .editor-highlight .syntax-comment {
+  color: #6a9955 !important;
+}
+
+.app-shell .editor-highlight .syntax-function {
+  color: #dcdcaa !important;
+}
+
+.app-shell .editor-highlight .syntax-property {
+  color: #9cdcfe !important;
+}
+
+.app-shell .editor-highlight .syntax-operator {
+  color: #d4d4d4 !important;
+}
+
+.app-shell .editor-code textarea {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
 .app-shell :where(.eyebrow, .detail-label, .sidebar-label, .stack-pill,
