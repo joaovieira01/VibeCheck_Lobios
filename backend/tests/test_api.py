@@ -316,6 +316,7 @@ class ProductionStartupTests(unittest.TestCase):
                 "senha de exemplo",
             ),
             ({"db_engine": "mysql", "db_password": ""}, "senha de exemplo"),
+            ({"db_engine": "postgres", "db_url": ""}, "VIBECHECK_DB_URL"),
         )
 
         for overrides, expected_message in invalid_settings:

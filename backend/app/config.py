@@ -51,6 +51,7 @@ class Settings:
 
     # --- Banco de dados ---
     db_engine: str = field(default_factory=lambda: _str_env("VIBECHECK_DB_ENGINE", "sqlite").lower())
+    db_url: str = field(default_factory=lambda: _str_env("VIBECHECK_DB_URL"))
     db_host: str = field(default_factory=lambda: _str_env("VIBECHECK_DB_HOST", "127.0.0.1"))
     db_port: int = field(default_factory=lambda: _int_env("VIBECHECK_DB_PORT", 3306))
     db_name: str = field(default_factory=lambda: _str_env("VIBECHECK_DB_NAME", "vibecheck"))

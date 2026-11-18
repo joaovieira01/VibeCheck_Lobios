@@ -79,9 +79,10 @@ Variáveis de ambiente (todas opcionais; veja `.env.example`):
 | Variável | Padrão | Para quê |
 |---|---|---|
 | `VIBECHECK_ENV` | `development` | Ativa validações rígidas quando `production` |
-| `VIBECHECK_DB_ENGINE` | `sqlite` | Motor de banco (`sqlite` ou `mysql`) |
+| `VIBECHECK_DB_ENGINE` | `sqlite` | Motor de banco (`sqlite`, `mysql` ou `postgres`) |
 | `VIBECHECK_DB_PATH` | `data/vibecheck.db` | Arquivo SQLite |
 | `VIBECHECK_DB_HOST/PORT/NAME/USER/PASSWORD` | `127.0.0.1:3306/vibecheck` | Conexão MySQL |
+| `VIBECHECK_DB_URL` | — | URL de conexão PostgreSQL; use a URL privada do Render no deploy |
 | `VIBECHECK_CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Origens do frontend (CORS) |
 | `VIBECHECK_FRONTEND_URL` | `http://localhost:5173` | Base do link de recuperação |
 | `VIBECHECK_SMTP_HOST/PORT/USER/PASSWORD/FROM/STARTTLS` | — | E-mail de recuperação |
@@ -109,6 +110,10 @@ Variáveis de ambiente (todas opcionais; veja `.env.example`):
 
 **Sem `VIBECHECK_SMTP_HOST`, o link de recuperação só é impresso no log do servidor.**
 Serve para desenvolver; em produção configure o SMTP (só STARTTLS, com validação de certificado).
+
+O Blueprint `render.yaml` conecta o backend ao PostgreSQL pela URL privada do Render
+e não configura disco persistente. O banco do plano gratuito expira 30 dias após sua
+criação; exporte ou migre os dados antes desse prazo.
 
 ## IA opcional
 

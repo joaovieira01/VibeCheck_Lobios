@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: vibecheck-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn app.main:create_app --factory --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: VIBECHECK_ENV
+        value: production
+      - key: VIBECHECK_DB_ENGINE
+        value: postgres
+      - key: VIBECHECK_DB_URL
+        fromDatabase:
+          name: vibecheck-db
+          property: connectionString
+      - key: VIBECHECK_CORS_ORIGINS
+        value: https://vibechecklobios.vercel.app
+      - key: VIBECHECK_SEED_DEMO_USER
+        value: "false"
+
+databases:
+  - name: vibecheck-db
+    plan: free
+    databaseName: vibecheck
+    user: vibecheck_user

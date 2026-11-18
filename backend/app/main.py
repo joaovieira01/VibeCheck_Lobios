@@ -108,6 +108,8 @@ def _validate_production_settings(settings: Settings) -> None:
             raise RuntimeError(
                 "Em produção, defina uma senha de banco diferente da senha de exemplo."
             )
+    if settings.db_engine.strip().lower() == "postgres" and not settings.db_url.strip():
+        raise RuntimeError("Em produção, defina VIBECHECK_DB_URL com a URL do PostgreSQL.")
 
 
 def ensure_state(application: FastAPI) -> None:

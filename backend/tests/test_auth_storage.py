@@ -1,11 +1,15 @@
 import os
 import re
+import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from app.auth import AuthManager
-from app.db import MYSQL_SCHEMA, Database
+from app.config import Settings
+from app.db import MYSQL_SCHEMA, POSTGRES_SCHEMA, Database
 from app.errors import ApiError
 from app.security import SCRYPT_N, hash_password, verify_password
 from app.service import detect_language, run_analysis
@@ -252,6 +256,54 @@ class MySQLSchemaTests(unittest.TestCase):
             table_metadata(manual_schema),
             table_metadata(runtime_schema),
         )
+
+
+class PostgreSQLDatabaseTests(unittest.TestCase):
+    def test_postgres_schema_and_query_placeholders(self):
+        executed = []
+        raw_connections = []
+
+        class FakeConnection:
+            def execute(self, sql, params=()):
+                executed.append((sql, params))
+                return self
+
+            def commit(self):
+                pass
+
+            def rollback(self):
+                pass
+
+            def close(self):
+                pass
+
+        def connect(url):
+            self.assertEqual(url, "postgresql://user:pass@private-host/db")
+            connection = FakeConnection()
+            raw_connections.append(connection)
+            return connection
+
+        fake_psycopg = types.SimpleNamespace(
+            connect=connect,
+            IntegrityError=type("IntegrityError", (Exception,), {}),
+        )
+        with patch.dict(sys.modules, {"psycopg": fake_psycopg}):
+            db = Database(
+                Settings(
+                    db_engine="postgres",
+                    db_url="postgresql://user:pass@private-host/db",
+                )
+            )
+            with db.connect() as conn:
+                conn.execute("SELECT * FROM users WHERE email = ?", ("a@b.co",))
+
+        self.assertEqual([sql for sql, _ in executed[:len(POSTGRES_SCHEMA)]], POSTGRES_SCHEMA)
+        self.assertEqual(executed[-1], ("SELECT * FROM users WHERE email = %s", ("a@b.co",)))
+        self.assertEqual(len(raw_connections), 2)
+
+    def test_postgres_requires_connection_url(self):
+        with self.assertRaisesRegex(RuntimeError, "VIBECHECK_DB_URL"):
+            Database(Settings(db_engine="postgres", db_url=""))
 
 
 if __name__ == "__main__":

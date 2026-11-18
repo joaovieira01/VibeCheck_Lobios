@@ -71,12 +71,18 @@ class AuthManager:
                     (user_id, email, password_hash, created),
                 )
         except Exception as exc:
-            # SQLite e MySQL usam tipos diferentes para violação de UNIQUE.
+            # Cada driver usa seu próprio tipo para violação de UNIQUE.
             is_integrity = isinstance(exc, sqlite3.IntegrityError)
             if not is_integrity:
                 try:
                     import mysql.connector
                     is_integrity = isinstance(exc, mysql.connector.IntegrityError)
+                except ImportError:
+                    pass
+            if not is_integrity:
+                try:
+                    import psycopg
+                    is_integrity = isinstance(exc, psycopg.IntegrityError)
                 except ImportError:
                     pass
             if is_integrity:

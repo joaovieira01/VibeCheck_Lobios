@@ -57,7 +57,7 @@ Frontend (React + Vite)  ──HTTP /api──►  Backend (FastAPI)  ───�
 |---|---|
 | Frontend | React, TypeScript, Vite |
 | Backend | FastAPI (Python), autenticação e motor de análise |
-| Banco de dados | MySQL 8.4 (SQLite opcional para testes locais) |
+| Banco de dados | MySQL 8.4, PostgreSQL (Render) ou SQLite para testes locais |
 | Infraestrutura | Docker Compose |
 | CI | GitHub Actions |
 | Testes | pytest (backend) e Vitest (frontend) |
@@ -89,7 +89,7 @@ Para subir somente o banco durante o desenvolvimento: `docker compose up -d mysq
 
 ## Execução manual
 
-Pré-requisitos: Python 3.12 e Node.js 22 (as versões usadas nos contêineres; o Vite 7 não funciona em versões antigas do Node), além de MySQL 8.4 ou SQLite para testes.
+Pré-requisitos: Python 3.12 e Node.js 22 (as versões usadas nos contêineres; o Vite 7 não funciona em versões antigas do Node), além de MySQL 8.4, PostgreSQL ou SQLite para testes.
 
 **Banco de dados.** Execute `database/schema.sql` no MySQL, trocando `CHANGE_THIS_PASSWORD` por uma senha forte, ou use apenas o contêiner do MySQL.
 
@@ -166,7 +166,8 @@ A documentação interativa dos endpoints fica em `/docs` na API.
 |---|---|---|
 | `VIBECHECK_ENV` | Ambiente; `production` ativa validações de segurança | `development` |
 | `MYSQL_ROOT_PASSWORD` | Senha do root do MySQL no Docker Compose | defina uma senha forte |
-| `VIBECHECK_DB_ENGINE` | Banco usado pelo backend | `mysql` ou `sqlite` |
+| `VIBECHECK_DB_ENGINE` | Banco usado pelo backend | `mysql`, `postgres` ou `sqlite` |
+| `VIBECHECK_DB_URL` | URL de conexão PostgreSQL (use a privada no Render) | configurada pelo Blueprint |
 | `VIBECHECK_DB_HOST`, `VIBECHECK_DB_PORT` | Endereço do MySQL | `127.0.0.1`, `3306` |
 | `VIBECHECK_DB_NAME` | Nome do banco | `vibecheck` |
 | `VIBECHECK_DB_USER` | Usuário exclusivo da aplicação | `vibecheck_user` |
@@ -312,6 +313,7 @@ As amostras e o gabarito usados nas métricas estão em `backend/tests/samples/`
 - Defina `VIBECHECK_ENV=production` no deploy; a inicialização rejeita seed demo, CORS com `*` e senha do banco vazia ou de exemplo.
 - O scrypt usa `N=2**17, r=8` (cerca de 128 MiB por operação). As operações são serializadas por processo e o login tem limites por IP e por IP/e-mail; dimensione a memória considerando um slot por worker.
 - Use uma conta MySQL exclusiva da aplicação, sem privilégios de administrador.
+- O Blueprint do Render usa PostgreSQL gratuito, que expira 30 dias após a criação. Faça backup ou migre para um plano pago antes do vencimento; o backend não usa disco persistente.
 - O `docker-compose.yml` expõe o MySQL na porta 3306 e usa `--reload`: é uma configuração de desenvolvimento. Em outros ambientes, restrinja o acesso (por exemplo, `127.0.0.1:3306:3306`) e use um servidor de produção.
 - O limitador de requisições é em memória. Em mais de uma instância, use um limitador compartilhado.
 
